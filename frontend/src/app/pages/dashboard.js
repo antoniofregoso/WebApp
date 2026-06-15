@@ -42,6 +42,22 @@ function renderView(view, area, lang) {
 }
 
 /**
+ * Insights is the default content on the dashboard home (no area) and on any
+ * insights subarea — regardless of the selected dock view.
+ */
+function isInsightsContext(area, subarea) {
+    return !area || subarea === 'insights';
+}
+
+/** Pick the content markup for the current page (insights or the dock view). */
+function renderContent(area, subarea, view, lang) {
+    if (isInsightsContext(area, subarea)) {
+        return renderInsights(area, lang);
+    }
+    return renderView(view, area, lang);
+}
+
+/**
  * Wire up the active view after its markup is in the DOM. Cleans up the
  * previously active view first (e.g. stops the calendar now-line timer).
  */
@@ -102,7 +118,7 @@ function renderDashboard(lang, theme, expanded, area, subarea, view) {
         ${renderSidebar(lang, expanded, area)}
         <div class="dash-main">
             ${renderTopbar(lang, theme, pageTitle, breadcrumb, showTopbarTools)}
-            ${renderView(view, area, lang)}
+            ${renderContent(area, subarea, view, lang)}
         </div>
     </div>
     `;
@@ -158,8 +174,8 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
     if (areaChanged || langChanged || viewChanged) {
         const contentEl = document.getElementById('dashboard-content');
         if (contentEl) {
-            contentEl.outerHTML = renderView(view, area, lang);
-            initActiveView(view, lang);
+            contentEl.outerHTML = renderContent(area, _currentSubarea, view, lang);
+            initActiveView(isInsightsContext(area, _currentSubarea) ? null : view, lang);
         }
         // Reflect the active view on the dock buttons (when topbar was not re-rendered)
         if (viewChanged) {
@@ -216,7 +232,7 @@ export function dashboard(req, router) {
     initSidebar();
     initTopbar();
     initViewButtons(view);
-    initActiveView(view, lang);
+    initActiveView(isInsightsContext(area, _currentSubarea) ? null : view, lang);
 
     // Track rendered values
     _lastLang = lang;
