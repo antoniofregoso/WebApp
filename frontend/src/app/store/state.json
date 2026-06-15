@@ -7,7 +7,7 @@
         "sidebar_expanded": true,
         "active_area": null
     },
-    "dashboard:":{
+    "dashboard":{
         "view":"kanban",
         "page":1,
         "per_page":20,

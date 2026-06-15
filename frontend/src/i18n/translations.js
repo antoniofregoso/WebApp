@@ -19,6 +19,7 @@ const translations = {
     'topbar.lang':          { en: 'Language',      es: 'Idioma' },
     'topbar.account':       { en: 'Account',       es: 'Cuenta' },
     'topbar.settings':      { en: 'Settings',      es: 'Ajustes' },
+    'topbar.logout':        { en: 'Log out',       es: 'Cerrar sesión' },
     'topbar.tasks':         { en: 'Tasks',         es: 'Tareas' },
     'topbar.messages':      { en: 'Messages',      es: 'Mensajes' },
     'topbar.notifications': { en: 'Notifications', es: 'Notificaciones' },
@@ -34,6 +35,16 @@ const translations = {
     'topbar.page_prev':     { en: 'Previous page', es: 'Página anterior' },
     'topbar.page_next':     { en: 'Next page',     es: 'Página siguiente' },
     'topbar.page_status':   { en: 'Page 1 of 10',  es: 'Página 1 de 10' },
+
+    // ── Calendar ─────────────────────────────────────────────────────────────
+    'calendar.today':       { en: 'Today',        es: 'Hoy' },
+    'calendar.month':       { en: 'Month',        es: 'Mes' },
+    'calendar.week':        { en: 'Week',         es: 'Semana' },
+    'calendar.day':         { en: 'Day',          es: 'Día' },
+    'calendar.year':        { en: 'Year',         es: 'Año' },
+    'calendar.prev':        { en: 'Previous',     es: 'Anterior' },
+    'calendar.next':        { en: 'Next',         es: 'Siguiente' },
+    'calendar.all_day':     { en: 'all-day',      es: 'todo el día' },
 
     // ── Content area ─────────────────────────────────────────────────────────
     'content.area1.title':  { en: 'Area 1',       es: 'Área 1' },

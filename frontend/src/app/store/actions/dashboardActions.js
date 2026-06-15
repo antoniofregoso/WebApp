@@ -2,7 +2,7 @@ import { appSignal } from '../appStore';
 
 export const dashboardActions = {
 
-     setView(view) {
+    setView(view) {
         appSignal.value = {
             ...appSignal.value,
             dashboard: {

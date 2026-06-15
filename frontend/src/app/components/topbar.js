@@ -127,6 +127,7 @@ export function renderTopbar(lang, theme, pageTitle, breadcrumb = null, showTool
                     <div class="topbar-menu-links">
                         <a class="topbar-menu-link" href="/dashboard/account" role="menuitem">${t('topbar.account', lang)}</a>
                         <a class="topbar-menu-link" href="/dashboard/settings" role="menuitem">${t('topbar.settings', lang)}</a>
+                        <button class="topbar-menu-link topbar-menu-link--logout" type="button" role="menuitem">${t('topbar.logout', lang)}</button>
                     </div>
                 </div>
             </div>
@@ -137,16 +138,16 @@ export function renderTopbar(lang, theme, pageTitle, breadcrumb = null, showTool
     <div class="topbar-tools-dock">
         <div class="topbar-floating-tools" aria-label="${t('topbar.tools', lang)}">
             <div class="topbar-view-group" role="group" aria-label="${t('topbar.view_type', lang)}">
-                <button class="topbar-tool-btn topbar-tool-btn--active" aria-label="${t('topbar.view.kanban', lang)}" data-tooltip="${t('topbar.view.kanban', lang)}">
+                <button class="topbar-tool-btn" data-view="kanban" aria-label="${t('topbar.view.kanban', lang)}" data-tooltip="${t('topbar.view.kanban', lang)}">
                     ${icon(faTableColumns, 'topbar-tool-icon')}
                 </button>
-                <button class="topbar-tool-btn" aria-label="${t('topbar.view.list', lang)}" data-tooltip="${t('topbar.view.list', lang)}">
+                <button class="topbar-tool-btn" data-view="list" aria-label="${t('topbar.view.list', lang)}" data-tooltip="${t('topbar.view.list', lang)}">
                     ${icon(faList, 'topbar-tool-icon')}
                 </button>
-                <button class="topbar-tool-btn" aria-label="${t('topbar.view.form', lang)}" data-tooltip="${t('topbar.view.form', lang)}">
+                <button class="topbar-tool-btn" data-view="form" aria-label="${t('topbar.view.form', lang)}" data-tooltip="${t('topbar.view.form', lang)}">
                     ${icon(faRectangleList, 'topbar-tool-icon')}
                 </button>
-                <button class="topbar-tool-btn" aria-label="${t('topbar.view.calendar', lang)}" data-tooltip="${t('topbar.view.calendar', lang)}">
+                <button class="topbar-tool-btn" data-view="calendar" aria-label="${t('topbar.view.calendar', lang)}" data-tooltip="${t('topbar.view.calendar', lang)}">
                     ${icon(faCalendarDays, 'topbar-tool-icon')}
                 </button>
             </div>
