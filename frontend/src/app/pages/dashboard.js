@@ -32,6 +32,10 @@ function getTopbarBreadcrumb(area, subarea, lang) {
     };
 }
 
+function shouldShowTopbarTools(area, subarea) {
+    return Boolean(area) && subarea !== 'insights';
+}
+
 
 /**
  * Full dashboard render (sidebar + topbar + content).
@@ -40,13 +44,14 @@ function getTopbarBreadcrumb(area, subarea, lang) {
 function renderDashboard(lang, theme, expanded, area, subarea) {
     const pageTitle = area ? getAreaTitle(area, lang, MENU_ITEMS) : '';
     const breadcrumb = getTopbarBreadcrumb(area, subarea, lang);
+    const showTopbarTools = shouldShowTopbarTools(area, subarea);
     const appEl = document.getElementById('app');
 
     appEl.innerHTML = `
     <div class="dash-layout">
         ${renderSidebar(lang, expanded, area)}
         <div class="dash-main">
-            ${renderTopbar(lang, theme, pageTitle, breadcrumb)}
+            ${renderTopbar(lang, theme, pageTitle, breadcrumb, showTopbarTools)}
             ${renderDefault(area, lang, MENU_ITEMS)}
         </div>
     </div>
@@ -89,8 +94,9 @@ function patchDashboard(lang, theme, expanded, area, prevLang, prevTheme, prevEx
         const topbarEl = document.getElementById('dashboard-topbar-shell');
         const pageTitle = area ? getAreaTitle(area, lang, MENU_ITEMS) : '';
         const breadcrumb = getTopbarBreadcrumb(area, _currentSubarea, lang);
+        const showTopbarTools = shouldShowTopbarTools(area, _currentSubarea);
         if (topbarEl) {
-            topbarEl.outerHTML = renderTopbar(lang, theme, pageTitle, breadcrumb);
+            topbarEl.outerHTML = renderTopbar(lang, theme, pageTitle, breadcrumb, showTopbarTools);
             initTopbar();
         }
     }

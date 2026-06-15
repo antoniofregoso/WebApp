@@ -26,9 +26,10 @@ let _topbarCleanup = null;
  * @param {string} theme   — current theme ('light' | 'dark' | 'system')
  * @param {string} pageTitle — title of the current area
  * @param {object|null} breadcrumb — optional area/subarea breadcrumb data
+ * @param {boolean} showTools — whether to show the floating tools dock
  * @returns {string}       — HTML string
  */
-export function renderTopbar(lang, theme, pageTitle, breadcrumb = null) {
+export function renderTopbar(lang, theme, pageTitle, breadcrumb = null, showTools = true) {
     const themes = [
         { key: 'light', icon: faSun, labelEn: 'Light', labelEs: 'Claro' },
         { key: 'dark', icon: faMoon, labelEn: 'Dark', labelEs: 'Oscuro' },
@@ -132,6 +133,7 @@ export function renderTopbar(lang, theme, pageTitle, breadcrumb = null) {
 
         </div>
     </header>
+    ${showTools ? `
     <div class="topbar-tools-dock">
         <div class="topbar-floating-tools" aria-label="${t('topbar.tools', lang)}">
             <div class="topbar-view-group" role="group" aria-label="${t('topbar.view_type', lang)}">
@@ -172,6 +174,7 @@ export function renderTopbar(lang, theme, pageTitle, breadcrumb = null) {
             </div>
         </div>
     </div>
+    ` : ''}
     </div>
     `;
 }
