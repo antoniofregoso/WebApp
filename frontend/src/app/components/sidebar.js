@@ -5,7 +5,7 @@ import { t } from '../../i18n/translations.js';
 import data from '../data/sidebar.json' assert { type: 'json' };
 
 
-    const iconMap = {faChartLine, faUsers, faFolder, faCloud};
+    const iconMap = {faChartLine, faUsers, faFolder, faCloud, faGear};
 
     const MENU_ITEMS_JSON = data;
 
@@ -18,10 +18,10 @@ import data from '../data/sidebar.json' assert { type: 'json' };
  * Render the sidebar HTML string.
  */
 export function renderSidebar(lang, expanded, activeArea) {
+    const appName = t('sidebar.app_name', lang);
     const menuItems = MENU_ITEMS.map((item) => {
         const label = lang === 'es' ? item.labelEs : item.labelEn;
         const isActive = item.key === activeArea;
-console.log('Rendering sidebar item:', item.icon);
         return `
         <li class="sidebar-item ${isActive ? 'sidebar-item--active' : ''}" data-tooltip="${label}">
             <a
@@ -47,7 +47,7 @@ console.log('Rendering sidebar item:', item.icon);
 
         <!-- ── Header: logo + app name + toggle ───────────────── -->
         <div class="sidebar-header">
-            <span class="sidebar-logo ${expanded ? '' : 'sidebar-logo--hidden'}">
+            <a href="/dashboard" class="sidebar-logo" aria-label="${appName}">
                 <img
                     src="/logo.png"
                     alt="App logo"
@@ -55,9 +55,9 @@ console.log('Rendering sidebar item:', item.icon);
                     style="width: 24px; height: 24px; border-radius: 4px;"
                 />
                 <span class="sidebar-app-name">
-                    ${t('sidebar.app_name', lang)}
+                    ${appName}
                 </span>
-            </span>
+            </a>
             <button
                 id="sidebar-toggle"
                 class="sidebar-toggle-btn"
@@ -79,8 +79,37 @@ console.log('Rendering sidebar item:', item.icon);
                 ${menuItems}
             </ul>
         </nav>
+        <a href="/dashboard" class="sidebar-collapsed-logo" aria-label="${appName}" title="${appName}">
+            <img
+                src="/logo.png"
+                alt="App logo"
+                class="sidebar-logo-img"
+                style="width: 24px; height: 24px; border-radius: 4px;"
+            />
+        </a>
     </aside>
     `;
+}
+
+export function updateSidebarExpansion(expanded) {
+    const sidebar = document.getElementById('dashboard-sidebar');
+    const toggle = document.getElementById('sidebar-toggle');
+
+    sidebar?.classList.toggle('sidebar--expanded', expanded);
+    sidebar?.classList.toggle('sidebar--collapsed', !expanded);
+
+    document.querySelectorAll('.sidebar-label').forEach((label) => {
+        label.classList.toggle('sidebar-label--hidden', !expanded);
+    });
+
+    if (toggle) {
+        toggle.setAttribute('aria-expanded', `${expanded}`);
+        toggle.setAttribute('aria-label', expanded ? 'Collapse sidebar' : 'Expand sidebar');
+        toggle.setAttribute('title', expanded ? 'Collapse' : 'Expand');
+        toggle.innerHTML = expanded
+            ? icon(faChevronLeft, 'sidebar-toggle-icon')
+            : icon(faBars, 'sidebar-toggle-icon');
+    }
 }
 
 // ── Floating tooltip (position:fixed — never clipped by sidebar overflow) ─────

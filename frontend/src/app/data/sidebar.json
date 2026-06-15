@@ -26,5 +26,12 @@
         "labelEn": "Area 4", 
         "labelEs": "Área 4", 
         "url": "/dashboard/area4" 
+    },
+    { 
+        "key": "configuration", 
+        "icon": "faGear", 
+        "labelEn": "Configuration", 
+        "labelEs": "Configuración", 
+        "url": "/dashboard/configuration" 
     }
 ]

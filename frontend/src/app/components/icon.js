@@ -17,11 +17,18 @@ import {
     faChevronDown,
     faUser,
     faAngleRight,
+    faListCheck,
+    faMagnifyingGlass,
+    faChevronRight,
+    faTableColumns,
+    faList,
+    faRectangleList,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
     faBell,
     faCircleUser,
+    faEnvelope,
 } from '@fortawesome/free-regular-svg-icons';
 
 // Register all icons with the library
@@ -39,8 +46,15 @@ library.add(
     faChevronDown,
     faUser,
     faAngleRight,
+    faListCheck,
+    faMagnifyingGlass,
+    faChevronRight,
+    faTableColumns,
+    faList,
+    faRectangleList,
     faBell,
     faCircleUser,
+    faEnvelope,
 );
 
 /**
@@ -75,6 +89,13 @@ export {
     faChevronDown,
     faUser,
     faAngleRight,
+    faListCheck,
+    faMagnifyingGlass,
+    faChevronRight,
+    faTableColumns,
+    faList,
+    faRectangleList,
     faBell,
     faCircleUser,
+    faEnvelope,
 };

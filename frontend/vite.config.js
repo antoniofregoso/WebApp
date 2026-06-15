@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   appType: 'spa',
@@ -17,7 +18,9 @@ export default defineConfig({
       }
     }
   },
-  
+  plugins: [
+    tailwindcss(),
+  ],
   // Si en Vitest usas selectores del DOM nativos, esto asegura que corran bien
   test: {
     environment: 'jsdom', 

@@ -1,9 +1,9 @@
 import { effect } from '@preact/signals';
-import { appSignal } from '../store/appStore.js';
-import { contextActions } from '../store/actions/index.js';
-import { renderSidebar, initSidebar, MENU_ITEMS } from '../components/sidebar.js';
-import { renderTopbar, initTopbar } from '../components/topbar.js';
-import { t } from '../../i18n/translations.js';
+import { appSignal } from '../store';
+import { contextActions } from '../store/actions';
+import { renderSidebar, initSidebar, updateSidebarExpansion, MENU_ITEMS } from '../components';
+import { renderTopbar, initTopbar } from '../components';
+import { t } from '../../i18n';
 import { renderDefault } from '../canvas';
 import { applyTheme, getAreaTitle } from '../utils';
 
@@ -51,12 +51,8 @@ function patchDashboard(lang, theme, expanded, area, prevLang, prevTheme, prevEx
     const themeChanged = theme !== prevTheme;
     const expandedChanged = expanded !== prevExpanded;
 
-    // If layout changes (sidebar expand), re-render everything
-    if (expandedChanged) {
-        renderDashboard(lang, theme, expanded, area);
-        initSidebar(_router);
-        initTopbar();
-        return;
+    if (expandedChanged && !langChanged && !areaChanged) {
+        updateSidebarExpansion(expanded);
     }
 
     // Patch sidebar (active area or lang change)
