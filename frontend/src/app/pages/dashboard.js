@@ -13,21 +13,40 @@ let _lastTheme = null;
 let _lastExpanded = null;
 let _lastArea = null;
 let _effectCleanup = null;
+let _currentSubarea = null;
+
+function getLabel(item, lang) {
+    return lang === 'es' ? item.labelEs : item.labelEn;
+}
+
+function getTopbarBreadcrumb(area, subarea, lang) {
+    if (!subarea) return null;
+
+    const areaItem = MENU_ITEMS.find((item) => item.key === area);
+    const subareaItem = areaItem?.items?.find((item) => item.key === subarea);
+
+    return {
+        areaLabel: areaItem ? getLabel(areaItem, lang) : area,
+        areaUrl: `/dashboard/${area}`,
+        subareaLabel: subareaItem ? getLabel(subareaItem, lang) : subarea,
+    };
+}
 
 
 /**
  * Full dashboard render (sidebar + topbar + content).
  * Called on first load and whenever signal values change.
  */
-function renderDashboard(lang, theme, expanded, area) {
-    const pageTitle = getAreaTitle(area, lang, MENU_ITEMS);
+function renderDashboard(lang, theme, expanded, area, subarea) {
+    const pageTitle = area ? getAreaTitle(area, lang, MENU_ITEMS) : '';
+    const breadcrumb = getTopbarBreadcrumb(area, subarea, lang);
     const appEl = document.getElementById('app');
 
     appEl.innerHTML = `
     <div class="dash-layout">
         ${renderSidebar(lang, expanded, area)}
         <div class="dash-main">
-            ${renderTopbar(lang, theme, pageTitle)}
+            ${renderTopbar(lang, theme, pageTitle, breadcrumb)}
             ${renderDefault(area, lang, MENU_ITEMS)}
         </div>
     </div>
@@ -67,10 +86,11 @@ function patchDashboard(lang, theme, expanded, area, prevLang, prevTheme, prevEx
 
     // Patch topbar (theme, lang change)
     if (themeChanged || langChanged || areaChanged) {
-        const topbarEl = document.getElementById('dashboard-topbar');
-        const pageTitle = getAreaTitle(area, lang, MENU_ITEMS);
+        const topbarEl = document.getElementById('dashboard-topbar-shell');
+        const pageTitle = area ? getAreaTitle(area, lang, MENU_ITEMS) : '';
+        const breadcrumb = getTopbarBreadcrumb(area, _currentSubarea, lang);
         if (topbarEl) {
-            topbarEl.outerHTML = renderTopbar(lang, theme, pageTitle);
+            topbarEl.outerHTML = renderTopbar(lang, theme, pageTitle, breadcrumb);
             initTopbar();
         }
     }
@@ -100,11 +120,15 @@ let _router = null;
 export function dashboard(req, router) {
     _router = router;
     const areaFromUrl = req.params?.area;
+    _currentSubarea = req.params?.subarea ?? null;
     if (!MENU_ITEMS.some(item => item.key === areaFromUrl)) {
         if (areaFromUrl!=undefined) {return router.trigger404(req.pathname);}
     }
     if (areaFromUrl && areaFromUrl !== appSignal.value.context.active_area) {
         contextActions.setActiveArea(areaFromUrl);
+    }
+    if (!areaFromUrl && appSignal.value.context.active_area) {
+        contextActions.setActiveArea(null);
     }
 
     const state = appSignal.value;
@@ -114,7 +138,7 @@ export function dashboard(req, router) {
     const area = state.context.active_area;
 
     // ── Initial full render ───────────────────────────────────────────────────
-    renderDashboard(lang, theme, expanded, area);
+    renderDashboard(lang, theme, expanded, area, _currentSubarea);
     initSidebar();
     initTopbar();
 

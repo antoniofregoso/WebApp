@@ -27,6 +27,7 @@ const translations = {
     'topbar.view.kanban':   { en: 'Kanban',        es: 'Kanban' },
     'topbar.view.list':     { en: 'List',          es: 'Lista' },
     'topbar.view.form':     { en: 'Form',          es: 'Formulario' },
+    'topbar.view.calendar': { en: 'Calendar',      es: 'Calendario' },
     'topbar.search':        { en: 'Search',        es: 'Buscar' },
     'topbar.search_placeholder': { en: 'Search...', es: 'Buscar...' },
     'topbar.pagination':    { en: 'Pagination',    es: 'Paginación' },
@@ -39,6 +40,7 @@ const translations = {
     'content.area2.title':  { en: 'Area 2',       es: 'Área 2' },
     'content.area3.title':  { en: 'Area 3',       es: 'Área 3' },
     'content.area4.title':  { en: 'Area 4',       es: 'Área 4' },
+    'content.home.title':   { en: 'Home',         es: 'Inicio' },
     'content.welcome':      { en: 'Welcome to',   es: 'Bienvenido a' },
     'content.placeholder':  {
         en: 'This is a template. Replace this content with your own.',

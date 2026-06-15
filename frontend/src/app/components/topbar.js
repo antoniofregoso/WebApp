@@ -13,6 +13,7 @@ import {
     faTableColumns,
     faList,
     faRectangleList,
+    faCalendarDays,
 } from './icon.js';
 import { contextActions } from '../store/actions/index.js';
 import { t } from '../../i18n/translations.js';
@@ -24,9 +25,10 @@ let _topbarCleanup = null;
  * @param {string} lang    — current language ('en' | 'es')
  * @param {string} theme   — current theme ('light' | 'dark' | 'system')
  * @param {string} pageTitle — title of the current area
+ * @param {object|null} breadcrumb — optional area/subarea breadcrumb data
  * @returns {string}       — HTML string
  */
-export function renderTopbar(lang, theme, pageTitle) {
+export function renderTopbar(lang, theme, pageTitle, breadcrumb = null) {
     const themes = [
         { key: 'light', icon: faSun, labelEn: 'Light', labelEs: 'Claro' },
         { key: 'dark', icon: faMoon, labelEn: 'Dark', labelEs: 'Oscuro' },
@@ -49,13 +51,24 @@ export function renderTopbar(lang, theme, pageTitle) {
         </button>
         `;
     }).join('');
+    const titleMarkup = breadcrumb?.subareaLabel ? `
+        <nav class="flex min-w-0 items-center gap-2 text-[1.0625rem] font-semibold text-[var(--dash-text)]" aria-label="Breadcrumb">
+            <a
+                class="min-w-0 truncate text-[var(--dash-text-muted)] no-underline transition-colors hover:text-[var(--dash-accent)]"
+                href="${breadcrumb.areaUrl}"
+            >${breadcrumb.areaLabel}</a>
+            <span class="shrink-0 text-[var(--dash-text-muted)]" aria-hidden="true">/</span>
+            <span class="min-w-0 truncate text-[var(--dash-text)]" aria-current="page">${breadcrumb.subareaLabel}</span>
+        </nav>
+    ` : `<h1 class="topbar-page-title">${pageTitle}</h1>`;
 
     return `
+    <div id="dashboard-topbar-shell" class="topbar-shell">
     <header id="dashboard-topbar" class="topbar" role="banner">
 
         <!-- ── Page title ─────────────────────────────────────── -->
         <div class="topbar-title">
-            <h1 class="topbar-page-title">${pageTitle}</h1>
+            ${titleMarkup}
         </div>
 
         <!-- ── Controls ───────────────────────────────────────── -->
@@ -131,6 +144,9 @@ export function renderTopbar(lang, theme, pageTitle) {
                 <button class="topbar-tool-btn" aria-label="${t('topbar.view.form', lang)}" data-tooltip="${t('topbar.view.form', lang)}">
                     ${icon(faRectangleList, 'topbar-tool-icon')}
                 </button>
+                <button class="topbar-tool-btn" aria-label="${t('topbar.view.calendar', lang)}" data-tooltip="${t('topbar.view.calendar', lang)}">
+                    ${icon(faCalendarDays, 'topbar-tool-icon')}
+                </button>
             </div>
 
             <form class="topbar-search" role="search" aria-label="${t('topbar.search', lang)}">
@@ -155,6 +171,7 @@ export function renderTopbar(lang, theme, pageTitle) {
                 </button>
             </div>
         </div>
+    </div>
     </div>
     `;
 }

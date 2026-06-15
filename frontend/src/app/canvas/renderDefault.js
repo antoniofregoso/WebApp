@@ -9,7 +9,7 @@ import { t } from '../../i18n/translations.js';
  * @returns {string}
  */
 export function renderDefault(area, lang, items) {
-    const title = getAreaTitle(area, lang, items);
+    const title = area ? getAreaTitle(area, lang, items) : t('content.home.title', lang);
     const welcome = t('content.welcome', lang);
     const placeholder = t('content.placeholder', lang);
 

@@ -23,6 +23,7 @@ import {
     faTableColumns,
     faList,
     faRectangleList,
+    faCalendarDays,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -52,6 +53,7 @@ library.add(
     faTableColumns,
     faList,
     faRectangleList,
+    faCalendarDays,
     faBell,
     faCircleUser,
     faEnvelope,
@@ -95,6 +97,7 @@ export {
     faTableColumns,
     faList,
     faRectangleList,
+    faCalendarDays,
     faBell,
     faCircleUser,
     faEnvelope,

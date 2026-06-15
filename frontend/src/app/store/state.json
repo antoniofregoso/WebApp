@@ -5,7 +5,7 @@
         "lang": "en",
         "theme": "system",
         "sidebar_expanded": true,
-        "active_area": "area1"
+        "active_area": null
     },
     "dashboard:":{
         "view":"kanban",
