@@ -4,10 +4,11 @@ import { contextActions, dashboardActions } from '../store/actions';
 import { renderSidebar, initSidebar, updateSidebarExpansion, MENU_ITEMS } from '../components';
 import { renderTopbar, initTopbar } from '../components';
 import { t } from '../../i18n';
-import { renderCalendar, renderForm, renderInsights, renderKanban, renderList, initCalendar, initList, initKanban } from '../views';
+import { renderCalendar, renderForm, renderInsights, renderKanban, renderList, initCalendar, initInsights, initList, initKanban } from '../views';
 import { applyTheme, getAreaTitle } from '../utils';
 
 import demoData from '../data/demo.json';
+import demoInsights from '../data/insights.json';
 
 // ── Track last rendered values to avoid redundant re-renders ──────────────────
 let _lastLang = null;
@@ -30,6 +31,7 @@ const DEFAULT_VIEW = 'kanban';
 // Views that need event wiring after their HTML is injected.
 const VIEW_INITIALIZERS = {
     calendar: initCalendar,
+    insights: initInsights,
     list: initList,
     kanban: initKanban,
 };
@@ -60,7 +62,7 @@ function isInsightsContext(area, subarea) {
 /** Pick the content markup for the current page (insights or the dock view). */
 function renderContent(area, subarea, view, lang) {
     if (isInsightsContext(area, subarea)) {
-        return renderInsights(area, lang);
+        return renderInsights(demoInsights, lang);
     }
     return renderView(view, area, lang);
 }
@@ -183,7 +185,7 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
         const contentEl = document.getElementById('dashboard-content');
         if (contentEl) {
             contentEl.outerHTML = renderContent(area, _currentSubarea, view, lang);
-            initActiveView(isInsightsContext(area, _currentSubarea) ? null : view, lang);
+            initActiveView(isInsightsContext(area, _currentSubarea) ? 'insights' : view, lang);
         }
         // Reflect the active view on the dock buttons (when topbar was not re-rendered)
         if (viewChanged) {
@@ -196,6 +198,9 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
     // Apply theme to <html>
     if (themeChanged) {
         applyTheme(theme);
+        if (isInsightsContext(area, _currentSubarea)) {
+            initActiveView('insights', lang);
+        }
     }
 }
 
@@ -240,7 +245,7 @@ export function dashboard(req, router) {
     initSidebar();
     initTopbar();
     initViewButtons(view);
-    initActiveView(isInsightsContext(area, _currentSubarea) ? null : view, lang);
+    initActiveView(isInsightsContext(area, _currentSubarea) ? 'insights' : view, lang);
 
     // Track rendered values
     _lastLang = lang;

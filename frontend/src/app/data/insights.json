@@ -1,0 +1,148 @@
+{
+    "period":"monthly",
+    "kpis": [
+        {
+            "name":{
+                "en": "Profit margin",
+                "es": "Margen de beneficio"
+            },
+            "value": 25.5,
+            "unit": "%",
+            "trend": "up"
+        },
+        {
+            "name":{
+                "en": "Cash Flow",
+                "es": "Flujo de efectivo"
+            },
+            "value": 450000.00,
+            "unit": "MXN",
+            "trend": "up"
+        },
+        {
+            "name":{
+                "en": "Customer Acquisition Cost",
+                "es": "Costo de Adquisición de Clientes"
+            },
+            "value": 720.00,
+            "unit": "MXN",
+            "trend": "down"
+        },
+        {
+            "name":{
+                "en": "Average Revenue Per User",
+                "es": "Ingreso Promedio Por Usuario"
+            },
+            "value": 2145.00,
+            "unit": "MXN",
+            "trend": "down"
+        },
+        {
+            "name":{
+                "en": "Conversion Rate",
+                "es": "Tasa de Conversión"
+            },
+            "value": 12.8,
+            "unit": "%",
+            "trend": "up"
+        }
+    ],
+    "gauges": [ 
+        {
+            "name":{
+                "en": "Operational Efficiency",
+                "es": "Eficiencia Operativa"
+            },
+            "value": 78,
+            "unit": "%",
+            "max": 100,
+            "thresholds": {
+                "green": 80,
+                "yellow": 60,
+                "red": 0
+            }
+        },
+        {
+            "name":{
+                "en": "Customer Satisfaction",
+                "es": "Satisfacción del Cliente"
+            },
+            "value": 85,
+            "unit": "%",
+            "max": 100,
+            "thresholds": {
+                "green": 90,
+                "yellow": 70,
+                "red": 0
+            }
+        },
+        {
+            "name":{
+                "en": "Sales per hour",
+                "es": "Ventas por hora"
+            },
+            "value": 65,
+            "unit": "",
+            "max": 150,
+            "thresholds": {
+                "green": 75,
+                "yellow": 50,
+                "red": 0
+            }
+        }
+    ],
+    "graphics": [
+        {
+            "type": "sankey",
+            "title": {
+                "en": "Cash Flow",
+                "es": "Flujo de efectivo"
+            },
+            "data": {
+    "nodes": [
+        { "id": "ingresos_ventas", "title": "Ingresos por Ventas", "title_en": "Sales Revenue" },
+        { "id": "otros_ingresos", "title": "Otros Ingresos", "title_en": "Other Income" },
+        { "id": "prestamos", "title": "Préstamos Recibidos", "title_en": "Loans Received" },
+        
+        { "id": "efectivo_entrante", "title": "Efectivo Entrante Total", "title_en": "Total Cash Inflow" },
+        
+        { "id": "costo_ventas", "title": "Costo de Ventas", "title_en": "Cost of Goods Sold" },
+        { "id": "sueldos", "title": "Sueldos y Salarios", "title_en": "Salaries and Wages" },
+        { "id": "alquiler_utilidades", "title": "Alquiler y Utilidades", "title_en": "Rent and Utilities" },
+        { "id": "marketing_admin", "title": "Marketing y Gastos Administrativos", "title_en": "Marketing & Admin Expenses" },
+        { "id": "impuestos", "title": "Impuestos", "title_en": "Taxes" },
+        { "id": "capex", "title": "Inversiones en Activos (CapEx)", "title_en": "Capital Expenditures (CapEx)" },
+        { "id": "pago_deuda", "title": "Pago de Deuda", "title_en": "Debt Payments" },
+        { "id": "dividendos", "title": "Dividendos", "title_en": "Dividends" },
+        
+        { "id": "efectivo_neto", "title": "Efectivo Neto Final", "title_en": "Net Cash Position" }
+    ],
+    "edges": [
+    { "source": "ingresos_ventas", "target": "efectivo_entrante", "value": 850000 },
+    { "source": "otros_ingresos", "target": "efectivo_entrante", "value": 45000 },
+    { "source": "prestamos", "target": "efectivo_entrante", "value": 120000 },
+    
+    { "source": "efectivo_entrante", "target": "costo_ventas", "value": 420000 },
+    { "source": "efectivo_entrante", "target": "sueldos", "value": 210000 },
+    { "source": "efectivo_entrante", "target": "alquiler_utilidades", "value": 85000 },
+    { "source": "efectivo_entrante", "target": "marketing_admin", "value": 65000 },
+    { "source": "efectivo_entrante", "target": "impuestos", "value": 95000 },
+    { "source": "efectivo_entrante", "target": "capex", "value": 110000 },
+    { "source": "efectivo_entrante", "target": "pago_deuda", "value": 45000 },
+    { "source": "efectivo_entrante", "target": "dividendos", "value": 35000 },
+    
+    { "source": "efectivo_entrante", "target": "efectivo_neto", "value": 105000 }
+    ],
+    "options": {  
+    "order": [
+        [["ingresos_ventas", "otros_ingresos", "prestamos"]],
+        [["efectivo_entrante"]],
+        [["costo_ventas", "sueldos", "alquiler_utilidades", "marketing_admin", "impuestos", "capex", "pago_deuda", "dividendos"]],
+        [["efectivo_neto"]]
+            ]
+        }
+        }   
+                }
+            ]
+
+        }

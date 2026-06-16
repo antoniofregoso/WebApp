@@ -34,11 +34,12 @@
 ## Insights
 ```json
 
-[
+{
+    "period":"",
     "kpis":[],
     "gauges":[],
     "graphics":[],
     "tables":[]
-]
+}
 
 ```
