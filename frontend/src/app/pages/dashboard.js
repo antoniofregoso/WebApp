@@ -4,8 +4,10 @@ import { contextActions, dashboardActions } from '../store/actions';
 import { renderSidebar, initSidebar, updateSidebarExpansion, MENU_ITEMS } from '../components';
 import { renderTopbar, initTopbar } from '../components';
 import { t } from '../../i18n';
-import { renderCalendar, renderForm, renderInsights, renderKanban, renderList, initCalendar } from '../canvas';
+import { renderCalendar, renderForm, renderInsights, renderKanban, renderList, initCalendar, initList, initKanban } from '../views';
 import { applyTheme, getAreaTitle } from '../utils';
+
+import demoData from '../data/demo.json';
 
 // ── Track last rendered values to avoid redundant re-renders ──────────────────
 let _lastLang = null;
@@ -28,6 +30,8 @@ const DEFAULT_VIEW = 'kanban';
 // Views that need event wiring after their HTML is injected.
 const VIEW_INITIALIZERS = {
     calendar: initCalendar,
+    list: initList,
+    kanban: initKanban,
 };
 let _viewCleanup = null;
 
@@ -38,6 +42,10 @@ function getView(state) {
 /** Render the content markup for the currently selected view. */
 function renderView(view, area, lang) {
     const renderFn = VIEW_RENDERERS[view] ?? VIEW_RENDERERS[DEFAULT_VIEW];
+    // TEMP: feed demo data to the data-driven views for testing.
+    if (renderFn === renderList || renderFn === renderKanban || renderFn === renderCalendar) {
+        return renderFn(demoData, lang);
+    }
     return renderFn(area, lang);
 }
 

@@ -27,13 +27,13 @@
   },
   "dependencies": {
     "@customerjourney/cj-router": "^1.5.0",
-    "@eslint/js": "^10.0.1",
     "@fortawesome/fontawesome-svg-core": "^7.2.0",
     "@fortawesome/free-regular-svg-icons": "^7.2.0",
     "@fortawesome/free-solid-svg-icons": "^7.2.0",
     "@preact/signals": "^2.9.1",
     "apexcharts": "^5.13.0",
     "graphql": "^16.14.1",
-    "graphql-request": "^7.4.0"
+    "graphql-request": "^7.4.0",
+    "sortablejs": "^1.15.7"
   }
 }

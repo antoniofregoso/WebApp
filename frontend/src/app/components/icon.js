@@ -24,6 +24,7 @@ import {
     faList,
     faRectangleList,
     faCalendarDays,
+    faGripVertical,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -54,6 +55,7 @@ library.add(
     faList,
     faRectangleList,
     faCalendarDays,
+    faGripVertical,
     faBell,
     faCircleUser,
     faEnvelope,
@@ -98,6 +100,7 @@ export {
     faList,
     faRectangleList,
     faCalendarDays,
+    faGripVertical,
     faBell,
     faCircleUser,
     faEnvelope,

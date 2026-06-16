@@ -2,8 +2,9 @@ import { icon, faChevronLeft, faChevronRight } from '../components/icon.js';
 import { t } from '../../i18n/translations.js';
 
 /* ════════════════════════════════════════════════════════════════════════════
- * Calendar view — template only (no data yet).
- *  · Opens on today, month view by default.
+ * Calendar view.
+ *  · Uses records as events, currently anchored on `last_updated`.
+ *  · Opens on today by default.
  *  · Today is marked with a red circle on its day number.
  *  · A blue "now" line tracks the current time (week / day views) and moves
  *    with the minutes.
@@ -17,11 +18,29 @@ const state = {
     view: 'month',   // 'month' | 'week' | 'day'
     cursor: null,    // reference Date being displayed
     lang: 'en',
+    events: [],
 };
 
 let _nowTimer = null;
 let _clickHandler = null;
 let _changeHandler = null;
+
+function escape(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function escapeAttr(value) {
+    return escape(value)
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function buildRecordUrl(model, id) {
+    return escapeAttr(`/model/${encodeURIComponent(model)}/${encodeURIComponent(id)}`);
+}
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 function locale(lang) {
@@ -67,6 +86,33 @@ function weekdayNames(lang) {
         const name = fmt(addDays(ref, i), { weekday: 'short' }, lang);
         return name.charAt(0).toUpperCase() + name.slice(1);
     });
+}
+
+function toCalendarEvents(data = {}) {
+    const modelName = data?.model?.name ?? '';
+    return (data?.records ?? [])
+        .map((record) => {
+            const startsAt = record.last_updated ? new Date(record.last_updated) : null;
+            if (!startsAt || Number.isNaN(startsAt.getTime())) return null;
+
+            return {
+                id: record.id,
+                title: record.name ?? String(record.id ?? ''),
+                customer: record.customer?.name ?? '',
+                startsAt,
+                href: modelName && record.id != null ? buildRecordUrl(modelName, record.id) : '',
+            };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.startsAt - b.startsAt);
+}
+
+function eventsForDay(day) {
+    return state.events.filter((event) => isSameDay(event.startsAt, day));
+}
+
+function formatEventTime(date, lang) {
+    return date.toLocaleTimeString(locale(lang), { hour: '2-digit', minute: '2-digit' });
 }
 
 // ── Title for the toolbar, per view ───────────────────────────────────────────
@@ -148,6 +194,37 @@ function buildToolbar(lang) {
     </div>`;
 }
 
+function renderMonthEvents(day, lang) {
+    const events = eventsForDay(day);
+    if (events.length === 0) return '';
+
+    const visible = events.slice(0, 3).map((event) => `
+        <a href="${event.href}" class="cal-month-event" title="${escapeAttr(event.title)}">
+            <span class="cal-event-time">${escape(formatEventTime(event.startsAt, lang))}</span>
+            <span class="cal-event-title">${escape(event.title)}</span>
+        </a>`).join('');
+    const hidden = events.length - 3;
+
+    return `
+    <div class="cal-month-events">
+        ${visible}
+        ${hidden > 0 ? `<span class="cal-month-more">+${hidden}</span>` : ''}
+    </div>`;
+}
+
+function renderTimedEvents(day, lang) {
+    return eventsForDay(day).map((event) => {
+        const minutes = event.startsAt.getHours() * 60 + event.startsAt.getMinutes();
+        const top = (minutes / 60) * HOUR_HEIGHT;
+        return `
+        <a href="${event.href}" class="cal-time-event" style="top:${top}px">
+            <span class="cal-time-event-hour">${escape(formatEventTime(event.startsAt, lang))}</span>
+            <span class="cal-time-event-title">${escape(event.title)}</span>
+            ${event.customer ? `<span class="cal-time-event-subtitle">${escape(event.customer)}</span>` : ''}
+        </a>`;
+    }).join('');
+}
+
 function buildMonth(lang) {
     const today = new Date();
     const { cursor } = state;
@@ -164,10 +241,11 @@ function buildMonth(lang) {
         const outside = day.getMonth() !== cursor.getMonth();
         const isToday = isSameDay(day, today);
         cells += `
-        <button class="cal-month-cell ${outside ? 'cal-month-cell--muted' : ''}"
-                data-cal-day="${day.getFullYear()}-${day.getMonth()}-${day.getDate()}">
+        <div class="cal-month-cell ${outside ? 'cal-month-cell--muted' : ''}"
+             data-cal-day="${day.getFullYear()}-${day.getMonth()}-${day.getDate()}">
             <span class="cal-daynum ${isToday ? 'cal-daynum--today' : ''}">${day.getDate()}</span>
-        </button>`;
+            ${renderMonthEvents(day, lang)}
+        </div>`;
     }
 
     return `
@@ -211,6 +289,7 @@ function buildTimeGrid(days, lang) {
         <div class="cal-day-col ${isToday ? 'cal-day-col--today' : ''}">
             ${hourLines}
             ${nowLine}
+            ${renderTimedEvents(d, lang)}
         </div>`;
     }).join('');
 
@@ -292,9 +371,10 @@ function navigate(dir) {
 
 /**
  * Render the calendar shell. Called by the dashboard each time the calendar
- * view is opened — always resets to today + month view.
+ * view is opened — resets to today + month view.
  */
 export function renderCalendar(data = {}, lang = 'en') {
+    state.events = toCalendarEvents(data);
     state.view = 'month';
     state.cursor = startOfDay(new Date());
     state.lang = lang;
@@ -329,6 +409,7 @@ export function initCalendar(lang = 'en') {
 
         const dayCell = event.target.closest('[data-cal-day]');
         if (dayCell) {
+            if (event.target.closest('a')) return;
             const [y, m, d] = dayCell.dataset.calDay.split('-').map(Number);
             state.cursor = new Date(y, m, d);
             state.view = 'day';

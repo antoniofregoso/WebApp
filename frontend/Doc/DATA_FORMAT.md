@@ -1,8 +1,10 @@
 ## Data types
 
 - string
-- number
+- integer
+- decimal
 - monetary
+- percentage
 - date
 - datetime
 - boolean
@@ -17,7 +19,11 @@
 ```json
 {
     "model":{
-        "name":{},
+        "name":"",
+        "label":{
+            "es":"",
+            "en":""
+        },
         "status":[],
         "schema":[]
     },
