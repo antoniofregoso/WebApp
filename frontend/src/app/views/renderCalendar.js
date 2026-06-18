@@ -1,17 +1,31 @@
 import { icon, faChevronLeft, faChevronRight } from '../components/icon.js';
 import { t } from '../../i18n/translations.js';
+import { buildRecordUrl } from '../utils';
+import { renderViewHeader } from '../components';
+import { initCreateModal, renderCreateModal } from './renderCreateModal.js';
 
 /* ════════════════════════════════════════════════════════════════════════════
  * Calendar view.
- *  · Uses records as events, currently anchored on `last_updated`.
+ *  · Uses records as events anchored on `start_date` and `end_date`.
  *  · Opens on today by default.
  *  · Today is marked with a red circle on its day number.
- *  · A blue "now" line tracks the current time (week / day views) and moves
+ *  · A green "now" line tracks the current time (week / day views) and moves
  *    with the minutes.
  *  · Switch between month / week / day and navigate back / forward.
  * ══════════════════════════════════════════════════════════════════════════ */
 
 const HOUR_HEIGHT = 48;          // px per hour row in week / day grids
+const MIN_EVENT_MINUTES = 30;
+
+const STATUS_PALETTE = {
+    zinc: { bg: '#f4f4f5', border: '#71717a', text: '#3f3f46' },
+    red: { bg: '#fee2e2', border: '#dc2626', text: '#991b1b' },
+    blue: { bg: '#dbeafe', border: '#2563eb', text: '#1d4ed8' },
+    purple: { bg: '#f3e8ff', border: '#9333ea', text: '#6b21a8' },
+    green: { bg: '#d1fae5', border: '#059669', text: '#047857' },
+    orange: { bg: '#ffedd5', border: '#ea580c', text: '#c2410c' },
+};
+const STATUS_FALLBACK = STATUS_PALETTE.zinc;
 
 // ── Local view state (lives for the lifetime of the calendar view) ────────────
 const state = {
@@ -36,10 +50,6 @@ function escapeAttr(value) {
     return escape(value)
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
-}
-
-function buildRecordUrl(model, id) {
-    return escapeAttr(`/model/${encodeURIComponent(model)}/${encodeURIComponent(id)}`);
 }
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
@@ -75,6 +85,39 @@ function addDays(d, n) {
     return r;
 }
 
+function endOfDay(d) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+}
+
+function parseCalendarDate(value) {
+    if (!value) return null;
+    const normalized = String(value)
+        .trim()
+        .replace(' ', 'T')
+        .replace(/^(\d{4}-\d{2}-\d{2}):(\d{2}:\d{2}(?::\d{2})?)$/, '$1T$2');
+    const date = new Date(normalized);
+    return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function eventOverlapsDay(event, day) {
+    const dayStart = startOfDay(day);
+    const dayEnd = endOfDay(day);
+    return event.startsAt < dayEnd && event.endsAt > dayStart;
+}
+
+function getEventSlice(event, day) {
+    const dayStart = startOfDay(day);
+    const dayEnd = endOfDay(day);
+    const startsAt = new Date(Math.max(event.startsAt.getTime(), dayStart.getTime()));
+    const endsAt = new Date(Math.min(event.endsAt.getTime(), dayEnd.getTime()));
+    return { startsAt, endsAt };
+}
+
+function styleForStatus(color) {
+    const palette = STATUS_PALETTE[color] ?? STATUS_FALLBACK;
+    return `--cal-event-bg:${palette.bg};--cal-event-border:${palette.border};--cal-event-text:${palette.text};`;
+}
+
 function fmt(d, opts, lang) {
     return d.toLocaleDateString(locale(lang), opts);
 }
@@ -88,18 +131,28 @@ function weekdayNames(lang) {
     });
 }
 
-function toCalendarEvents(data = {}) {
+function toCalendarEvents(data = {}, lang = 'en') {
     const modelName = data?.model?.name ?? '';
+    const statuses = data?.model?.status ?? [];
     return (data?.records ?? [])
         .map((record) => {
-            const startsAt = record.last_updated ? new Date(record.last_updated) : null;
+            const startsAt = parseCalendarDate(record.start_date);
             if (!startsAt || Number.isNaN(startsAt.getTime())) return null;
+            const parsedEnd = parseCalendarDate(record.end_date);
+            const endsAt = parsedEnd && parsedEnd > startsAt
+                ? parsedEnd
+                : new Date(startsAt.getTime() + MIN_EVENT_MINUTES * 60_000);
+            const status = statuses.find((option) => option.value === record.status);
 
             return {
                 id: record.id,
                 title: record.name ?? String(record.id ?? ''),
                 customer: record.customer?.name ?? '',
                 startsAt,
+                endsAt,
+                status: record.status,
+                statusLabel: status?.[lang] ?? record.status ?? '',
+                color: status?.color,
                 href: modelName && record.id != null ? buildRecordUrl(modelName, record.id) : '',
             };
         })
@@ -108,11 +161,15 @@ function toCalendarEvents(data = {}) {
 }
 
 function eventsForDay(day) {
-    return state.events.filter((event) => isSameDay(event.startsAt, day));
+    return state.events.filter((event) => eventOverlapsDay(event, day));
 }
 
 function formatEventTime(date, lang) {
     return date.toLocaleTimeString(locale(lang), { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatEventRange(event, lang) {
+    return `${formatEventTime(event.startsAt, lang)}-${formatEventTime(event.endsAt, lang)}`;
 }
 
 // ── Title for the toolbar, per view ───────────────────────────────────────────
@@ -198,11 +255,15 @@ function renderMonthEvents(day, lang) {
     const events = eventsForDay(day);
     if (events.length === 0) return '';
 
-    const visible = events.slice(0, 3).map((event) => `
-        <a href="${event.href}" class="cal-month-event" title="${escapeAttr(event.title)}">
-            <span class="cal-event-time">${escape(formatEventTime(event.startsAt, lang))}</span>
+    const visible = events.slice(0, 3).map((event) => {
+        const slice = getEventSlice(event, day);
+        return `
+        <a href="${event.href}" class="cal-month-event" style="${styleForStatus(event.color)}"
+           title="${escapeAttr(`${event.title} ${formatEventRange(event, lang)}`)}">
+            <span class="cal-event-time">${escape(formatEventTime(slice.startsAt, lang))}</span>
             <span class="cal-event-title">${escape(event.title)}</span>
-        </a>`).join('');
+        </a>`;
+    }).join('');
     const hidden = events.length - 3;
 
     return `
@@ -214,13 +275,20 @@ function renderMonthEvents(day, lang) {
 
 function renderTimedEvents(day, lang) {
     return eventsForDay(day).map((event) => {
-        const minutes = event.startsAt.getHours() * 60 + event.startsAt.getMinutes();
+        const slice = getEventSlice(event, day);
+        const minutes = slice.startsAt.getHours() * 60 + slice.startsAt.getMinutes();
+        const durationMinutes = Math.max(
+            MIN_EVENT_MINUTES,
+            Math.round((slice.endsAt - slice.startsAt) / 60_000),
+        );
         const top = (minutes / 60) * HOUR_HEIGHT;
+        const height = (durationMinutes / 60) * HOUR_HEIGHT;
         return `
-        <a href="${event.href}" class="cal-time-event" style="top:${top}px">
-            <span class="cal-time-event-hour">${escape(formatEventTime(event.startsAt, lang))}</span>
+        <a href="${event.href}" class="cal-time-event" style="top:${top}px;height:${height}px;${styleForStatus(event.color)}">
+            <span class="cal-time-event-hour">${escape(formatEventTime(slice.startsAt, lang))}</span>
             <span class="cal-time-event-title">${escape(event.title)}</span>
             ${event.customer ? `<span class="cal-time-event-subtitle">${escape(event.customer)}</span>` : ''}
+            ${event.statusLabel ? `<span class="cal-time-event-status">${escape(event.statusLabel)}</span>` : ''}
         </a>`;
     }).join('');
 }
@@ -374,16 +442,19 @@ function navigate(dir) {
  * view is opened — resets to today + month view.
  */
 export function renderCalendar(data = {}, lang = 'en') {
-    state.events = toCalendarEvents(data);
+    const title = data?.model?.label?.[lang] ?? '';
+    state.lang = lang;
+    state.events = toCalendarEvents(data, lang);
     state.view = 'month';
     state.cursor = startOfDay(new Date());
-    state.lang = lang;
 
     return `
-    <main id="dashboard-content" class="dash-content" role="main" aria-label="Calendar">
+    <main id="dashboard-content" class="dash-content dash-content--calendar" role="main" aria-label="Calendar">
+        ${renderViewHeader({ title, count: state.events.length, lang, className: 'cal-page-header' })}
         <div id="cal-root" class="cal">
             ${buildInner(lang)}
         </div>
+        ${renderCreateModal(data, lang)}
     </main>`;
 }
 
@@ -394,7 +465,8 @@ export function renderCalendar(data = {}, lang = 'en') {
 export function initCalendar(lang = 'en') {
     state.lang = lang;
     const root = document.getElementById('cal-root');
-    if (!root) return () => {};
+    const destroyCreateModal = initCreateModal(document, lang);
+    if (!root) return destroyCreateModal;
 
     _clickHandler = (event) => {
         const nav = event.target.closest('[data-cal-nav]');
@@ -440,6 +512,7 @@ export function initCalendar(lang = 'en') {
             if (_clickHandler) root.removeEventListener('click', _clickHandler);
             if (_changeHandler) root.removeEventListener('change', _changeHandler);
         }
+        destroyCreateModal();
         _clickHandler = null;
         _changeHandler = null;
     };

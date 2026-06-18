@@ -10,9 +10,11 @@
  * ══════════════════════════════════════════════════════════════════════════ */
 
 import {
-    COLOR_CLASS, COLOR_FALLBACK, locale, makeSortable, formatCurrency, formatDate,
+    COLOR_CLASS, COLOR_FALLBACK, buildRecordUrl, locale, makeSortable, formatCurrency, formatDate,
 } from '../utils';
 import { icon, faGripVertical } from '../components/icon.js';
+import { renderViewHeader } from '../components';
+import { initCreateModal, renderCreateModal } from './renderCreateModal.js';
 
 // Records currently on the board — kept so drag moves can mutate their status.
 let _records = [];
@@ -71,13 +73,11 @@ export function renderKanban(data = {}, lang = 'en') {
 
     return `
     <main id="dashboard-content" class="dash-content" role="main" aria-label="Kanban Board">
-        <header class="mb-5 flex items-baseline gap-3">
-            <h2 class="text-base font-semibold text-[var(--dash-text)]">${escape(title)}</h2>
-            <span class="text-xs text-[var(--dash-text-muted)]">${records.length}</span>
-        </header>
+        ${renderViewHeader({ title, count: records.length, lang })}
         <div class="flex items-start gap-4 overflow-x-auto pb-2">
             ${columns}
         </div>
+        ${renderCreateModal(data, lang)}
     </main>
     `;
 }
@@ -124,12 +124,12 @@ function renderCard(record, currency, modelName, lang) {
              class="group rounded-lg border border-[var(--dash-border)] bg-[var(--dash-bg)]
                     p-3 shadow-sm transition-shadow hover:shadow-md">
         <div class="flex items-start justify-between gap-2">
-            <div class="flex min-w-0 flex-col gap-1">
-                <a href="${recordHref}" class="truncate text-sm font-semibold text-[var(--dash-accent)] hover:underline">
-                    ${recordName}
-                </a>
-                <div class="flex min-w-0 items-center gap-2">
-                    ${avatar(record.avatar, record.customer?.name)}
+            <div class="flex min-w-0 items-center gap-2">
+                ${avatar(record.avatar, record.name)}
+                <div class="flex min-w-0 flex-col gap-0.5">
+                    <a href="${recordHref}" class="truncate text-sm font-semibold text-[var(--dash-accent)] hover:underline">
+                        ${recordName}
+                    </a>
                     ${customerHref
                         ? `<a href="${customerHref}" class="truncate text-xs font-medium text-[var(--dash-accent)] hover:underline">${customerName}</a>`
                         : `<span class="truncate text-xs font-medium text-[var(--dash-text)]">${customerName}</span>`}
@@ -158,10 +158,6 @@ function renderCard(record, currency, modelName, lang) {
     </article>`;
 }
 
-function buildRecordUrl(model, id) {
-    return escape(`/model/${encodeURIComponent(model)}/${encodeURIComponent(id)}`);
-}
-
 function renderTags(tags) {
     if (!Array.isArray(tags) || tags.length === 0) return '';
     return `<div class="mt-2 flex flex-wrap gap-1">${tags.map((tag) => {
@@ -178,9 +174,10 @@ function renderTags(tags) {
  * All columns share one Sortable group so cards can move between them.
  * @returns {() => void} cleanup function (destroys all Sortable instances).
  */
-export function initKanban() {
+export function initKanban(lang = 'en') {
     const columns = document.querySelectorAll('[data-kanban-cards]');
     const cleanups = [];
+    cleanups.push(initCreateModal(document, lang));
 
     columns.forEach((col) => {
         cleanups.push(makeSortable(col, {

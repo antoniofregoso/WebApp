@@ -7,6 +7,15 @@ body {
   margin: 0;
 }
 
+.list-row--selected {
+  background: color-mix(in srgb, var(--dash-surface-hover) 86%, var(--dash-text-muted) 8%);
+  box-shadow: inset 3px 0 0 var(--dash-text-soft);
+}
+
+.list-row--selected:hover {
+  background: color-mix(in srgb, var(--dash-surface-hover) 80%, var(--dash-text-muted) 12%);
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    APP EXTERIOR — Public pages
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -251,7 +260,7 @@ body {
   --dash-success:        #10b981;
   --dash-warning:        #f59e0b;
   --dash-danger:         #ef4444;
-  --dash-info:           #3b82f6;
+  --dash-info:           #10b981;
 }
 
 [data-theme="dark"] {
@@ -293,6 +302,7 @@ body {
   --dash-success:        #34d399;
   --dash-warning:        #fbbf24;
   --dash-danger:         #f87171;
+  --dash-info:           #34d399;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -322,6 +332,13 @@ body {
   overflow-y: auto;
   background: var(--dash-bg);
   padding: 2rem;
+}
+
+.dash-content--calendar {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .dash-content-inner {
@@ -1335,6 +1352,12 @@ body {
   border-color: var(--dash-accent);
 }
 
+.topbar-action-btn--active {
+  background: var(--dash-accent-soft);
+  color: var(--dash-accent);
+  border-color: var(--dash-accent);
+}
+
 .topbar-action-icon {
   width: 16px;
   height: 16px;
@@ -1358,6 +1381,172 @@ body {
   font-size: 0.625rem;
   font-weight: 800;
   line-height: 1;
+}
+
+.form-activity-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.form-activity-tab:hover,
+.form-activity-tab--active {
+  background: var(--dash-bg);
+  border-color: var(--dash-border-soft);
+}
+
+.form-activity-tab:hover .topbar-action-btn,
+.form-activity-tab--active .topbar-action-btn {
+  background: var(--dash-surface-hover);
+  color: var(--dash-accent);
+  border-color: var(--dash-accent);
+}
+
+.form-modal[hidden] {
+  display: none;
+}
+
+.form-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.form-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(24, 24, 27, 0.48);
+  backdrop-filter: blur(4px);
+}
+
+.form-modal-panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: min(100%, 760px);
+  max-height: min(760px, calc(100svh - 3rem));
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--dash-border);
+  border-radius: 14px;
+  background: var(--dash-surface);
+  box-shadow: var(--dash-shadow-md);
+}
+
+.form-modal-header,
+.form-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--dash-border);
+  padding: 0.875rem 1rem;
+}
+
+.form-modal-footer {
+  justify-content: flex-end;
+  border-top: 1px solid var(--dash-border);
+  border-bottom: none;
+}
+
+.form-modal-body {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.form-control {
+  width: 100%;
+  min-height: 32px;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dash-text);
+  font: inherit;
+  font-size: 0.875rem;
+  outline: none;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.form-control--title {
+  min-height: 36px;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.form-control--textarea {
+  min-height: 72px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.form-control--date {
+  accent-color: var(--dash-accent);
+  caret-color: var(--dash-accent);
+  color-scheme: light;
+}
+
+.form-control--date::selection {
+  background: var(--dash-accent-soft);
+  color: var(--dash-accent);
+}
+
+:root.dark .form-control--date,
+[data-theme="dark"] .form-control--date {
+  color-scheme: dark;
+}
+
+.form-control--date::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.75;
+  filter: invert(55%) sepia(78%) saturate(520%) hue-rotate(115deg) brightness(88%) contrast(92%);
+}
+
+.form-control--date::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.form-control:disabled {
+  opacity: 1;
+  pointer-events: none;
+}
+
+[data-form-mode="edit"] .form-control {
+  border-color: var(--dash-border);
+  background: var(--dash-surface);
+  padding: 0.375rem 0.5rem;
+}
+
+[data-form-mode="edit"] .form-control:focus {
+  border-color: var(--dash-accent);
+  box-shadow: 0 0 0 3px var(--dash-accent-soft);
+}
+
+.form-checkbox {
+  height: 1rem;
+  width: 1rem;
+  border-radius: 4px;
+  border: 1px solid var(--dash-border);
+  background: var(--dash-surface);
+  accent-color: var(--dash-text-muted);
+}
+
+.form-checkbox:disabled {
+  opacity: 1;
+  pointer-events: none;
+}
+
+[data-form-mode="edit"] .form-checkbox {
+  pointer-events: auto;
 }
 
 .topbar-user-menu-wrap {
@@ -1519,12 +1708,18 @@ body {
 .cal {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
   height: 100%;
   border: 1px solid var(--dash-border);
   border-radius: 14px;
   background: var(--dash-surface);
   box-shadow: var(--dash-shadow);
   overflow: hidden;
+}
+
+.cal-page-header {
+  flex-shrink: 0;
 }
 
 /* ── Toolbar ──────────────────────────────────────────────────────────────── */
@@ -1757,10 +1952,10 @@ body {
 .cal-month-cell {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  align-items: flex-start;
+  justify-content: flex-start;
+  align-items: stretch;
   gap: 0.375rem;
-  padding: 0.375rem;
+  padding: 0.5rem;
   border-right: 1px solid var(--dash-border-soft);
   border-bottom: 1px solid var(--dash-border-soft);
   background: transparent;
@@ -1774,6 +1969,7 @@ body {
   display: flex;
   width: 100%;
   min-width: 0;
+  margin-top: 0.125rem;
   flex-direction: column;
   gap: 0.25rem;
 }
@@ -1783,10 +1979,11 @@ body {
   min-width: 0;
   align-items: center;
   gap: 0.25rem;
+  border-left: 3px solid var(--cal-event-border, var(--dash-accent));
   border-radius: 6px;
-  background: var(--dash-accent-soft);
+  background: var(--cal-event-bg, var(--dash-accent-soft));
   padding: 0.125rem 0.375rem;
-  color: var(--dash-accent);
+  color: var(--cal-event-text, var(--dash-accent));
   font-size: 0.6875rem;
   font-weight: 600;
   line-height: 1.35;
@@ -1799,7 +1996,7 @@ body {
 
 .cal-event-time {
   flex-shrink: 0;
-  color: var(--dash-text-muted);
+  color: var(--cal-event-text, var(--dash-text-muted));
   font-weight: 700;
 }
 
@@ -1921,9 +2118,9 @@ body {
   min-height: 34px;
   flex-direction: column;
   overflow: hidden;
-  border-left: 3px solid var(--dash-accent);
+  border-left: 3px solid var(--cal-event-border, var(--dash-accent));
   border-radius: 7px;
-  background: var(--dash-accent-soft);
+  background: var(--cal-event-bg, var(--dash-accent-soft));
   padding: 0.25rem 0.375rem;
   color: var(--dash-text);
   box-shadow: var(--dash-shadow);
@@ -1934,7 +2131,7 @@ body {
 }
 
 .cal-time-event-hour {
-  color: var(--dash-accent);
+  color: var(--cal-event-text, var(--dash-accent));
   font-size: 0.625rem;
   font-weight: 800;
   line-height: 1.2;
@@ -1960,6 +2157,14 @@ body {
   line-height: 1.2;
 }
 
+.cal-time-event-status {
+  color: var(--cal-event-text, var(--dash-text-muted));
+  font-size: 0.625rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
 .cal-day-col:last-child {
   border-right: none;
 }
@@ -1972,14 +2177,14 @@ body {
   border-bottom: 1px solid var(--dash-border-soft);
 }
 
-/* ── Blue "now" line (moves with the minutes) ─────────────────────────────── */
+/* ── Green "now" line (moves with the minutes) ────────────────────────────── */
 
 .cal-nowline {
   position: absolute;
   left: 0;
   right: 0;
   height: 0;
-  border-top: 2px solid var(--dash-info, #3b82f6);
+  border-top: 2px solid var(--dash-info, var(--dash-accent));
   z-index: 10;
   pointer-events: none;
 }
@@ -1991,5 +2196,5 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: var(--dash-info, #3b82f6);
+  background: var(--dash-info, var(--dash-accent));
 }

@@ -1,6 +1,6 @@
 /* ════════════════════════════════════════════════════════════════════════════
  * List view — renders a model's records as a table inside a card.
- *  · Columns follow the model schema order; each cell is formatted per field
+ *  · Columns follow the model schema `list` order; each cell is formatted per field
  *    type (many2one, monetary, date, percentage, pills, boolean, …).
  *  · Themed with the dashboard design tokens (--dash-*) so it tracks
  *    light / dark mode, styled with Tailwind utilities.
@@ -9,8 +9,12 @@
  *   data = { model: { label, status, schema }, records: [...] }
  * ══════════════════════════════════════════════════════════════════════════ */
 
-import { COLOR_CLASS, COLOR_FALLBACK, NUMERIC_TYPES, locale, makeSortable } from '../utils';
+import {
+    COLOR_CLASS, COLOR_FALLBACK, NUMERIC_TYPES, locale, makeSortable, buildRecordUrl,
+} from '../utils';
 import { icon, faGripVertical } from '../components/icon.js';
+import { renderViewHeader } from '../components';
+import { initCreateModal, renderCreateModal } from './renderCreateModal.js';
 
 
 
@@ -19,6 +23,20 @@ function escape(value) {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
+}
+
+function getListColumns(schema) {
+    return schema
+        .map((field, index) => ({ field, index }))
+        .filter(({ field }) => field.list !== undefined && field.list !== false)
+        .sort((a, b) => {
+            const orderA = Number(a.field.list);
+            const orderB = Number(b.field.list);
+            const safeA = Number.isFinite(orderA) ? orderA : Number.MAX_SAFE_INTEGER;
+            const safeB = Number.isFinite(orderB) ? orderB : Number.MAX_SAFE_INTEGER;
+            return safeA - safeB || a.index - b.index;
+        })
+        .map(({ field }) => field);
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -35,24 +53,21 @@ export function renderList(data = {}, lang = 'en') {
     const modelName = data?.model?.name ?? '';
     const title = data?.model?.label?.[lang] ?? '';
 
-    // The id is not shown as a column — it travels as `data-id` on each row.
-    const columns = schema.filter((field) => field.name !== 'id');
+    const columns = getListColumns(schema);
     const hasData = columns.length > 0 && records.length > 0;
 
     return `
     <main id="dashboard-content" class="dash-content" role="main" aria-label="List">
+        ${renderViewHeader({ title, count: records.length, lang })}
         <div class="w-full overflow-hidden rounded-xl border border-[var(--dash-border)]
                     bg-[var(--dash-surface)] shadow-[var(--dash-shadow)]">
-            <div class="flex items-center justify-between gap-4 border-b border-[var(--dash-border)] px-5 py-3.5">
-                <h2 class="text-sm font-semibold text-[var(--dash-text)]">${escape(title)}</h2>
-                <span class="text-xs text-[var(--dash-text-muted)]">${records.length}</span>
-            </div>
             ${hasData ? `
             <div class="overflow-x-auto">
                 <table class="w-full border-collapse text-sm">
                     <thead>
                         <tr class="border-b border-[var(--dash-border)] bg-[var(--dash-surface-hover)]">
                             <th class="w-10" aria-hidden="true"></th>
+                            ${selectionHeaderCell(lang)}
                             ${getHeaders(columns, lang)}
                         </tr>
                     </thead>
@@ -65,6 +80,7 @@ export function renderList(data = {}, lang = 'en') {
                 ${lang === 'es' ? 'Sin registros' : 'No records'}
             </div>`}
         </div>
+        ${renderCreateModal(data, lang)}
     </main>
     `;
 }
@@ -92,7 +108,7 @@ function getRows(records, columns, statusLabels, modelName, lang) {
         }).join('');
         return `<tr data-id="${escape(record.id)}"
                     class="border-b border-[var(--dash-border-soft)] last:border-0
-                    transition-colors hover:bg-[var(--dash-surface-hover)]">${dragHandleCell()}${cells}</tr>`;
+                    transition-colors hover:bg-[var(--dash-surface-hover)]">${dragHandleCell()}${selectionCell(record.id, lang)}${cells}</tr>`;
     }).join('');
 }
 
@@ -104,6 +120,31 @@ function dragHandleCell() {
                     active:cursor-grabbing" aria-label="Reorder row">
             ${icon(faGripVertical, 'h-3.5 w-3.5')}
         </button>
+    </td>`;
+}
+
+/** Header checkbox that toggles every visible row selection. */
+function selectionHeaderCell(lang) {
+    const label = lang === 'es' ? 'Seleccionar todas las filas' : 'Select all rows';
+    return `<th class="w-10 px-2 text-center align-middle">
+        <input type="checkbox"
+            class="js-list-select-all h-4 w-4 rounded border-[var(--dash-border)]
+                bg-[var(--dash-surface)] accent-[var(--dash-text-muted)]
+                focus:ring-2 focus:ring-[var(--dash-border)] focus:ring-offset-0"
+            aria-label="${escape(label)}" />
+    </th>`;
+}
+
+/** Row checkbox shown after the drag handle. */
+function selectionCell(id, lang) {
+    const label = lang === 'es' ? 'Seleccionar fila' : 'Select row';
+    return `<td class="w-10 px-2 text-center align-middle">
+        <input type="checkbox"
+            class="js-list-row-select h-4 w-4 rounded border-[var(--dash-border)]
+                bg-[var(--dash-surface)] accent-[var(--dash-text-muted)]
+                focus:ring-2 focus:ring-[var(--dash-border)] focus:ring-offset-0"
+            aria-label="${escape(label)}"
+            value="${escape(id)}" />
     </td>`;
 }
 
@@ -167,7 +208,7 @@ function formatCell(field, value, statusLabels, modelName, recordId, lang) {
 }
 
 /**
- * many2one link → "/model/{model}/{id}".
+ * many2one link → "{current path}/{model}/{id}".
  * The href is built as a safe, encoded string (segments URL-encoded, then
  * HTML-escaped). How the link actually resolves/navigates is intentionally
  * left for later — for now it's just a well-formed, escaped string.
@@ -184,12 +225,6 @@ function recordNameCell(value, model, id) {
     if (!model || id == null) return name;
     const href = buildRecordUrl(model, id);
     return `<a href="${href}" class="font-medium text-[var(--dash-accent)] hover:underline">${name}</a>`;
-}
-
-/** /model/{model}/{id}, each dynamic segment encoded and escaped. */
-function buildRecordUrl(model, id) {
-    const path = `/model/${encodeURIComponent(model)}/${encodeURIComponent(id)}`;
-    return escape(path);
 }
 
 /** Small progress bar + percentage label. */
@@ -263,15 +298,53 @@ function statusCell(code, statusOptions, lang) {
  * Wire up row drag-and-drop reordering after the list markup is in the DOM.
  * @returns {() => void} cleanup function (destroys the Sortable instance).
  */
-export function initList() {
+export function initList(lang = 'en') {
     const tbody = document.querySelector('[data-list-rows]');
-    if (!tbody) return () => {};
+    const destroyCreateModal = initCreateModal(document, lang);
+    if (!tbody) return destroyCreateModal;
+    const selectAll = document.querySelector('.js-list-select-all');
+    const rowCheckboxes = Array.from(tbody.querySelectorAll('.js-list-row-select'));
 
-    return makeSortable(tbody, {
+    const syncRowSelection = (checkbox) => {
+        checkbox.closest('tr')?.classList.toggle('list-row--selected', checkbox.checked);
+    };
+
+    const syncSelectAll = () => {
+        if (!selectAll) return;
+        const selectedCount = rowCheckboxes.filter((checkbox) => checkbox.checked).length;
+        selectAll.checked = selectedCount > 0 && selectedCount === rowCheckboxes.length;
+        selectAll.indeterminate = selectedCount > 0 && selectedCount < rowCheckboxes.length;
+    };
+
+    const onSelectAllChange = () => {
+        rowCheckboxes.forEach((checkbox) => {
+            checkbox.checked = selectAll.checked;
+            syncRowSelection(checkbox);
+        });
+        syncSelectAll();
+    };
+
+    const onRowSelectChange = (event) => {
+        syncRowSelection(event.currentTarget);
+        syncSelectAll();
+    };
+
+    rowCheckboxes.forEach(syncRowSelection);
+    selectAll?.addEventListener('change', onSelectAllChange);
+    rowCheckboxes.forEach((checkbox) => checkbox.addEventListener('change', onRowSelectChange));
+
+    const destroySortable = makeSortable(tbody, {
         handle: '.js-list-drag-handle',
         onReorder: (ids) => {
             // New row order, by record id. Persisting it is decided later.
             console.debug('list reordered:', ids);
         },
     });
+
+    return () => {
+        selectAll?.removeEventListener('change', onSelectAllChange);
+        rowCheckboxes.forEach((checkbox) => checkbox.removeEventListener('change', onRowSelectChange));
+        destroySortable();
+        destroyCreateModal();
+    };
 }

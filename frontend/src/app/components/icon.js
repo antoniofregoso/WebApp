@@ -25,12 +25,17 @@ import {
     faRectangleList,
     faCalendarDays,
     faGripVertical,
+    faPen,
+    faFloppyDisk,
+    faPlus,
+    faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
     faBell,
     faCircleUser,
     faEnvelope,
+    faFileLines,
 } from '@fortawesome/free-regular-svg-icons';
 
 // Register all icons with the library
@@ -56,9 +61,14 @@ library.add(
     faRectangleList,
     faCalendarDays,
     faGripVertical,
+    faPen,
+    faFloppyDisk,
+    faPlus,
+    faXmark,
     faBell,
     faCircleUser,
     faEnvelope,
+    faFileLines,
 );
 
 /**
@@ -101,7 +111,12 @@ export {
     faRectangleList,
     faCalendarDays,
     faGripVertical,
+    faPen,
+    faFloppyDisk,
+    faPlus,
+    faXmark,
     faBell,
     faCircleUser,
     faEnvelope,
+    faFileLines,
 };

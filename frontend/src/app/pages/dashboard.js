@@ -4,7 +4,7 @@ import { contextActions, dashboardActions } from '../store/actions';
 import { renderSidebar, initSidebar, updateSidebarExpansion, MENU_ITEMS } from '../components';
 import { renderTopbar, initTopbar } from '../components';
 import { t } from '../../i18n';
-import { renderCalendar, renderForm, renderInsights, renderKanban, renderList, initCalendar, initInsights, initList, initKanban } from '../views';
+import { renderCalendar, renderForm, renderInsights, renderKanban, renderList, initCalendar, initForm, initInsights, initList, initKanban } from '../views';
 import { applyTheme, getAreaTitle } from '../utils';
 
 import demoData from '../data/demo.json';
@@ -16,8 +16,13 @@ let _lastTheme = null;
 let _lastExpanded = null;
 let _lastArea = null;
 let _lastView = null;
+let _lastRecordRoute = false;
+let _lastRecordModel = null;
+let _lastRecordId = null;
 let _effectCleanup = null;
 let _currentSubarea = null;
+let _currentRecordModel = null;
+let _currentRecordId = null;
 
 // ── View renderers (dock view-switch buttons) ─────────────────────────────────
 const VIEW_RENDERERS = {
@@ -34,11 +39,20 @@ const VIEW_INITIALIZERS = {
     insights: initInsights,
     list: initList,
     kanban: initKanban,
+    form: initForm,
 };
 let _viewCleanup = null;
 
 function getView(state) {
     return state.dashboard?.view ?? DEFAULT_VIEW;
+}
+
+function getEffectiveView(view) {
+    return _currentRecordModel && _currentRecordId != null ? 'form' : view;
+}
+
+function hasRecordRoute() {
+    return _currentRecordModel && _currentRecordId != null;
 }
 
 /** Render the content markup for the currently selected view. */
@@ -47,6 +61,14 @@ function renderView(view, area, lang) {
     // TEMP: feed demo data to the data-driven views for testing.
     if (renderFn === renderList || renderFn === renderKanban || renderFn === renderCalendar) {
         return renderFn(demoData, lang);
+    }
+    if (renderFn === renderForm) {
+        const commercialAreas = new Set(['crm', 'sales', 'sale', 'ventas']);
+        return renderFn(demoData, lang, {
+            recordModel: _currentRecordModel,
+            recordId: _currentRecordId,
+            showWhatsapp: commercialAreas.has(area),
+        });
     }
     return renderFn(area, lang);
 }
@@ -109,7 +131,7 @@ function getTopbarBreadcrumb(area, subarea, lang) {
 }
 
 function shouldShowTopbarTools(area, subarea) {
-    return Boolean(area) && subarea !== 'insights';
+    return Boolean(area) && subarea !== 'insights' && !hasRecordRoute();
 }
 
 
@@ -122,6 +144,7 @@ function renderDashboard(lang, theme, expanded, area, subarea, view) {
     const breadcrumb = getTopbarBreadcrumb(area, subarea, lang);
     const showTopbarTools = shouldShowTopbarTools(area, subarea);
     const appEl = document.getElementById('app');
+    if (!appEl) return;
 
     appEl.innerHTML = `
     <div class="dash-layout">
@@ -151,6 +174,10 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
     const themeChanged = theme !== prevTheme;
     const expandedChanged = expanded !== prevExpanded;
     const viewChanged = view !== prevView;
+    const recordRouteChanged =
+        hasRecordRoute() !== _lastRecordRoute ||
+        _currentRecordModel !== _lastRecordModel ||
+        _currentRecordId !== _lastRecordId;
 
     if (expandedChanged && !langChanged && !areaChanged) {
         updateSidebarExpansion(expanded);
@@ -167,7 +194,7 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
     }
 
     // Patch topbar (theme, lang change)
-    if (themeChanged || langChanged || areaChanged) {
+    if (themeChanged || langChanged || areaChanged || recordRouteChanged) {
         const topbarEl = document.getElementById('dashboard-topbar-shell');
         const pageTitle = area ? getAreaTitle(area, lang, MENU_ITEMS) : '';
         const breadcrumb = getTopbarBreadcrumb(area, _currentSubarea, lang);
@@ -180,8 +207,8 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
         }
     }
 
-    // Patch content (area, lang or view change)
-    if (areaChanged || langChanged || viewChanged) {
+    // Patch content (area, lang, view, or selected record change)
+    if (areaChanged || langChanged || viewChanged || recordRouteChanged) {
         const contentEl = document.getElementById('dashboard-content');
         if (contentEl) {
             contentEl.outerHTML = renderContent(area, _currentSubarea, view, lang);
@@ -216,7 +243,11 @@ export function dashboard(req, router) {
     _router = router;
     const areaFromUrl = req.params?.area;
     const prevSubarea = _currentSubarea;
+    const hadRecordRoute = _currentRecordModel && _currentRecordId != null;
     _currentSubarea = req.params?.subarea ?? null;
+    _currentRecordModel = req.params?.model ?? null;
+    _currentRecordId = req.params?.id ?? null;
+    const isRecordRoute = hasRecordRoute();
     if (!MENU_ITEMS.some(item => item.key === areaFromUrl)) {
         if (areaFromUrl!=undefined) {return router.trigger404(req.pathname);}
     }
@@ -228,8 +259,10 @@ export function dashboard(req, router) {
     if (!areaFromUrl && appSignal.value.context.active_area) {
         contextActions.setActiveArea(null);
     }
-    // Reset to the default view whenever the page (area or subarea) changes
-    if (areaChanged || subareaChanged) {
+    // Open record URLs directly in form view; otherwise reset when leaving a page.
+    if (isRecordRoute) {
+        dashboardActions.setView('form');
+    } else if (areaChanged || subareaChanged || hadRecordRoute) {
         dashboardActions.setView(DEFAULT_VIEW);
     }
 
@@ -238,7 +271,7 @@ export function dashboard(req, router) {
     const theme = state.context.theme;
     const expanded = state.context.sidebar_expanded;
     const area = state.context.active_area;
-    const view = getView(state);
+    const view = getEffectiveView(getView(state));
 
     // ── Initial full render ───────────────────────────────────────────────────
     renderDashboard(lang, theme, expanded, area, _currentSubarea, view);
@@ -253,6 +286,9 @@ export function dashboard(req, router) {
     _lastExpanded = expanded;
     _lastArea = area;
     _lastView = view;
+    _lastRecordRoute = isRecordRoute;
+    _lastRecordModel = _currentRecordModel;
+    _lastRecordId = _currentRecordId;
 
     // ── Cleanup previous effect if navigating back to this page ──────────────
     if (_effectCleanup) {
@@ -267,14 +303,17 @@ export function dashboard(req, router) {
         const newTheme = s.context.theme;
         const newExpanded = s.context.sidebar_expanded;
         const newArea = s.context.active_area;
-        const newView = getView(s);
+        const newView = getEffectiveView(getView(s));
 
         const changed =
             newLang !== _lastLang ||
             newTheme !== _lastTheme ||
             newExpanded !== _lastExpanded ||
             newArea !== _lastArea ||
-            newView !== _lastView;
+            newView !== _lastView ||
+            hasRecordRoute() !== _lastRecordRoute ||
+            _currentRecordModel !== _lastRecordModel ||
+            _currentRecordId !== _lastRecordId;
 
         if (!changed) return;
 
@@ -288,5 +327,8 @@ export function dashboard(req, router) {
         _lastExpanded = newExpanded;
         _lastArea = newArea;
         _lastView = newView;
+        _lastRecordRoute = hasRecordRoute();
+        _lastRecordModel = _currentRecordModel;
+        _lastRecordId = _currentRecordId;
     });
 }

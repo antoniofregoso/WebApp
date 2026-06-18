@@ -38,7 +38,8 @@
                 "label": {
                     "es": "ID",
                     "en": "ID"
-                }
+                },
+                "list":1
             },
             {
                 "name": "name",
@@ -54,6 +55,11 @@
                 "label": {
                     "es": "Cliente",
                     "en": "Customer"
+                },
+                "list":2,
+                "form":{
+                    "column":0,
+                    "row":0
                 }
             },
             {
@@ -62,13 +68,29 @@
                 "label": {
                     "es": "Fecha de Pedido",
                     "en": "Order Date"
+                },
+                "form":{
+                    "column":1,
+                    "row":0
                 }
             },
             {
-                "name": "last_updated",
+                "name": "start_date",
                 "type": "datetime",
                 "label": {
-                    "es": "Última Actualización",
+                    "es": "Fecha inicial",
+                    "en": "Last Updated"
+                },
+                "form":{
+                    "column":3,
+                    "row":0
+                }
+            },
+            {
+                "name": "end_date",
+                "type": "datetime",
+                "label": {
+                    "es": "",
                     "en": "Last Updated"
                 }
             },
@@ -78,6 +100,11 @@
                 "label": {
                     "es": "Número de Productos",
                     "en": "Product Count"
+                },
+                "list":3,
+                "form":{
+                    "column":0,
+                    "row":1
                 }
             },
             {
@@ -86,6 +113,10 @@
                 "label": {
                     "es": "Porcentaje Entregado",
                     "en": "Percentage Delivered"
+                },
+                "form":{
+                    "column":1,
+                    "row":1
                 }
             },
             {
@@ -103,6 +134,11 @@
                 "label": {
                     "es": "Total",
                     "en": "Total"
+                },
+                "list":4,
+                "form":{
+                    "column":0,
+                    "row":2
                 }
             },
             {
@@ -111,6 +147,11 @@
                 "label": {
                     "es": "Revisado",
                     "en": "Checked"
+                },
+                "list":5,
+                "form":{
+                    "column":1,
+                    "row":2
                 }
             },
             {
@@ -119,7 +160,8 @@
                 "label": {
                     "es": "Avatar",
                     "en": "Avatar"
-                }
+                },
+                "list":0
             },
             {
                 "name": "tags",
@@ -127,7 +169,8 @@
                 "label": {
                     "es": "Etiquetas",
                     "en": "Tags"
-                }
+                },
+                "list":false
             },
             {
                 "name": "status",
@@ -135,7 +178,8 @@
                 "label": {
                     "es": "Estado",
                     "en": "Status"
-                }
+                },
+                "list":7
             }
         ]
     },
@@ -149,8 +193,9 @@
                 "name": "ACME Corp",
                 "model": "res.partner"
             },
-            "date_order": "2024-01-15",
-            "": "2024-01-20T14:30:00",
+            "date_order": "2026-01-15",
+            "start_date": "2026-01-20T14:30:00",
+            "end_date": "2026-01-25T15:30:00",
             "product_count": 5,
             "percentage_delivered": 80,
             "decimal_field": 3.14159,
@@ -167,8 +212,9 @@
                 "name": "Globex S.A.",
                 "model": "res.partner"
             },
-            "date_order": "2024-03-03",
-            "last_updated": "2024-03-03T06:14:00",
+            "date_order": "2026-03-03",
+            "start_date": "2026-03-03T06:14:00",
+            "end_date": "2026-03-03T06:14:30",
             "product_count": 3,
             "percentage_delivered": 34,
             "decimal_field": 2.469,
@@ -197,8 +243,9 @@
                 "name": "Initech",
                 "model": "res.partner"
             },
-            "date_order": "2024-04-04",
-            "last_updated": "2024-04-04T09:21:00",
+            "date_order": "2026-04-04",
+            "start_date": "2026-04-04T09:21:00",
+            "end_date": "2026-04-04T09:21:45",
             "product_count": 4,
             "percentage_delivered": 51,
             "decimal_field": 3.7035,
@@ -232,8 +279,9 @@
                 "name": "Umbrella Inc.",
                 "model": "res.partner"
             },
-            "date_order": "2024-05-05",
-            "last_updated": "2024-05-05T12:28:00",
+            "date_order": "2026-05-05",
+            "start_date": "2026-05-05T12:28:00",
+            "end_date": "2026-05-05T12:28:30",
             "product_count": 5,
             "percentage_delivered": 68,
             "decimal_field": 4.938,
@@ -251,8 +299,9 @@
                 "name": "Soylent Co.",
                 "model": "res.partner"
             },
-            "date_order": "2024-06-06",
-            "last_updated": "2024-06-06T15:35:00",
+            "date_order": "2026-06-06",
+            "start_date": "2026-06-06T15:35:00",
+            "end_date": "2026-06-06T15:35:30",
             "product_count": 6,
             "percentage_delivered": 85,
             "decimal_field": 6.1725,
@@ -276,8 +325,9 @@
                 "name": "Stark Industries",
                 "model": "res.partner"
             },
-            "date_order": "2024-07-07",
-            "last_updated": "2024-07-07T18:42:00",
+            "date_order": "2026-07-07",
+            "start_date": "2026-07-07T18:42:00",
+            "end_date": "2026-07-07T18:42:30",
             "product_count": 7,
             "percentage_delivered": 1,
             "decimal_field": 7.407,
@@ -306,8 +356,9 @@
                 "name": "Wayne Enterprises",
                 "model": "res.partner"
             },
-            "date_order": "2024-08-08",
-            "last_updated": "2024-08-08T21:49:00",
+            "date_order": "2026-08-08",
+            "start_date": "2026-08-08T21:49:00",
+            "end_date": "2026-08-08T22:49:30",
             "product_count": 8,
             "percentage_delivered": 18,
             "decimal_field": 8.6415,
@@ -341,8 +392,8 @@
                 "name": "Wonka Ltd.",
                 "model": "res.partner"
             },
-            "date_order": "2024-09-09",
-            "last_updated": "2024-09-09T00:56:00",
+            "date_order": "2026-09-09",
+            "start_date": "2026-09-09T00:56:00",
             "product_count": 9,
             "percentage_delivered": 35,
             "decimal_field": 9.876,
@@ -360,8 +411,8 @@
                 "name": "Cyberdyne",
                 "model": "res.partner"
             },
-            "date_order": "2024-10-10",
-            "last_updated": "2024-10-10T03:03:00",
+            "date_order": "2026-10-10",
+            "start_date": "2026-10-10T03:03:00",
             "product_count": 1,
             "percentage_delivered": 52,
             "decimal_field": 11.1105,
@@ -385,8 +436,9 @@
                 "name": "Hooli",
                 "model": "res.partner"
             },
-            "date_order": "2024-11-11",
-            "last_updated": "2024-11-11T06:10:00",
+            "date_order": "2026-11-11",
+            "start_date": "2026-11-11T06:10:00",
+            "end_date":"2026-01-25T15:30:00",
             "product_count": 2,
             "percentage_delivered": 69,
             "decimal_field": 12.345,
@@ -415,8 +467,9 @@
                 "name": "Pied Piper",
                 "model": "res.partner"
             },
-            "date_order": "2024-12-12",
-            "last_updated": "2024-12-12T09:17:00",
+            "date_order": "2026-12-12",
+            "start_date": "2026-12-12T09:17:00",
+            "end_date": "2026-12-12T09:17:30",
             "product_count": 3,
             "percentage_delivered": 86,
             "decimal_field": 13.5795,
@@ -450,8 +503,9 @@
                 "name": "Aperture Labs",
                 "model": "res.partner"
             },
-            "date_order": "2024-01-13",
-            "last_updated": "2024-01-13T12:24:00",
+            "date_order": "2026-01-13",
+            "start_date": "2026-01-13T12:24:00",
+            "end_date": "2026-01-25T15:30:00",
             "product_count": 4,
             "percentage_delivered": 2,
             "decimal_field": 14.814,
@@ -469,8 +523,9 @@
                 "name": "Vandelay Industries",
                 "model": "res.partner"
             },
-            "date_order": "2024-02-14",
-            "last_updated": "2024-02-14T15:31:00",
+            "date_order": "2026-02-14",
+            "start_date": "2026-02-14T15:31:00",
+            "end_date": "2026-02-14T15:31:30",
             "product_count": 5,
             "percentage_delivered": 19,
             "decimal_field": 16.0485,
@@ -494,8 +549,9 @@
                 "name": "Gekko & Co.",
                 "model": "res.partner"
             },
-            "date_order": "2024-03-15",
-            "last_updated": "2024-03-15T18:38:00",
+            "date_order": "2026-03-15",
+            "start_date": "2026-03-15T18:38:00",
+            "end_date": "2026-03-15T18:38:30",
             "product_count": 6,
             "percentage_delivered": 36,
             "decimal_field": 17.283,
@@ -524,8 +580,9 @@
                 "name": "Massive Dynamic",
                 "model": "res.partner"
             },
-            "date_order": "2024-04-16",
-            "last_updated": "2024-04-16T21:45:00",
+            "date_order": "2026-04-16",
+            "start_date": "2026-04-16T21:45:00",
+            "end_date": "2026-04-20T21:45:00",
             "product_count": 7,
             "percentage_delivered": 53,
             "decimal_field": 18.5175,
@@ -559,8 +616,9 @@
                 "name": "ACME Corp",
                 "model": "res.partner"
             },
-            "date_order": "2024-05-17",
-            "last_updated": "2024-05-17T00:52:00",
+            "date_order": "2026-05-17",
+            "start_date": "2026-05-17T00:52:00",
+            "end_date": "2026-05-20T00:52:00",
             "product_count": 8,
             "percentage_delivered": 70,
             "decimal_field": 19.752,
@@ -578,8 +636,9 @@
                 "name": "Globex S.A.",
                 "model": "res.partner"
             },
-            "date_order": "2024-06-18",
-            "last_updated": "2024-06-18T03:59:00",
+            "date_order": "2026-06-18",
+            "start_date": "2026-06-18T03:59:00",
+            "end_date": "2026-06-21T03:59:00",
             "product_count": 9,
             "percentage_delivered": 87,
             "decimal_field": 20.9865,
@@ -603,8 +662,9 @@
                 "name": "Initech",
                 "model": "res.partner"
             },
-            "date_order": "2024-07-19",
-            "last_updated": "2024-07-19T06:06:00",
+            "date_order": "2026-07-19",
+            "start_date": "2026-07-19T06:06:00",
+            "end_date": "2026-07-07T06:08:00",
             "product_count": 1,
             "percentage_delivered": 3,
             "decimal_field": 22.221,
@@ -633,8 +693,9 @@
                 "name": "Umbrella Inc.",
                 "model": "res.partner"
             },
-            "date_order": "2024-08-20",
-            "last_updated": "2024-08-20T09:13:00",
+            "date_order": "2026-08-20",
+            "start_date": "2026-08-20T09:13:00",
+            "end_date": "2026-08-20T09:13:30",
             "product_count": 2,
             "percentage_delivered": 20,
             "decimal_field": 23.4555,
@@ -668,8 +729,9 @@
                 "name": "Soylent Co.",
                 "model": "res.partner"
             },
-            "date_order": "2024-09-21",
-            "last_updated": "2024-09-21T12:20:00",
+            "date_order": "2026-09-21",
+            "start_date": "2026-09-21T12:20:00",
+            "end_date": "2026-09-21T12:22:00",
             "product_count": 3,
             "percentage_delivered": 37,
             "decimal_field": 24.69,
@@ -687,8 +749,9 @@
                 "name": "Stark Industries",
                 "model": "res.partner"
             },
-            "date_order": "2024-10-22",
-            "last_updated": "2024-10-22T15:27:00",
+            "date_order": "2026-10-22",
+            "start_date": "2026-10-22T15:27:00",
+            "end_date": "2026-10-22T15:27:50",
             "product_count": 4,
             "percentage_delivered": 54,
             "decimal_field": 25.9245,
@@ -712,8 +775,9 @@
                 "name": "Wayne Enterprises",
                 "model": "res.partner"
             },
-            "date_order": "2024-11-23",
-            "last_updated": "2024-11-23T18:34:00",
+            "date_order": "2026-11-23",
+            "start_date": "2026-11-23T18:34:00",
+            "end_date": "2026-11-23T18:34:30",
             "product_count": 5,
             "percentage_delivered": 71,
             "decimal_field": 27.159,
@@ -742,8 +806,9 @@
                 "name": "Wonka Ltd.",
                 "model": "res.partner"
             },
-            "date_order": "2024-12-24",
-            "last_updated": "2024-12-24T21:41:00",
+            "date_order": "2026-12-24",
+            "start_date": "2026-12-24T21:41:00",
+            "end_date": "2026-12-24T21:50:00",
             "product_count": 6,
             "percentage_delivered": 88,
             "decimal_field": 28.3935,
@@ -777,8 +842,9 @@
                 "name": "Cyberdyne",
                 "model": "res.partner"
             },
-            "date_order": "2024-01-25",
-            "last_updated": "2024-01-25T00:48:00",
+            "date_order": "2026-01-25",
+            "start_date": "2026-01-25T10:48:00",
+            "end_date":"2026-01-25T15:30:00",
             "product_count": 7,
             "percentage_delivered": 4,
             "decimal_field": 29.628,
@@ -796,8 +862,9 @@
                 "name": "Hooli",
                 "model": "res.partner"
             },
-            "date_order": "2024-02-26",
-            "last_updated": "2024-02-26T03:55:00",
+            "date_order": "2026-02-26",
+            "start_date": "2026-02-26T03:55:00",
+            "end_date":"2026-02-26T15:30:00",
             "product_count": 8,
             "percentage_delivered": 21,
             "decimal_field": 30.8625,
@@ -821,8 +888,9 @@
                 "name": "Pied Piper",
                 "model": "res.partner"
             },
-            "date_order": "2024-03-27",
-            "last_updated": "2024-03-27T06:02:00",
+            "date_order": "2026-03-27",
+            "start_date": "2026-03-27T06:02:00",
+            "end_date": "2026-03-27T15:30:00",
             "product_count": 9,
             "percentage_delivered": 38,
             "decimal_field": 32.097,
@@ -851,8 +919,9 @@
                 "name": "Aperture Labs",
                 "model": "res.partner"
             },
-            "date_order": "2024-04-01",
-            "last_updated": "2024-04-01T09:09:00",
+            "date_order": "2026-04-01",
+            "start_date": "2026-04-01T09:09:00",
+            "end_date": "2026-04-01T15:30:00",
             "product_count": 1,
             "percentage_delivered": 55,
             "decimal_field": 33.3315,
@@ -886,8 +955,9 @@
                 "name": "Vandelay Industries",
                 "model": "res.partner"
             },
-            "date_order": "2024-05-02",
-            "last_updated": "2024-05-02T12:16:00",
+            "date_order": "2026-05-02",
+            "start_date": "2026-05-02T12:16:00",
+            "end_date": "2026-05-02T15:30:00",
             "product_count": 2,
             "percentage_delivered": 72,
             "decimal_field": 34.566,
@@ -905,8 +975,9 @@
                 "name": "Gekko & Co.",
                 "model": "res.partner"
             },
-            "date_order": "2024-06-03",
-            "last_updated": "2024-06-03T15:23:00",
+            "date_order": "2026-06-03",
+            "start_date": "2026-06-03T15:23:00",
+            "end_date":"2026-06-03T15:30:00",
             "product_count": 3,
             "percentage_delivered": 89,
             "decimal_field": 35.8005,
@@ -930,8 +1001,9 @@
                 "name": "Massive Dynamic",
                 "model": "res.partner"
             },
-            "date_order": "2024-07-04",
-            "last_updated": "2024-07-04T18:30:00",
+            "date_order": "2026-07-04",
+            "start_date": "2026-07-04T18:30:00",
+            "end_date": "2026-07-04T19:30:30",
             "product_count": 4,
             "percentage_delivered": 5,
             "decimal_field": 37.035,
@@ -960,8 +1032,9 @@
                 "name": "ACME Corp",
                 "model": "res.partner"
             },
-            "date_order": "2024-08-05",
-            "last_updated": "2024-08-05T21:37:00",
+            "date_order": "2026-08-05",
+            "start_date": "2026-08-05T21:37:00",
+            "end_date": "2026-08-05T22:37:00",
             "product_count": 5,
             "percentage_delivered": 22,
             "decimal_field": 38.2695,
@@ -995,8 +1068,8 @@
                 "name": "Globex S.A.",
                 "model": "res.partner"
             },
-            "date_order": "2024-09-06",
-            "last_updated": "2024-09-06T00:44:00",
+            "date_order": "2026-09-06",
+            "start_date": "2026-09-06T00:44:00",
             "product_count": 6,
             "percentage_delivered": 39,
             "decimal_field": 39.504,
@@ -1014,8 +1087,9 @@
                 "name": "Initech",
                 "model": "res.partner"
             },
-            "date_order": "2024-10-07",
-            "last_updated": "2024-10-07T03:51:00",
+            "date_order": "2026-10-07",
+            "start_date": "2026-10-07T03:51:00",
+            "end_date": "2026-10-07T05:51:30",
             "product_count": 7,
             "percentage_delivered": 56,
             "decimal_field": 40.7385,
@@ -1039,8 +1113,9 @@
                 "name": "Umbrella Inc.",
                 "model": "res.partner"
             },
-            "date_order": "2024-11-08",
-            "last_updated": "2024-11-08T06:58:00",
+            "date_order": "2026-11-08",
+            "start_date": "2026-11-08T06:58:00",
+            "end_date": "2026-11-08T07:58:30",
             "product_count": 8,
             "percentage_delivered": 73,
             "decimal_field": 41.973,
@@ -1069,8 +1144,9 @@
                 "name": "Soylent Co.",
                 "model": "res.partner"
             },
-            "date_order": "2024-12-09",
-            "last_updated": "2024-12-09T09:05:00",
+            "date_order": "2026-12-09",
+            "start_date": "2026-12-09T09:05:00",
+            "end_date":"2026-12-25T15:30:00",
             "product_count": 9,
             "percentage_delivered": 90,
             "decimal_field": 43.2075,
@@ -1104,8 +1180,9 @@
                 "name": "Stark Industries",
                 "model": "res.partner"
             },
-            "date_order": "2024-01-10",
-            "last_updated": "2024-01-10T12:12:00",
+            "date_order": "2026-01-10",
+            "start_date": "2026-01-10T12:12:00",
+            "end_date": "2026-01-10T13:14:00",
             "product_count": 1,
             "percentage_delivered": 6,
             "decimal_field": 44.442,
@@ -1123,8 +1200,9 @@
                 "name": "Wayne Enterprises",
                 "model": "res.partner"
             },
-            "date_order": "2024-02-11",
-            "last_updated": "2024-02-11T15:19:00",
+            "date_order": "2026-02-11",
+            "start_date": "2026-02-11T15:19:00",
+            "end_date": "2026-02-11T16:20:00",
             "product_count": 2,
             "percentage_delivered": 23,
             "decimal_field": 45.6765,
@@ -1148,8 +1226,9 @@
                 "name": "Wonka Ltd.",
                 "model": "res.partner"
             },
-            "date_order": "2024-03-12",
-            "last_updated": "2024-03-12T18:26:00",
+            "date_order": "2026-03-12",
+            "start_date": "2026-03-12T18:26:00",
+            "end_date": "2026-03-12T19:27:00",
             "product_count": 3,
             "percentage_delivered": 40,
             "decimal_field": 46.911,
@@ -1178,8 +1257,9 @@
                 "name": "Cyberdyne",
                 "model": "res.partner"
             },
-            "date_order": "2024-04-13",
-            "last_updated": "2024-04-13T21:33:00",
+            "date_order": "2026-04-13",
+            "start_date": "2026-04-13T21:33:00",
+            "end_date": "2026-04-13T22:34:00",
             "product_count": 4,
             "percentage_delivered": 57,
             "decimal_field": 48.1455,
@@ -1213,8 +1293,9 @@
                 "name": "Hooli",
                 "model": "res.partner"
             },
-            "date_order": "2024-05-14",
-            "last_updated": "2024-05-14T00:40:00",
+            "date_order": "2026-05-14",
+            "start_date": "2026-05-14T00:40:00",
+            "end_date": "2026-05-14T01:40:00",
             "product_count": 5,
             "percentage_delivered": 74,
             "decimal_field": 49.38,
@@ -1232,8 +1313,9 @@
                 "name": "Pied Piper",
                 "model": "res.partner"
             },
-            "date_order": "2024-06-15",
-            "last_updated": "2024-06-15T03:47:00",
+            "date_order": "2026-06-15",
+            "start_date": "2026-06-15T03:47:00",
+            "end_date":"2026-01-10T13:14:00",
             "product_count": 6,
             "percentage_delivered": 91,
             "decimal_field": 50.6145,
@@ -1257,8 +1339,9 @@
                 "name": "Aperture Labs",
                 "model": "res.partner"
             },
-            "date_order": "2024-07-16",
-            "last_updated": "2024-07-16T06:54:00",
+            "date_order": "2026-07-16",
+            "start_date": "2026-07-16T06:54:00",
+            "end_date":"2026-07-16T06:55:00",
             "product_count": 7,
             "percentage_delivered": 7,
             "decimal_field": 51.849,
@@ -1287,8 +1370,9 @@
                 "name": "Vandelay Industries",
                 "model": "res.partner"
             },
-            "date_order": "2024-08-17",
-            "last_updated": "2024-08-17T09:01:00",
+            "date_order": "2026-08-17",
+            "start_date": "2026-08-17T09:01:00",
+            "end_date":"2026-08-20T09:13:30",
             "product_count": 8,
             "percentage_delivered": 24,
             "decimal_field": 53.0835,
@@ -1322,8 +1406,9 @@
                 "name": "Gekko & Co.",
                 "model": "res.partner"
             },
-            "date_order": "2024-09-18",
-            "last_updated": "2024-09-18T12:08:00",
+            "date_order": "2026-09-18",
+            "start_date": "2026-09-18T12:08:00",
+            "end_date":"2026-09-20T12:08:00",
             "product_count": 9,
             "percentage_delivered": 41,
             "decimal_field": 54.318,
@@ -1341,8 +1426,9 @@
                 "name": "Massive Dynamic",
                 "model": "res.partner"
             },
-            "date_order": "2024-10-19",
-            "last_updated": "2024-10-19T15:15:00",
+            "date_order": "2026-10-19",
+            "start_date": "2026-10-19T15:15:00",
+            "end_date":"2026-10-19T18:00:00",
             "product_count": 1,
             "percentage_delivered": 58,
             "decimal_field": 55.5525,
@@ -1366,8 +1452,9 @@
                 "name": "ACME Corp",
                 "model": "res.partner"
             },
-            "date_order": "2024-11-20",
-            "last_updated": "2024-11-20T18:22:00",
+            "date_order": "2026-11-20",
+            "start_date": "2026-11-20T18:22:00",
+            "end_date":"2026-11-20T19:00:00",
             "product_count": 2,
             "percentage_delivered": 75,
             "decimal_field": 56.787,
@@ -1396,8 +1483,9 @@
                 "name": "Globex S.A.",
                 "model": "res.partner"
             },
-            "date_order": "2024-12-21",
-            "last_updated": "2024-12-21T21:29:00",
+            "date_order": "2026-12-21",
+            "start_date": "2026-12-21T21:29:00",
+            "end_date":"2026-12-21T23:00:00",
             "product_count": 3,
             "percentage_delivered": 92,
             "decimal_field": 58.0215,
@@ -1431,8 +1519,8 @@
                 "name": "Initech",
                 "model": "res.partner"
             },
-            "date_order": "2024-01-22",
-            "last_updated": "2024-01-22T00:36:00",
+            "date_order": "2026-01-22",
+            "start_date": "2026-01-22T00:36:00",
             "product_count": 4,
             "percentage_delivered": 8,
             "decimal_field": 59.256,
@@ -1450,8 +1538,9 @@
                 "name": "Umbrella Inc.",
                 "model": "res.partner"
             },
-            "date_order": "2024-02-23",
-            "last_updated": "2024-02-23T03:43:00",
+            "date_order": "2026-02-23",
+            "start_date": "2026-02-23T03:43:00",
+            "end_date":"2026-02-23T10:00:00",
             "product_count": 5,
             "percentage_delivered": 25,
             "decimal_field": 60.4905,
@@ -1475,8 +1564,9 @@
                 "name": "Soylent Co.",
                 "model": "res.partner"
             },
-            "date_order": "2024-03-24",
-            "last_updated": "2024-03-24T06:50:00",
+            "date_order": "2026-03-24",
+            "start_date": "2026-03-24T06:50:00",
+            "end_date":"2026-03-28:00:00",
             "product_count": 6,
             "percentage_delivered": 42,
             "decimal_field": 61.725,
