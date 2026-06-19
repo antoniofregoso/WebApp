@@ -12,7 +12,7 @@ from app.core.exceptions import (
     ValidationException,
 )
 from app.core.security.jwt_manager import JWTManager
-from app.domains.users.models.user import User
+from app.domains.users.models.user import UserUser
 from app.domains.users.repository.user_repository import UserRepository
 
 
@@ -50,7 +50,7 @@ class AuthService:
             password, existing_user.password
         ):
             raise AuthenticationException("Invalid email or password")
-        if existing_user.disabled:
+        if not existing_user.active:
             raise AuthorizationException("User account is disabled")
 
         token = JWTManager.generate_token({"sub": existing_user.email})
@@ -69,7 +69,7 @@ class AuthService:
         if await UserRepository.get_by_email(normalized_email):
             raise DuplicateEntryException(field="email", value=normalized_email)
 
-        new_user = User(
+        new_user = UserUser(
             name=normalized_name,
             email=normalized_email,
             password=cls.hash_password(password),

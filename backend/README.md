@@ -61,6 +61,9 @@ Si prefieres ejecutarlo en tu máquina (requiere Python 3.10+ y una base de dato
     *   **Aplicar cambios:** `alembic upgrade head`
     *   **Revertir último cambio:** `alembic downgrade -1`
 
+La migración inicial crea desde cero la tabla `user_user` correspondiente al
+modelo `UserUser`.
+
 4.  **Ejecutar Servidor:**
     ```bash
     uvicorn main:app --reload

@@ -1,14 +1,14 @@
 import uuid as uuid_lib
 from sqlalchemy import select
 
-from app.domains.users.models.user import User
+from app.domains.users.models.user import UserUser
 from app.core.database.session import db
 
 
 class UserRepository:
 
     @staticmethod
-    async def create(user: User):
+    async def create(user: UserUser):
         async with db.session() as session:
             session.add(user)
             await session.commit()
@@ -18,21 +18,21 @@ class UserRepository:
     @staticmethod
     async def get_all():
         async with db.session() as session:
-            query = select(User)
+            query = select(UserUser)
             result = await session.execute(query)
             return result.scalars().all()
 
     @staticmethod
     async def get_user_by_uuid(user_uuid: uuid_lib.UUID):
         async with db.session() as session:
-            query = select(User).where(User.uuid == user_uuid)
+            query = select(UserUser).where(UserUser.uuid == user_uuid)
             result = await session.execute(query)
             return result.scalar_one_or_none()
 
     @staticmethod
     async def update(user_uuid: uuid_lib.UUID, user_data: dict):
         async with db.session() as session:
-            query = select(User).where(User.uuid == user_uuid)
+            query = select(UserUser).where(UserUser.uuid == user_uuid)
             result = await session.execute(query)
             user = result.scalar_one_or_none()
 
@@ -48,7 +48,7 @@ class UserRepository:
     @staticmethod
     async def delete(user_uuid: uuid_lib.UUID):
         async with db.session() as session:
-            query = select(User).where(User.uuid == user_uuid)
+            query = select(UserUser).where(UserUser.uuid == user_uuid)
             result = await session.execute(query)
             user = result.scalar_one_or_none()
 
@@ -61,6 +61,6 @@ class UserRepository:
     @staticmethod
     async def get_by_email(email: str):
         async with db.session() as session:
-            query = select(User).where(User.email == email)
+            query = select(UserUser).where(UserUser.email == email)
             result = await session.execute(query)
             return result.scalar_one_or_none()

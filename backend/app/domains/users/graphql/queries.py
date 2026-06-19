@@ -17,12 +17,12 @@ class UserQuery:
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         payload = JWTManager.verify_token(token)
         user = await UserService.get_by_email(payload["sub"])
-        if user.disabled:
+        if not user.active:
             raise AuthorizationException("User account is disabled")
         return UserType(
             id=user.id,
             uuid=user.uuid,
             name=user.name,
             email=user.email,
-            disabled=user.disabled,
+            active=user.active,
         )

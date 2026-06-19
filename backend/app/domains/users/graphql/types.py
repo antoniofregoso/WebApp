@@ -8,7 +8,7 @@ class UserType:
     uuid: uuid_lib.UUID
     name: str
     email: str
-    disabled: bool
+    active: bool
 
 
 @strawberry.input
