@@ -9,7 +9,7 @@ class UserRepository:
 
     @staticmethod
     async def create(user: User):
-        async with db as session:
+        async with db.session() as session:
             session.add(user)
             await session.commit()
             await session.refresh(user)
@@ -17,21 +17,21 @@ class UserRepository:
 
     @staticmethod
     async def get_all():
-        async with db as session:
+        async with db.session() as session:
             query = select(User)
             result = await session.execute(query)
             return result.scalars().all()
 
     @staticmethod
     async def get_user_by_uuid(user_uuid: uuid_lib.UUID):
-        async with db as session:
+        async with db.session() as session:
             query = select(User).where(User.uuid == user_uuid)
             result = await session.execute(query)
             return result.scalar_one_or_none()
 
     @staticmethod
     async def update(user_uuid: uuid_lib.UUID, user_data: dict):
-        async with db as session:
+        async with db.session() as session:
             query = select(User).where(User.uuid == user_uuid)
             result = await session.execute(query)
             user = result.scalar_one_or_none()
@@ -47,7 +47,7 @@ class UserRepository:
 
     @staticmethod
     async def delete(user_uuid: uuid_lib.UUID):
-        async with db as session:
+        async with db.session() as session:
             query = select(User).where(User.uuid == user_uuid)
             result = await session.execute(query)
             user = result.scalar_one_or_none()
@@ -60,7 +60,7 @@ class UserRepository:
 
     @staticmethod
     async def get_by_email(email: str):
-        async with db as session:
+        async with db.session() as session:
             query = select(User).where(User.email == email)
             result = await session.execute(query)
             return result.scalar_one_or_none()

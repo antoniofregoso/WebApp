@@ -1,31 +1,26 @@
 import uvicorn
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 import strawberry
 from sqlalchemy.sql import text
-from datetime import datetime
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.core.database.session import db
 from app.core.config.settings import settings
-from exceptions import (
-    AppException,
-    ValidationException,
-    AuthenticationException,
-    AuthorizationException,
-    ResourceNotFoundException,
-    DatabaseException,
-)
+from app.core.exceptions import AppException
 
 from app.domains.users.graphql.queries import UserQuery as Query
 from app.domains.users.graphql.mutations import UserMutation as Mutation
 
 from strawberry.fastapi import GraphQLRouter
-from logging_config import configure_logging, get_logger
+from app.core.logging import configure_logging, get_logger
 
 # Configurar logging al inicio
 configure_logging()
@@ -44,15 +39,23 @@ def create_error_response(
         "error_code": error_code,
         "message": message,
         "details": details or {},
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 
 def init_app():
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
+        logger.info("Iniciando aplicación...")
+        yield
+        logger.info("Cerrando conexión a base de datos...")
+        await db.close()
+
     apps = FastAPI(
-        title="API",
+        title=settings.APP_NAME,
         description="API description",
-        version="0.0.1",
+        version=settings.APP_VERSION,
+        lifespan=lifespan,
     )
 
     apps.add_middleware(
@@ -127,25 +130,14 @@ def init_app():
     apps.state.limiter = limiter
     apps.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
-    @apps.on_event("startup")
-    async def startup():
-        logger.info("Iniciando aplicación y conectando a base de datos...")
-        # await db.create_all()
-        pass
-
-    @apps.on_event("shutdown")
-    async def shutdown():
-        logger.info("Cerrando conexión a base de datos...")
-        await db.close()
-
     @apps.get("/")
-    def root():
+    async def root():
         return {"message": "Hello World"}
 
     @apps.get("/health")
     async def health_check():
         try:
-            async with db as session:
+            async with db.session() as session:
                 await session.execute(text("SELECT 1"))
             return {"status": "healthy", "database": "online"}
         except Exception as e:

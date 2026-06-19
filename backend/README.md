@@ -33,7 +33,7 @@ Este proyecto utiliza **Alembic** para gestionar los cambios en la estructura de
 
 Ejecuta estos comandos en otra terminal mientras los contenedores están corriendo (`docker-compose up -d`):
 
-1.  **Crear la migración inicial o nueva** (Ejecutar después de modificar modelos en `Models/`):
+1.  **Crear una migración nueva** (después de modificar modelos en `app/domains/`):
     ```bash
     docker-compose exec web alembic revision --autogenerate -m "descripcion_del_cambio"
     ```
@@ -53,7 +53,8 @@ Si prefieres ejecutarlo en tu máquina (requiere Python 3.10+ y una base de dato
     ```
 
 2.  **Configurar entorno:**
-    Crea un archivo `.env` basado en las variables requeridas en `settings.py` (DB_CONFIG, SECRET_KEY, etc).
+    Crea un archivo `.env` basado en las variables requeridas en
+    `app/core/config/settings.py` (DB_CONFIG, SECRET_KEY, etc).
 
 3.  **Comandos de Migración:**
     *   **Crear migración:** `alembic revision --autogenerate -m "mensaje"`

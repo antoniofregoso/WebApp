@@ -26,15 +26,11 @@ python main.py
 
 ```
 backend/
-├── Models/           # ORM Models (SQLModel)
-├── Repository/       # Data access layer
-├── Service/          # Business logic
-├── Graphql/          # GraphQL mutations y queries
-├── Middleware/       # JWT, CORS, etc
+├── app/
+│   ├── core/         # Configuración, BD, seguridad y excepciones
+│   └── domains/      # Dominios, servicios, repositorios y GraphQL
+├── migrations/       # Migraciones de Alembic
 ├── tests/            # Tests con pytest
-├── exceptions.py     # Excepciones personalizadas
-├── schema.py         # Pydantic schemas
-├── settings.py       # Configuración
 ├── main.py           # FastAPI app
 └── requirements.txt  # Dependencias
 ```
@@ -44,10 +40,10 @@ backend/
 ## Ejemplo: Crear un nuevo servicio
 
 ```python
-# Service/product.py
-from logging_config import get_logger
-from exceptions import ResourceNotFoundException, DuplicateEntryException
-from Repository.product import ProductRepository
+# app/domains/products/service/product_service.py
+from app.core.logging import get_logger
+from app.core.exceptions import ResourceNotFoundException, DuplicateEntryException
+from app.domains.products.repository.product_repository import ProductRepository
 
 logger = get_logger(__name__)
 

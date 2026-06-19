@@ -14,7 +14,7 @@
   - Timestamps ISO
   - Campos adicionales (level, logger, module)
   - Silenciamiento de librerías ruidosas
-- **Ubicación**: `logging_config.py`
+- **Ubicación**: `app/core/logging.py`
 - **Uso**: `logger.info("message", extra={"key": "value"})`
 
 ## 3. **Testing** 🧪

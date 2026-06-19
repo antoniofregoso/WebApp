@@ -100,7 +100,7 @@ El logging ahora usa JSON estructurado para mejor análisis.
 ### Ejemplos de uso
 
 ```python
-from logging_config import get_logger
+from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -241,7 +241,7 @@ pip freeze > requirements.txt
 
 ```python
 # Service/user_service.py
-from logging_config import get_logger
+from app.core.logging import get_logger
 from exceptions import DuplicateEntryException, ResourceNotFoundException
 from main import limiter
 

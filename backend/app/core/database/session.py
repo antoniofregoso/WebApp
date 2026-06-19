@@ -1,5 +1,10 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from contextlib import asynccontextmanager
+
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlmodel import SQLModel
 
 from app.core.config.settings import settings
@@ -8,7 +13,7 @@ from app.core.config.settings import settings
 class DatabaseSession:
     def __init__(self, url: str = settings.DB_CONFIG):
         self.engine = create_async_engine(url, echo=settings.DB_ECHO)
-        self.SessionLocal = sessionmaker(
+        self.session_factory = async_sessionmaker(
             bind=self.engine, class_=AsyncSession, expire_on_commit=False
         )
 
@@ -23,19 +28,15 @@ class DatabaseSession:
     async def close(self):
         await self.engine.dispose()
 
-    async def __aenter__(self):
-        self.session = self.SessionLocal()
-        return self.session
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.session.close()
-
-    async def commit_rollback(self):
-        try:
-            await self.session.commit()
-        except Exception as e:
-            await self.session.rollback()
-            raise e
+    @asynccontextmanager
+    async def session(self):
+        """Entrega una sesión independiente y segura para cada operación."""
+        async with self.session_factory() as session:
+            try:
+                yield session
+            except Exception:
+                await session.rollback()
+                raise
 
 
 db = DatabaseSession()

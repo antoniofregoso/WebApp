@@ -1,10 +1,8 @@
 """Tests para las excepciones personalizadas."""
 
-import pytest
-from exceptions import (
+from app.core.exceptions import (
     ValidationException,
     AuthenticationException,
-    AuthorizationException,
     ResourceNotFoundException,
     DuplicateEntryException,
     DatabaseException,

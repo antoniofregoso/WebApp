@@ -1,31 +1,36 @@
 """Test configuration and fixtures."""
 
+from contextlib import asynccontextmanager
+
 import pytest
-from fastapi.testclient import TestClient
-import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+from httpx import ASGITransport, AsyncClient
 
-from main import app
-from app.core.database.session import db
+import main
+
+
+class FakeSession:
+    async def execute(self, _statement):
+        return None
+
+
+class FakeDatabase:
+    @asynccontextmanager
+    async def session(self):
+        yield FakeSession()
+
+    async def close(self):
+        return None
+
+
+@pytest.fixture(autouse=True)
+def fake_database(monkeypatch):
+    """Evita que las pruebas HTTP dependan de PostgreSQL."""
+    monkeypatch.setattr(main, "db", FakeDatabase())
 
 
 @pytest.fixture
-def client():
+async def client():
     """Crea un cliente de prueba para la aplicación."""
-    return TestClient(app)
-
-
-@pytest.fixture
-async def async_client():
-    """Crea un cliente asincrónico para la aplicación."""
-    async with TestClient(app) as client:
+    transport = ASGITransport(app=main.app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
-
-
-@pytest.fixture
-def event_loop():
-    """Crea un event loop para tests async."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()

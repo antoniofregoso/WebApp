@@ -1,6 +1,8 @@
 """
 Core: Infraestructura transversal de la aplicación.
-- security: JWT, autenticación, autorización
-- auth: Servicio de autenticación/registro
+- config: Configuración de entorno
+- database: Sesiones y motor de base de datos
+- logging: Logging estructurado
+- security: JWT y autorización
 - exceptions: Excepciones personalizadas de la app
 """

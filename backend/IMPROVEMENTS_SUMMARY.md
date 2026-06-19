@@ -21,7 +21,7 @@ async def get_users(request: Request):
 ---
 
 ### 2. **Logging Estructurado** 📝
-- **Archivo**: [logging_config.py](logging_config.py)
+- **Archivo**: [app/core/logging.py](app/core/logging.py)
 - **Características**:
   - Salida en formato JSON para fácil parseo
   - Timestamps ISO automáticos
@@ -43,7 +43,7 @@ async def get_users(request: Request):
 
 **Uso en código:**
 ```python
-from logging_config import get_logger
+from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 logger.info("User created", extra={"user_id": 123, "email": "user@example.com"})
@@ -59,7 +59,7 @@ logger.info("User created", extra={"user_id": 123, "email": "user@example.com"})
   - [tests/test_api.py](tests/test_api.py) - Tests de endpoints
   - [tests/test_exceptions.py](tests/test_exceptions.py) - Tests de excepciones
 
-**Estadísticas**: ✅ 16/16 tests pasando
+**Estadísticas**: ✅ 15/15 tests pasando
 
 **Comandos útiles:**
 ```bash
@@ -114,7 +114,7 @@ pylint Service/ Repository/
 | [pyproject.toml](pyproject.toml) | Config de Black y Pytest |
 | [.flake8](.flake8) | Config de Flake8 |
 | [requirements.txt](requirements.txt) | Dependencias del proyecto |
-| [settings.py](settings.py) | Variables de entorno |
+| [app/core/config/settings.py](app/core/config/settings.py) | Variables de entorno |
 
 ---
 

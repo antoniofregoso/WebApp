@@ -3,7 +3,8 @@ import strawberry
 from app.domains.users.graphql.types import UserType
 from app.core.security.jwt_bearer import IsAuthenticated
 from app.core.security.jwt_manager import JWTManager
-from app.domains.users.repository.user_repository import UserRepository
+from app.core.exceptions import AuthorizationException
+from app.domains.users.service.user_service import UserService
 
 
 @strawberry.type
@@ -15,7 +16,9 @@ class UserQuery:
         request = info.context["request"]
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         payload = JWTManager.verify_token(token)
-        user = await UserRepository.get_by_email(payload["sub"])
+        user = await UserService.get_by_email(payload["sub"])
+        if user.disabled:
+            raise AuthorizationException("User account is disabled")
         return UserType(
             id=user.id,
             uuid=user.uuid,
