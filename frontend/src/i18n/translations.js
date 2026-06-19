@@ -36,6 +36,30 @@ const translations = {
     'topbar.page_next':     { en: 'Next page',     es: 'Página siguiente' },
     'topbar.page_status':   { en: 'Page 1 of 10',  es: 'Página 1 de 10' },
 
+    // ── Authentication ──────────────────────────────────────────────────────
+    'auth.login.aria':      { en: 'Login', es: 'Inicio de sesión' },
+    'auth.login.eyebrow':   { en: 'Template workspace', es: 'Espacio de trabajo' },
+    'auth.login.title':     { en: 'Sign in to your app', es: 'Inicia sesión en tu aplicación' },
+    'auth.login.subtitle':  {
+        en: 'A clean starting point to generate modern web applications.',
+        es: 'Un punto de partida limpio para crear aplicaciones web modernas.'
+    },
+    'auth.email':           { en: 'Email', es: 'Correo electrónico' },
+    'auth.email.placeholder': { en: 'name@company.com', es: 'nombre@empresa.com' },
+    'auth.password':        { en: 'Password', es: 'Contraseña' },
+    'auth.remember':        { en: 'Remember me', es: 'Recordarme' },
+    'auth.forgot_password': { en: 'Forgot password?', es: '¿Olvidaste tu contraseña?' },
+    'auth.sign_in':         { en: 'Sign in', es: 'Iniciar sesión' },
+    'auth.reset.aria':      { en: 'Password reset', es: 'Restablecimiento de contraseña' },
+    'auth.reset.eyebrow':   { en: 'Account recovery', es: 'Recuperación de cuenta' },
+    'auth.reset.title':     { en: 'Reset your password', es: 'Restablece tu contraseña' },
+    'auth.reset.subtitle':  {
+        en: 'Enter your email address and we’ll send you instructions to reset your password.',
+        es: 'Ingresa tu correo electrónico y te enviaremos instrucciones para restablecer tu contraseña.'
+    },
+    'auth.reset.submit':    { en: 'Send reset instructions', es: 'Enviar instrucciones' },
+    'auth.back_to_login':   { en: 'Back to sign in', es: 'Volver al inicio de sesión' },
+
     // ── Calendar ─────────────────────────────────────────────────────────────
     'calendar.today':       { en: 'Today',        es: 'Hoy' },
     'calendar.month':       { en: 'Month',        es: 'Mes' },

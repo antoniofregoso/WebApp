@@ -1,39 +1,41 @@
 
-export function renderLogin(lang) {
+import { t } from '../../i18n/translations.js';
+
+export function renderLogin(lang = 'en') {
     return `
     <main class="app-shell login-page">
-        <section class="login-panel" aria-label="Login">
+        <section class="login-panel" aria-label="${t('auth.login.aria', lang)}">
             <div class="login-brand">
                 <img class="login-logo" src="/logo.png" alt="WebApp logo" />
                 <span class="login-brand-name">WebApp</span>
             </div>
 
             <div class="login-copy">
-                <p class="login-eyebrow">Template workspace</p>
-                <h1 class="login-title">Sign in to your app</h1>
-                <p class="login-subtitle">A clean starting point to generate modern web applications.</p>
+                <p class="login-eyebrow">${t('auth.login.eyebrow', lang)}</p>
+                <h1 class="login-title">${t('auth.login.title', lang)}</h1>
+                <p class="login-subtitle">${t('auth.login.subtitle', lang)}</p>
             </div>
 
             <form class="login-form" action="#">
                 <label class="login-field">
-                    <span>Email</span>
-                    <input type="email" name="email" placeholder="name@company.com" autocomplete="email" />
+                    <span>${t('auth.email', lang)}</span>
+                    <input type="email" name="email" placeholder="${t('auth.email.placeholder', lang)}" autocomplete="email" />
                 </label>
 
                 <label class="login-field">
-                    <span>Password</span>
+                    <span>${t('auth.password', lang)}</span>
                     <input type="password" name="password" placeholder="••••••••" autocomplete="current-password" />
                 </label>
 
                 <div class="login-row">
                     <label class="login-check">
                         <input type="checkbox" name="remember" />
-                        <span>Remember me</span>
+                        <span>${t('auth.remember', lang)}</span>
                     </label>
-                    <a href="#" class="login-link">Forgot password?</a>
+                    <a href="/password_reset" class="login-link">${t('auth.forgot_password', lang)}</a>
                 </div>
 
-                <button class="login-submit" type="button">Sign in</button>
+                <button class="login-submit" type="button">${t('auth.sign_in', lang)}</button>
             </form>
         </section>
     </main>
