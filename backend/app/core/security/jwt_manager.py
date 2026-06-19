@@ -1,17 +1,19 @@
 from typing import Optional
 from datetime import datetime, timedelta, timezone
 import jwt
-from settings import settings
-
 import logging
+
+from app.core.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
 
 class JWTManager:
+    """Gestiona la generación y verificación de tokens JWT."""
 
     @staticmethod
-    def generate_token(data: dict, expires_delta: Optional[timedelta] = None):
+    def generate_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+        """Genera un token JWT firmado con los datos proporcionados."""
         to_encode = data.copy()
         if expires_delta:
             expire = datetime.now(timezone.utc) + expires_delta
@@ -27,7 +29,8 @@ class JWTManager:
         return encoded_jwt
 
     @staticmethod
-    def verify_token(token: str):
+    def verify_token(token: str) -> dict:
+        """Verifica y decodifica un token JWT. Lanza ValueError si es inválido."""
         try:
             decoded = jwt.decode(
                 token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]

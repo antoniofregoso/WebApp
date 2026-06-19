@@ -1,3 +1,7 @@
+"""
+schema.py - Tipos base compartidos de GraphQL.
+Los tipos de usuarios (UserType, LoginType, etc.) están en app/domains/users/graphql/types.py
+"""
 import strawberry
 from typing import Optional, Any, Dict
 
@@ -20,35 +24,3 @@ class ErrorResponse:
     message: str
     details: Optional[Dict[str, Any]] = None
     timestamp: Optional[str] = None
-
-
-@strawberry.type
-class NoteType:
-    id: int
-    name: str
-    description: str
-
-
-@strawberry.input
-class NoteInput:
-    name: str
-    description: str
-
-
-@strawberry.input
-class RegisterInput:
-    name: str
-    email: str
-    password: str
-
-
-@strawberry.input
-class LoginInput:
-    email: str
-    password: str
-
-
-@strawberry.type
-class LoginType:
-    email: str
-    token: str

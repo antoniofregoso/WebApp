@@ -10,8 +10,8 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-from config import db
-from settings import settings
+from app.core.database.session import db
+from app.core.config.settings import settings
 from exceptions import (
     AppException,
     ValidationException,
@@ -21,8 +21,8 @@ from exceptions import (
     DatabaseException,
 )
 
-from Graphql.query import Query
-from Graphql.mutation import Mutation
+from app.domains.users.graphql.queries import UserQuery as Query
+from app.domains.users.graphql.mutations import UserMutation as Mutation
 
 from strawberry.fastapi import GraphQLRouter
 from logging_config import configure_logging, get_logger

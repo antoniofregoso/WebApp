@@ -1,6 +1,8 @@
-from Models.user import User
-from config import db
-from sqlalchemy import select, update, delete
+import uuid as uuid_lib
+from sqlalchemy import select
+
+from app.domains.users.models.user import User
+from app.core.database.session import db
 
 
 class UserRepository:
@@ -21,25 +23,22 @@ class UserRepository:
             return result.scalars().all()
 
     @staticmethod
-    async def get_by_id(id: int):
+    async def get_user_by_uuid(user_uuid: uuid_lib.UUID):
         async with db as session:
-            query = select(User).where(User.id == id)
+            query = select(User).where(User.uuid == user_uuid)
             result = await session.execute(query)
             return result.scalar_one_or_none()
 
     @staticmethod
-    async def update(id: int, user_data):
+    async def update(user_uuid: uuid_lib.UUID, user_data: dict):
         async with db as session:
-            # We locate the existing note
-            query = select(User).where(User.id == id)
+            query = select(User).where(User.uuid == user_uuid)
             result = await session.execute(query)
             user = result.scalar_one_or_none()
 
             if user:
-                # We expect note_data to be a dict
                 for key, value in user_data.items():
                     setattr(user, key, value)
-
                 session.add(user)
                 await session.commit()
                 await session.refresh(user)
@@ -47,9 +46,9 @@ class UserRepository:
             return None
 
     @staticmethod
-    async def delete(id: int):
+    async def delete(user_uuid: uuid_lib.UUID):
         async with db as session:
-            query = select(User).where(User.id == id)
+            query = select(User).where(User.uuid == user_uuid)
             result = await session.execute(query)
             user = result.scalar_one_or_none()
 

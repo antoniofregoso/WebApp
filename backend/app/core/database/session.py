@@ -1,9 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql import text
-
 from sqlmodel import SQLModel
-from settings import settings
+
+from app.core.config.settings import settings
 
 
 class DatabaseSession:
@@ -24,12 +23,10 @@ class DatabaseSession:
     async def close(self):
         await self.engine.dispose()
 
-    # Prepare the context for the asynchronous operation
     async def __aenter__(self):
         self.session = self.SessionLocal()
         return self.session
 
-    # it is used to clean up resources,etc.
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.session.close()
 

@@ -3,7 +3,7 @@ import sys
 import json
 from datetime import datetime
 from pythonjsonlogger import jsonlogger
-from settings import settings
+from app.core.config.settings import settings
 
 
 class CustomJsonFormatter(jsonlogger.JsonFormatter):
