@@ -1,7 +1,7 @@
 import uuid as uuid_lib
 from sqlalchemy import select
 
-from app.domains.users.models.user import UserUser
+from app.domains.users.models.user_user import UserUser
 from app.core.database.session import db
 
 

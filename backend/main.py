@@ -16,8 +16,10 @@ from app.core.database.session import db
 from app.core.config.settings import settings
 from app.core.exceptions import AppException
 
-from app.domains.users.graphql.queries import UserQuery as Query
-from app.domains.users.graphql.mutations import UserMutation as Mutation
+from app.domains.core.graphql.mutations import CoreMutation
+from app.domains.core.graphql.queries import CoreQuery
+from app.domains.users.graphql.queries import UserQuery
+from app.domains.users.graphql.mutations import UserMutation
 
 from strawberry.fastapi import GraphQLRouter
 from app.core.logging import configure_logging, get_logger
@@ -28,6 +30,16 @@ logger = get_logger(__name__)
 
 # Configurar rate limiter
 limiter = Limiter(key_func=get_remote_address)
+
+
+@strawberry.type
+class Query(UserQuery, CoreQuery):
+    pass
+
+
+@strawberry.type
+class Mutation(UserMutation, CoreMutation):
+    pass
 
 
 def create_error_response(

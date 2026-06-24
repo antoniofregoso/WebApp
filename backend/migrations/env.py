@@ -8,7 +8,7 @@ from alembic import context
 from sqlmodel import SQLModel
 
 # Importar modelos para que Alembic los detecte en autogenerate
-from app.domains.users.models.user import UserUser  # noqa: F401
+from app.domains.users.models.user_user import UserUser  # noqa: F401
 from app.core.config.settings import settings
 
 config = context.config

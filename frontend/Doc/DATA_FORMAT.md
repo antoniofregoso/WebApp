@@ -8,6 +8,9 @@
 - date
 - datetime
 - boolean
+- image
+- text
+- html
 - many2one
 - many2one_avatar
 - many2many

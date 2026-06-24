@@ -12,7 +12,7 @@ from app.core.exceptions import (
     ValidationException,
 )
 from app.core.security.jwt_manager import JWTManager
-from app.domains.users.models.user import UserUser
+from app.domains.users.models.user_user import UserUser
 from app.domains.users.repository.user_repository import UserRepository
 
 
