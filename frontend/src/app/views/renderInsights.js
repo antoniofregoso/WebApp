@@ -171,7 +171,7 @@ export function renderInsights(data = {}, lang = 'en') {
             </header>
             ${renderKpis(data?.kpis, period, lang)}
             ${renderGauges(_gauges, lang)}
-            ${renderInsightGraphics(_graphics, lang)}
+            ${renderInsightGraphics(_graphics, lang, data?.layout)}
         </div>
     </main>
     `;

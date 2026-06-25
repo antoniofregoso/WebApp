@@ -31,17 +31,33 @@ function formatValue(value, lang) {
     }).format(Number(value) || 0);
 }
 
-export function renderInsightGraphics(graphics = [], lang = 'en') {
+export function renderInsightGraphics(graphics = [], lang = 'en', layout = {}) {
     if (!Array.isArray(graphics) || graphics.length === 0) return '';
+
+    const cols = Math.max(1, parseInt(layout?.graphics) || 1);
 
     return `
     <section class="insight-section" aria-labelledby="insight-graphics-title">
         <h3 id="insight-graphics-title" class="sr-only">Graphics</h3>
-        <div class="insight-graphic-grid">
+        <div class="insight-graphic-grid" style="--graphic-cols:${cols}" data-graphic-cols="${cols}">
             ${graphics.map((graphic, index) => `
             <article class="insight-graphic-card">
                 <div class="insight-graphic-head">
                     <h4 class="insight-graphic-title">${escape(getLocalized(graphic.title, lang))}</h4>
+                    <button
+                        class="insight-graphic-expand"
+                        type="button"
+                        aria-label="${lang === 'es' ? 'Expandir a pantalla completa' : 'Expand to fullscreen'}"
+                        data-label-expand="${lang === 'es' ? 'Expandir a pantalla completa' : 'Expand to fullscreen'}"
+                        data-label-compress="${lang === 'es' ? 'Salir de pantalla completa' : 'Exit fullscreen'}"
+                    >
+                        <svg class="icon-expand" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <path d="M1 6V1h5M15 6V1h-5M1 10v5h5M15 10v5h-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg class="icon-compress" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <path d="M6 1v5H1M10 1v5h5M6 15v-5H1M10 15v-5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
                 </div>
                 <div
                     class="insight-graphic-chart"
@@ -99,6 +115,11 @@ function getFallbackLayers(data) {
     return [sources, middle, targets].filter((layer) => layer.length > 0);
 }
 
+function truncateText(text, maxChars) {
+    if (!text || text.length <= maxChars) return text;
+    return text.slice(0, Math.max(2, maxChars - 1)) + '…';
+}
+
 function renderFallbackSankey(graphic, lang) {
     const data = getSankeyData(graphic, lang);
     const width = 1180;
@@ -110,10 +131,17 @@ function renderFallbackSankey(graphic, lang) {
     const positions = new Map();
     const nodeMap = new Map(data.nodes.map((node) => [node.id, node]));
 
-    layers.forEach((layer, layerIndex) => {
-        const x = layers.length === 1
+    const layerXPositions = layers.map((_, i) =>
+        layers.length === 1
             ? (width / 2) - (nodeWidth / 2)
-            : 24 + ((width - 64) * layerIndex / (layers.length - 1));
+            : 24 + ((width - 64) * i / (layers.length - 1))
+    );
+
+    const nodeLayerIndex = new Map();
+    layers.forEach((layer, i) => layer.forEach((id) => nodeLayerIndex.set(id, i)));
+
+    layers.forEach((layer, layerIndex) => {
+        const x = layerXPositions[layerIndex];
         const gap = Math.max(18, (height - 60 - (layer.length * nodeHeight)) / Math.max(layer.length - 1, 1));
 
         layer.forEach((id, index) => {
@@ -121,6 +149,22 @@ function renderFallbackSankey(graphic, lang) {
             const y = Math.max(24, ((height - totalHeight) / 2) + (index * (nodeHeight + gap)));
             positions.set(id, { x, y });
         });
+    });
+
+    const CHAR_WIDTH = 7;
+    const LABEL_PADDING = 8;
+
+    const layerMaxChars = layerXPositions.map((x, i) => {
+        const isLeft = x < width / 2;
+        let availableWidth;
+        if (isLeft) {
+            const nextX = i + 1 < layerXPositions.length ? layerXPositions[i + 1] : width - 4;
+            availableWidth = nextX - (x + nodeWidth + LABEL_PADDING) - 4;
+        } else {
+            const prevX = i - 1 >= 0 ? layerXPositions[i - 1] + nodeWidth : 4;
+            availableWidth = (x - LABEL_PADDING) - prevX - 4;
+        }
+        return Math.max(6, Math.floor(availableWidth / CHAR_WIDTH));
     });
 
     const edges = data.edges.map((edge, index) => {
@@ -160,13 +204,16 @@ function renderFallbackSankey(graphic, lang) {
         if (!position) return '';
         const labelX = position.x < width / 2 ? position.x + nodeWidth + 8 : position.x - 8;
         const anchor = position.x < width / 2 ? 'start' : 'end';
+        const fullTitle = nodeMap.get(node.id)?.title ?? node.id;
+        const layerIdx = nodeLayerIndex.get(node.id) ?? 0;
+        const displayTitle = truncateText(fullTitle, layerMaxChars[layerIdx]);
 
         return `
             <g
                 class="insight-sankey-node"
                 tabindex="0"
                 data-node="${escapeAttribute(node.id)}"
-                data-node-title="${escapeAttribute(nodeMap.get(node.id)?.title ?? node.id)}"
+                data-node-title="${escapeAttribute(fullTitle)}"
             >
                 <rect
                     x="${position.x}"
@@ -184,7 +231,7 @@ function renderFallbackSankey(graphic, lang) {
                     fill="var(--dash-text)"
                     font-size="12"
                     font-weight="650"
-                >${escape(nodeMap.get(node.id)?.title ?? node.id)}</text>
+                >${escape(displayTitle)}</text>
             </g>`;
     }).join('');
 
@@ -329,8 +376,48 @@ function bindInteractiveSankey(el, lang) {
     });
 }
 
+function bindExpandButtons() {
+    document.querySelectorAll('.insight-graphic-expand').forEach((btn) => {
+        if (btn.dataset.expandBound) return;
+        btn.dataset.expandBound = 'true';
+
+        const card = btn.closest('.insight-graphic-card');
+        if (!card || !document.fullscreenEnabled) {
+            btn.hidden = true;
+            return;
+        }
+
+        btn.addEventListener('click', () => {
+            if (document.fullscreenElement === card) {
+                document.exitFullscreen();
+            } else {
+                card.requestFullscreen();
+            }
+        });
+
+        card.addEventListener('fullscreenchange', () => {
+            const isFullscreen = document.fullscreenElement === card;
+            btn.setAttribute('aria-label', isFullscreen
+                ? (btn.dataset.labelCompress ?? 'Exit fullscreen')
+                : (btn.dataset.labelExpand ?? 'Expand to fullscreen')
+            );
+
+            const tooltip = document.querySelector('[data-insight-sankey-tooltip]');
+            if (tooltip) {
+                if (isFullscreen) {
+                    card.appendChild(tooltip);
+                } else {
+                    document.body.appendChild(tooltip);
+                }
+            }
+        });
+    });
+}
+
 export function initInsightGraphics(graphics = [], lang = 'en') {
     const instances = [];
+
+    bindExpandButtons();
 
     document.querySelectorAll('[data-insight-graphic]').forEach((el) => {
         const index = Number(el.dataset.insightGraphic);
