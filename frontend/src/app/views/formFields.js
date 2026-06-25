@@ -43,7 +43,7 @@ export function createEmptyRecord(schema) {
     return schema.reduce((record, field) => {
         record[field.name] = field.type === 'boolean' ? false : field.type === 'many2many_pills' ? [] : '';
         return record;
-    }, { id: '', name: '' });
+    }, { uuid: '', name: '' });
 }
 
 function toDateInputValue(value) {

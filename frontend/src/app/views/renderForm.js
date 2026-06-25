@@ -14,30 +14,30 @@ function escape(value) {
         .replace(/>/g, '&gt;');
 }
 
-function findRelatedRecord(records, model, id) {
+function findRelatedRecord(records, model, uuid) {
     for (const record of records) {
         const related = Object.values(record).find((value) => (
             value &&
             typeof value === 'object' &&
             !Array.isArray(value) &&
             value.model === model &&
-            String(value.id) === String(id)
+            String(value.uuid) === String(uuid)
         ));
         if (related) return related;
     }
     return null;
 }
 
-function getRecord(data, recordId, recordModel) {
+function getRecord(data, routeUuid, recordModel) {
     const records = data?.records ?? [];
-    if (recordId == null) return records[0] ?? {};
+    if (routeUuid == null) return records[0] ?? {};
     const modelName = data?.model?.name;
     if (!recordModel || recordModel === modelName) {
-        return records.find((record) => String(record.id) === String(recordId)) ?? { id: recordId };
+        return records.find((record) => String(record.uuid) === String(routeUuid)) ?? { uuid: routeUuid };
     }
-    return findRelatedRecord(records, recordModel, recordId) ?? {
-        id: recordId,
-        name: `${recordModel} ${recordId}`,
+    return findRelatedRecord(records, recordModel, routeUuid) ?? {
+        uuid: routeUuid,
+        name: `${recordModel} ${routeUuid}`,
         model: recordModel,
     };
 }
@@ -47,7 +47,7 @@ function inferSchema(record, lang) {
         .filter((name) => name !== 'avatar')
         .map((name) => ({
             name,
-            type: name === 'id' ? 'integer' : 'string',
+            type: 'string',
             label: {
                 es: name === 'model' ? 'Modelo' : name === 'name' ? 'Nombre' : name,
                 en: name === 'model' ? 'Model' : name === 'name' ? 'Name' : name,
@@ -157,10 +157,10 @@ function renderFormActions(lang) {
  * Render a dynamic record form.
  * @param {object} data - model document ({ model, records })
  * @param {string} lang - 'es' | 'en'
- * @param {object} options - { recordModel, recordId, showWhatsapp }
+ * @param {object} options - { recordModel, recordUuid, showWhatsapp }
  */
 export function renderForm(data = {}, lang = 'en', options = {}) {
-    const record = getRecord(data, options.recordId, options.recordModel);
+    const record = getRecord(data, options.recordUuid, options.recordModel);
     const isMainModel = !options.recordModel || options.recordModel === data?.model?.name;
     const schema = isMainModel ? (data?.model?.schema ?? []) : inferSchema(record, lang);
     const modelTitle = isMainModel
@@ -177,7 +177,7 @@ export function renderForm(data = {}, lang = 'en', options = {}) {
 
     return `
     <main id="dashboard-content" class="dash-content" role="main" aria-label="Form" data-form-root data-form-mode="readonly">
-        <input type="hidden" data-id="${escape(record.id ?? '')}" value="${escape(record.id ?? '')}" />
+        <input type="hidden" data-uuid="${escape(record.uuid ?? '')}" value="${escape(record.uuid ?? '')}" />
         ${renderViewHeader({ title: modelTitle, lang })}
         <div class="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
             <section data-form-record class="rounded-xl border border-[var(--dash-border)]

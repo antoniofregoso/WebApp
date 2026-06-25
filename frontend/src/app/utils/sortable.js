@@ -9,7 +9,7 @@ import Sortable from 'sortablejs';
  * @param {string}   [options.handle] — selector of the drag handle inside each
  *                   item; omit to allow dragging from anywhere on the item.
  * @param {(ids: string[], evt: object) => void} [options.onReorder] — called
- *                   after a drag ends, with the children's `data-id` values in
+ *                   after a drag ends, with the children's `data-uuid` values in
  *                   their new order.
  * @param {object}   [options.sortableOptions] — extra SortableJS options.
  * @returns {() => void} cleanup function that destroys the instance.
@@ -24,7 +24,7 @@ export function makeSortable(el, { handle, onReorder, sortableOptions = {} } = {
         onEnd: (evt) => {
             if (onReorder) {
                 const ids = Array.from(el.children)
-                    .map((child) => child.dataset.id)
+                    .map((child) => child.dataset.uuid)
                     .filter(Boolean);
                 onReorder(ids, evt);
             }

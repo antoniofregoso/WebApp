@@ -18,11 +18,11 @@ let _lastArea = null;
 let _lastView = null;
 let _lastRecordRoute = false;
 let _lastRecordModel = null;
-let _lastRecordId = null;
+let _lastRecordUuid = null;
 let _effectCleanup = null;
 let _currentSubarea = null;
 let _currentRecordModel = null;
-let _currentRecordId = null;
+let _currentRecordUuid = null;
 
 // ── View renderers (dock view-switch buttons) ─────────────────────────────────
 const VIEW_RENDERERS = {
@@ -48,11 +48,11 @@ function getView(state) {
 }
 
 function getEffectiveView(view) {
-    return _currentRecordModel && _currentRecordId != null ? 'form' : view;
+    return _currentRecordModel && _currentRecordUuid != null ? 'form' : view;
 }
 
 function hasRecordRoute() {
-    return _currentRecordModel && _currentRecordId != null;
+    return _currentRecordModel && _currentRecordUuid != null;
 }
 
 /** Render the content markup for the currently selected view. */
@@ -66,7 +66,7 @@ function renderView(view, area, lang) {
         const commercialAreas = new Set(['crm', 'sales', 'sale', 'ventas']);
         return renderFn(demoData, lang, {
             recordModel: _currentRecordModel,
-            recordId: _currentRecordId,
+            recordUuid: _currentRecordUuid,
             showWhatsapp: commercialAreas.has(area),
         });
     }
@@ -177,7 +177,7 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
     const recordRouteChanged =
         hasRecordRoute() !== _lastRecordRoute ||
         _currentRecordModel !== _lastRecordModel ||
-        _currentRecordId !== _lastRecordId;
+        _currentRecordUuid !== _lastRecordUuid;
 
     if (expandedChanged && !langChanged && !areaChanged) {
         updateSidebarExpansion(expanded);
@@ -243,10 +243,10 @@ export function dashboard(req, router) {
     _router = router;
     const areaFromUrl = req.params?.area;
     const prevSubarea = _currentSubarea;
-    const hadRecordRoute = _currentRecordModel && _currentRecordId != null;
+    const hadRecordRoute = _currentRecordModel && _currentRecordUuid != null;
     _currentSubarea = req.params?.subarea ?? null;
     _currentRecordModel = req.params?.model ?? null;
-    _currentRecordId = req.params?.id ?? null;
+    _currentRecordUuid = req.params?.uuid ?? null;
     const isRecordRoute = hasRecordRoute();
     if (!MENU_ITEMS.some(item => item.key === areaFromUrl)) {
         if (areaFromUrl!=undefined) {return router.trigger404(req.pathname);}
@@ -288,7 +288,7 @@ export function dashboard(req, router) {
     _lastView = view;
     _lastRecordRoute = isRecordRoute;
     _lastRecordModel = _currentRecordModel;
-    _lastRecordId = _currentRecordId;
+    _lastRecordUuid = _currentRecordUuid;
 
     // ── Cleanup previous effect if navigating back to this page ──────────────
     if (_effectCleanup) {
@@ -313,7 +313,7 @@ export function dashboard(req, router) {
             newView !== _lastView ||
             hasRecordRoute() !== _lastRecordRoute ||
             _currentRecordModel !== _lastRecordModel ||
-            _currentRecordId !== _lastRecordId;
+            _currentRecordUuid !== _lastRecordUuid;
 
         if (!changed) return;
 
@@ -329,6 +329,6 @@ export function dashboard(req, router) {
         _lastView = newView;
         _lastRecordRoute = hasRecordRoute();
         _lastRecordModel = _currentRecordModel;
-        _lastRecordId = _currentRecordId;
+        _lastRecordUuid = _currentRecordUuid;
     });
 }

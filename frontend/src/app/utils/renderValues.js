@@ -16,9 +16,9 @@ export function renderValue(data, type, locale, currency, model) {
         case 'boolean':
             return data;
         case 'many2one':
-            return `<a href="/model/${model}/${data.id}">${data.name?.[locale.slice(0, 2)] || data}</a>`;
+            return `<a href="/model/${model}/${data.uuid}">${data.name?.[locale.slice(0, 2)] || data}</a>`;
         case 'many2one_avatar':
-            return `<a href="/model/${model}/${data.id}"><figure class="image is-24x24"><img class="is-rounded" src="${data.avatar}" alt="${data.name?.[locale.slice(0, 2)] || data}" /></figure></a>`;
+            return `<a href="/model/${model}/${data.uuid}"><figure class="image is-24x24"><img class="is-rounded" src="${data.avatar}" alt="${data.name?.[locale.slice(0, 2)] || data}" /></figure></a>`;
         case 'many2many':
             return data;
         case 'many2many_pills':

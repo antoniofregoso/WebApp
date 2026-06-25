@@ -145,15 +145,15 @@ function toCalendarEvents(data = {}, lang = 'en') {
             const status = statuses.find((option) => option.value === record.status);
 
             return {
-                id: record.id,
-                title: record.name ?? String(record.id ?? ''),
+                id: record.uuid,
+                title: record.name ?? String(record.uuid ?? ''),
                 customer: record.customer?.name ?? '',
                 startsAt,
                 endsAt,
                 status: record.status,
                 statusLabel: status?.[lang] ?? record.status ?? '',
                 color: status?.color,
-                href: modelName && record.id != null ? buildRecordUrl(modelName, record.id) : '',
+                href: modelName && record.uuid != null ? buildRecordUrl(modelName, record.uuid) : '',
             };
         })
         .filter(Boolean)

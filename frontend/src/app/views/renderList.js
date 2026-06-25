@@ -103,12 +103,12 @@ function getRows(records, columns, statusLabels, modelName, lang) {
         const cells = columns.map((field) => {
             const align = NUMERIC_TYPES.has(field.type) ? 'text-right' : 'text-left';
             return `<td class="${align} whitespace-nowrap px-4 py-2.5 text-[var(--dash-text)]">
-                ${formatCell(field, record[field.name], statusLabels, modelName, record.id, lang)}
+                ${formatCell(field, record[field.name], statusLabels, modelName, record.uuid, lang)}
             </td>`;
         }).join('');
-        return `<tr data-id="${escape(record.id)}"
+        return `<tr data-uuid="${escape(record.uuid ?? '')}"
                     class="border-b border-[var(--dash-border-soft)] last:border-0
-                    transition-colors hover:bg-[var(--dash-surface-hover)]">${dragHandleCell()}${selectionCell(record.id, lang)}${cells}</tr>`;
+                    transition-colors hover:bg-[var(--dash-surface-hover)]">${dragHandleCell()}${selectionCell(record.uuid, lang)}${cells}</tr>`;
     }).join('');
 }
 
@@ -136,7 +136,7 @@ function selectionHeaderCell(lang) {
 }
 
 /** Row checkbox shown after the drag handle. */
-function selectionCell(id, lang) {
+function selectionCell(uuid, lang) {
     const label = lang === 'es' ? 'Seleccionar fila' : 'Select row';
     return `<td class="w-10 px-2 text-center align-middle">
         <input type="checkbox"
@@ -144,13 +144,13 @@ function selectionCell(id, lang) {
                 bg-[var(--dash-surface)] accent-[var(--dash-text-muted)]
                 focus:ring-2 focus:ring-[var(--dash-border)] focus:ring-offset-0"
             aria-label="${escape(label)}"
-            value="${escape(id)}" />
+            value="${escape(uuid)}" />
     </td>`;
 }
 
 // ── Cell formatting per field type ──────────────────────────────────────────────
 
-function formatCell(field, value, statusLabels, modelName, recordId, lang) {
+function formatCell(field, value, statusLabels, modelName, recordUuidValue, lang) {
     if (value === null || value === undefined || value === '') {
         // image still renders a placeholder; everything else shows a muted dash.
         if (field.type !== 'image') {
@@ -159,7 +159,7 @@ function formatCell(field, value, statusLabels, modelName, recordId, lang) {
     }
 
     if (field.name === 'name') {
-        return recordNameCell(value, modelName, recordId);
+        return recordNameCell(value, modelName, recordUuidValue);
     }
 
     switch (field.type) {
@@ -208,22 +208,22 @@ function formatCell(field, value, statusLabels, modelName, recordId, lang) {
 }
 
 /**
- * many2one link → "{current path}/{model}/{id}".
+ * many2one link → "{current path}/{model}/{uuid}".
  * The href is built as a safe, encoded string (segments URL-encoded, then
  * HTML-escaped). How the link actually resolves/navigates is intentionally
  * left for later — for now it's just a well-formed, escaped string.
  */
 function manyToOneCell(value) {
     const name = escape(value?.name ?? '');
-    if (!value || value.id == null || !value.model) return name;
-    const href = buildRecordUrl(value.model, value.id);
+    if (!value || value.uuid == null || !value.model) return name;
+    const href = buildRecordUrl(value.model, value.uuid);
     return `<a href="${href}" class="text-[var(--dash-accent)] hover:underline">${name}</a>`;
 }
 
-function recordNameCell(value, model, id) {
+function recordNameCell(value, model, uuid) {
     const name = escape(value);
-    if (!model || id == null) return name;
-    const href = buildRecordUrl(model, id);
+    if (!model || uuid == null) return name;
+    const href = buildRecordUrl(model, uuid);
     return `<a href="${href}" class="font-medium text-[var(--dash-accent)] hover:underline">${name}</a>`;
 }
 
@@ -335,9 +335,9 @@ export function initList(lang = 'en') {
 
     const destroySortable = makeSortable(tbody, {
         handle: '.js-list-drag-handle',
-        onReorder: (ids) => {
-            // New row order, by record id. Persisting it is decided later.
-            console.debug('list reordered:', ids);
+        onReorder: (uuids) => {
+            // New row order, by record uuid. Persisting it is decided later.
+            console.debug('list reordered:', uuids);
         },
     });
 

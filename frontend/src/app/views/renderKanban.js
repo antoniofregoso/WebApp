@@ -2,7 +2,7 @@
  * Kanban view — records grouped into columns by their `status` (selection).
  *  · Columns come from model.status; cards are the records in each status.
  *  · Cards are drag-sortable within and across columns (SortableJS, shared
- *    group), using the same grip handle + data-id pattern as the list view.
+ *    group), using the same grip handle + data-uuid pattern as the list view.
  *  · Themed with the dashboard design tokens (--dash-*) and Tailwind utilities.
  *
  * Expected shape (see data/demo.json):
@@ -108,11 +108,11 @@ function renderColumn(status, cards, currency, modelName, lang) {
 
 function renderCard(record, currency, modelName, lang) {
     const customerName = escape(record.customer?.name ?? '');
-    const customerHref = record.customer?.model && record.customer?.id != null
-        ? buildRecordUrl(record.customer.model, record.customer.id)
+    const customerHref = record.customer?.model && record.customer?.uuid != null
+        ? buildRecordUrl(record.customer.model, record.customer.uuid)
         : '';
     const recordName = escape(record.name ?? '');
-    const recordHref = buildRecordUrl(modelName, record.id);
+    const recordHref = buildRecordUrl(modelName, record.uuid);
     const amount = record.amount_total != null
         ? escape(formatCurrency(Number(record.amount_total), locale(lang), currency))
         : '';
@@ -120,7 +120,7 @@ function renderCard(record, currency, modelName, lang) {
     const pct = Math.max(0, Math.min(100, Number(record.percentage_delivered) || 0));
 
     return `
-    <article data-id="${escape(record.id)}"
+    <article data-uuid="${escape(record.uuid ?? '')}"
              class="group rounded-lg border border-[var(--dash-border)] bg-[var(--dash-bg)]
                     p-3 shadow-sm transition-shadow hover:shadow-md">
         <div class="flex items-start justify-between gap-2">
@@ -186,9 +186,9 @@ export function initKanban(lang = 'en') {
             onReorder: (_ids, evt) => {
                 // Card dropped in a different column → its status becomes that column's.
                 if (evt.from !== evt.to) {
-                    const cardId = evt.item?.dataset.id;
+                    const cardUuid = evt.item?.dataset.uuid;
                     const toStatus = evt.to?.dataset.status;
-                    const record = _records.find((r) => String(r.id) === cardId);
+                    const record = _records.find((r) => String(r.uuid) === cardUuid);
                     if (record) record.status = toStatus;
                 }
                 refreshColumnCounts();
