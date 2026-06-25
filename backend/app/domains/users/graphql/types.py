@@ -1,5 +1,6 @@
 import strawberry
 import uuid as uuid_lib
+from typing import Optional
 
 
 @strawberry.type
@@ -8,6 +9,9 @@ class UserType:
     uuid: uuid_lib.UUID
     name: str
     email: str
+    avatar_url: Optional[str]
+    theme: str
+    lang: Optional[str]
     active: bool
 
 

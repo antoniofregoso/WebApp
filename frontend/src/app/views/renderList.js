@@ -12,7 +12,7 @@
 import {
     COLOR_CLASS, COLOR_FALLBACK, NUMERIC_TYPES, locale, makeSortable, buildRecordUrl,
 } from '../utils';
-import { icon, faGripVertical } from '../components/icon.js';
+import { icon, faGripVertical, faTrash, faBoxArchive } from '../components/icon.js';
 import { renderViewHeader } from '../components';
 import { initCreateModal, renderCreateModal } from './renderCreateModal.js';
 
@@ -30,10 +30,10 @@ function getListColumns(schema) {
         .map((field, index) => ({ field, index }))
         .filter(({ field }) => field.list !== undefined && field.list !== false)
         .sort((a, b) => {
-            const orderA = Number(a.field.list);
-            const orderB = Number(b.field.list);
-            const safeA = Number.isFinite(orderA) ? orderA : Number.MAX_SAFE_INTEGER;
-            const safeB = Number.isFinite(orderB) ? orderB : Number.MAX_SAFE_INTEGER;
+            const colA = typeof a.field.list === 'object' ? a.field.list.column : Number(a.field.list);
+            const colB = typeof b.field.list === 'object' ? b.field.list.column : Number(b.field.list);
+            const safeA = Number.isFinite(colA) ? colA : Number.MAX_SAFE_INTEGER;
+            const safeB = Number.isFinite(colB) ? colB : Number.MAX_SAFE_INTEGER;
             return safeA - safeB || a.index - b.index;
         })
         .map(({ field }) => field);
@@ -46,6 +46,26 @@ function getListColumns(schema) {
  * @param {object} data — the model document ({ model, records })
  * @param {string} lang — 'es' | 'en'
  */
+function renderSelectionActions(lang) {
+    const deleteLabel = lang === 'es' ? 'Borrar' : 'Delete';
+    const archiveLabel = lang === 'es' ? 'Archivar' : 'Archive';
+    return `
+        <button type="button" hidden
+            class="js-list-action topbar-action-btn"
+            data-list-delete
+            aria-label="${deleteLabel}"
+            data-tooltip="${deleteLabel}">
+            ${icon(faTrash, 'topbar-action-icon')}
+        </button>
+        <button type="button" hidden
+            class="js-list-action topbar-action-btn"
+            data-list-archive
+            aria-label="${archiveLabel}"
+            data-tooltip="${archiveLabel}">
+            ${icon(faBoxArchive, 'topbar-action-icon')}
+        </button>`;
+}
+
 export function renderList(data = {}, lang = 'en') {
     const schema = data?.model?.schema ?? [];
     const records = data?.records ?? [];
@@ -58,7 +78,7 @@ export function renderList(data = {}, lang = 'en') {
 
     return `
     <main id="dashboard-content" class="dash-content" role="main" aria-label="List">
-        ${renderViewHeader({ title, count: records.length, lang })}
+        ${renderViewHeader({ title, count: records.length, lang, actions: renderSelectionActions(lang) })}
         <div class="w-full overflow-hidden rounded-xl border border-[var(--dash-border)]
                     bg-[var(--dash-surface)] shadow-[var(--dash-shadow)]">
             ${hasData ? `
@@ -87,22 +107,55 @@ export function renderList(data = {}, lang = 'en') {
 
 // ── Header row ────────────────────────────────────────────────────────────────
 
+function sortIcon() {
+    return `<svg viewBox="0 0 8 10" class="h-2.5 w-2 shrink-0" fill="currentColor" aria-hidden="true">
+        <path class="js-sort-up" d="M4 0.5L7 4H1L4 0.5Z" opacity="0.35"/>
+        <path class="js-sort-down" d="M4 9.5L1 6H7L4 9.5Z" opacity="0.35"/>
+    </svg>`;
+}
+
 function getHeaders(columns, lang) {
     return columns.map((field) => {
         const align = NUMERIC_TYPES.has(field.type) ? 'text-right' : 'text-left';
         const label = field.label?.[lang] ?? field.name;
+        const canOrder = field.list?.order === true;
+        const sortBtn = canOrder
+            ? `<button type="button" data-sort-field="${escape(field.name)}" data-sort-dir=""
+                    class="js-list-sort ml-1 inline-flex items-center
+                           text-[var(--dash-text-soft)] hover:text-[var(--dash-text)]"
+                    aria-label="Sort by ${escape(label)}">${sortIcon()}</button>`
+            : '';
         return `<th class="${align} whitespace-nowrap px-4 py-2.5 text-xs font-semibold
-                    uppercase tracking-wide text-[var(--dash-text-muted)]">${escape(label)}</th>`;
+                    uppercase tracking-wide text-[var(--dash-text-muted)]">
+            <span class="inline-flex items-center gap-0.5">${escape(label)}${sortBtn}</span>
+        </th>`;
     }).join('');
 }
 
 // ── Body rows ─────────────────────────────────────────────────────────────────
 
+function getSortValue(field, value) {
+    if (value == null || value === '') return '';
+    switch (field.type) {
+        case 'many2one': return value?.name ?? '';
+        case 'date':
+        case 'datetime': return value;
+        case 'monetary':
+        case 'decimal':
+        case 'integer':
+        case 'percentage': return Number(value);
+        case 'boolean': return value ? 1 : 0;
+        default: return String(value);
+    }
+}
+
 function getRows(records, columns, statusLabels, modelName, lang) {
     return records.map((record) => {
         const cells = columns.map((field) => {
             const align = NUMERIC_TYPES.has(field.type) ? 'text-right' : 'text-left';
-            return `<td class="${align} whitespace-nowrap px-4 py-2.5 text-[var(--dash-text)]">
+            const sortAttr = field.list?.order === true
+                ? ` data-sort-value="${escape(String(getSortValue(field, record[field.name])))}"` : '';
+            return `<td class="${align} whitespace-nowrap px-4 py-2.5 text-[var(--dash-text)]"${sortAttr}>
                 ${formatCell(field, record[field.name], statusLabels, modelName, record.uuid, lang)}
             </td>`;
         }).join('');
@@ -304,16 +357,19 @@ export function initList(lang = 'en') {
     if (!tbody) return destroyCreateModal;
     const selectAll = document.querySelector('.js-list-select-all');
     const rowCheckboxes = Array.from(tbody.querySelectorAll('.js-list-row-select'));
+    const actionButtons = Array.from(document.querySelectorAll('.js-list-action'));
 
     const syncRowSelection = (checkbox) => {
         checkbox.closest('tr')?.classList.toggle('list-row--selected', checkbox.checked);
     };
 
     const syncSelectAll = () => {
-        if (!selectAll) return;
         const selectedCount = rowCheckboxes.filter((checkbox) => checkbox.checked).length;
-        selectAll.checked = selectedCount > 0 && selectedCount === rowCheckboxes.length;
-        selectAll.indeterminate = selectedCount > 0 && selectedCount < rowCheckboxes.length;
+        if (selectAll) {
+            selectAll.checked = selectedCount > 0 && selectedCount === rowCheckboxes.length;
+            selectAll.indeterminate = selectedCount > 0 && selectedCount < rowCheckboxes.length;
+        }
+        actionButtons.forEach((btn) => { btn.hidden = selectedCount === 0; });
     };
 
     const onSelectAllChange = () => {
@@ -333,6 +389,51 @@ export function initList(lang = 'en') {
     selectAll?.addEventListener('change', onSelectAllChange);
     rowCheckboxes.forEach((checkbox) => checkbox.addEventListener('change', onRowSelectChange));
 
+    // ── Column sort ────────────────────────────────────────────────────────────
+    const sortButtons = Array.from(document.querySelectorAll('.js-list-sort'));
+
+    const updateSortIcons = (activeBtn, dir) => {
+        sortButtons.forEach((btn) => {
+            const up = btn.querySelector('.js-sort-up');
+            const down = btn.querySelector('.js-sort-down');
+            if (btn === activeBtn) {
+                up?.setAttribute('opacity', dir === 'asc' ? '1' : '0.35');
+                down?.setAttribute('opacity', dir === 'desc' ? '1' : '0.35');
+            } else {
+                up?.setAttribute('opacity', '0.35');
+                down?.setAttribute('opacity', '0.35');
+            }
+        });
+    };
+
+    const onSortClick = (event) => {
+        const btn = event.currentTarget;
+        const th = btn.closest('th');
+        const colIndex = th.cellIndex;
+        const prevDir = btn.dataset.sortDir || '';
+        const newDir = prevDir === 'asc' ? 'desc' : 'asc';
+
+        sortButtons.forEach((b) => { b.dataset.sortDir = ''; });
+        btn.dataset.sortDir = newDir;
+        updateSortIcons(btn, newDir);
+
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.sort((a, b) => {
+            const aRaw = a.cells[colIndex]?.dataset.sortValue ?? '';
+            const bRaw = b.cells[colIndex]?.dataset.sortValue ?? '';
+            const aNum = Number(aRaw);
+            const bNum = Number(bRaw);
+            if (aRaw !== '' && bRaw !== '' && !Number.isNaN(aNum) && !Number.isNaN(bNum)) {
+                return newDir === 'asc' ? aNum - bNum : bNum - aNum;
+            }
+            const cmp = String(aRaw).localeCompare(String(bRaw));
+            return newDir === 'asc' ? cmp : -cmp;
+        });
+        rows.forEach((row) => tbody.appendChild(row));
+    };
+
+    sortButtons.forEach((btn) => btn.addEventListener('click', onSortClick));
+
     const destroySortable = makeSortable(tbody, {
         handle: '.js-list-drag-handle',
         onReorder: (uuids) => {
@@ -344,6 +445,7 @@ export function initList(lang = 'en') {
     return () => {
         selectAll?.removeEventListener('change', onSelectAllChange);
         rowCheckboxes.forEach((checkbox) => checkbox.removeEventListener('change', onRowSelectChange));
+        sortButtons.forEach((btn) => btn.removeEventListener('click', onSortClick));
         destroySortable();
         destroyCreateModal();
     };

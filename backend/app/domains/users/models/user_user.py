@@ -6,12 +6,13 @@ from pydantic import EmailStr, constr
 import uuid
 
 if TYPE_CHECKING:
-    from app.domains.core.models.core_message import CoreMessage
-    from app.domains.core.models.core_notification import CoreNotification
-    from app.domains.core.models.core_company import CoreCompany
+    from app.domains.system.models.system_message import SystemMessage
+    from app.domains.system.models.system_notification import SystemNotification
+    from app.domains.system.models.system_company import SystemCompany
+    from app.domains.system.models.system_lang import SystemLang
 
-from app.domains.core.models.core_message_user_rel import CoreMessageUserRel
-from app.domains.core.models.core_notification_user_rel import CoreNotificationUserRel
+from app.domains.system.models.system_message_user_rel import SystemMessageUserRel
+from app.domains.system.models.system_notification_user_rel import SystemNotificationUserRel
 
 
 class ThemeMode(str, Enum):
@@ -43,25 +44,38 @@ class UserUser(SQLModel, table=True):
     password: constr(min_length=8)
     avatar_url: Optional[str] = None
     theme: ThemeMode = Field(default=ThemeMode.system)
+    lang_id: Optional[int] = Field(default=None, foreign_key="system_langs.id")
+    lang: Optional["SystemLang"] = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "[UserUser.lang_id]"}
+    )
     user_type: UserType = Field(default=UserType.HUMAN)
     active: bool = Field(default=True)
-    company_id: Optional[int] = Field(default=None, foreign_key="core_companies.id", nullable=True)
-    company: Optional["CoreCompany"] = Relationship(back_populates="users")
+    company_id: Optional[int] = Field(default=None, foreign_key="system_companies.id", nullable=True)
+    company: Optional["SystemCompany"] = Relationship(
+        back_populates="users",
+        sa_relationship_kwargs={"foreign_keys": "[UserUser.company_id]"},
+    )
 
     # Messages sent by this user
-    sent_messages: List["CoreMessage"] = Relationship(back_populates="from_user")
+    sent_messages: List["SystemMessage"] = Relationship(
+        back_populates="from_user",
+        sa_relationship_kwargs={"foreign_keys": "[SystemMessage.from_user_id]"},
+    )
 
     # Messages received by this user
-    received_messages: List["CoreMessage"] = Relationship(
+    received_messages: List["SystemMessage"] = Relationship(
         back_populates="to_users",
-        link_model=CoreMessageUserRel,
+        link_model=SystemMessageUserRel,
     )
 
     # Notifications directed to this user (single target via user_id)
-    notifications: List["CoreNotification"] = Relationship(back_populates="user")
+    notifications: List["SystemNotification"] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"foreign_keys": "[SystemNotification.user_id]"},
+    )
 
     # Notifications where this user is one of many targets
-    group_notifications: List["CoreNotification"] = Relationship(
+    group_notifications: List["SystemNotification"] = Relationship(
         back_populates="users",
-        link_model=CoreNotificationUserRel,
+        link_model=SystemNotificationUserRel,
     )

@@ -1,5 +1,6 @@
 import uuid as uuid_lib
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.domains.users.models.user_user import UserUser
 from app.core.database.session import db
@@ -61,6 +62,10 @@ class UserRepository:
     @staticmethod
     async def get_by_email(email: str):
         async with db.session() as session:
-            query = select(UserUser).where(UserUser.email == email)
+            query = (
+                select(UserUser)
+                .where(UserUser.email == email)
+                .options(selectinload(UserUser.lang))
+            )
             result = await session.execute(query)
             return result.scalar_one_or_none()

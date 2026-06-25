@@ -29,6 +29,8 @@ import {
     faFloppyDisk,
     faPlus,
     faXmark,
+    faTrash,
+    faBoxArchive,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -65,6 +67,8 @@ library.add(
     faFloppyDisk,
     faPlus,
     faXmark,
+    faTrash,
+    faBoxArchive,
     faBell,
     faCircleUser,
     faEnvelope,
@@ -115,6 +119,8 @@ export {
     faFloppyDisk,
     faPlus,
     faXmark,
+    faTrash,
+    faBoxArchive,
     faBell,
     faCircleUser,
     faEnvelope,

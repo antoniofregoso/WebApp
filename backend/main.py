@@ -16,8 +16,8 @@ from app.core.database.session import db
 from app.core.config.settings import settings
 from app.core.exceptions import AppException
 
-from app.domains.core.graphql.mutations import CoreMutation
-from app.domains.core.graphql.queries import CoreQuery
+from app.domains.system.graphql.mutations import SystemMutation
+from app.domains.system.graphql.queries import SystemQuery
 from app.domains.users.graphql.queries import UserQuery
 from app.domains.users.graphql.mutations import UserMutation
 
@@ -33,12 +33,12 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 @strawberry.type
-class Query(UserQuery, CoreQuery):
+class Query(UserQuery, SystemQuery):
     pass
 
 
 @strawberry.type
-class Mutation(UserMutation, CoreMutation):
+class Mutation(UserMutation, SystemMutation):
     pass
 
 

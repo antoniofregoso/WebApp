@@ -7,7 +7,7 @@ function escape(value) {
         .replace(/>/g, '&gt;');
 }
 
-export function renderViewHeader({ title = '', count = null, lang = 'en', className = '' } = {}) {
+export function renderViewHeader({ title = '', count = null, lang = 'en', className = '', actions = '' } = {}) {
     const countMarkup = count === null || count === undefined
         ? ''
         : `<span class="text-xs text-[var(--dash-text-muted)]">${escape(count)}</span>`;
@@ -17,6 +17,9 @@ export function renderViewHeader({ title = '', count = null, lang = 'en', classN
             <h2 class="text-base font-semibold text-[var(--dash-text)]">${escape(title)}</h2>
             ${countMarkup}
         </div>
-        ${renderCreateButton(lang)}
+        <div class="flex items-center gap-2">
+            ${actions}
+            ${renderCreateButton(lang)}
+        </div>
     </header>`;
 }

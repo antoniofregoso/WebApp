@@ -1,0 +1,28 @@
+from typing import TYPE_CHECKING, Any, Optional
+
+from sqlalchemy import Index, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Field, Relationship, SQLModel
+
+from app.domains.system.models.system_audit import SystemAudit
+
+if TYPE_CHECKING:
+    from app.domains.system.models.system_app import SystemApp
+
+
+class SystemAppSettings(SystemAudit, SQLModel, table=True):
+    __tablename__ = "system_app_settings"
+    __table_args__ = (
+        UniqueConstraint("app_id", "key", name="uq_system_app_settings_app_key"),
+        Index("ix_system_app_settings_app_id", "app_id"),
+        Index("ix_system_app_settings_key", "key"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True, nullable=False)
+    app_id: int = Field(foreign_key="system_apps.id")
+    key: str = Field(index=True)
+    value: Any = Field(default=None, sa_type=JSONB)
+    app: "SystemApp" = Relationship(back_populates="settings_ids")
+
+
+from app.domains.system.models.system_app import SystemApp  

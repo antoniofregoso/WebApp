@@ -38,8 +38,7 @@
                 "label": {
                     "es": "uuid",
                     "en": "uuid"
-                },
-                "list": 1
+                }
             },
             {
                 "name": "name",
@@ -47,7 +46,12 @@
                 "label": {
                     "es": "Orden",
                     "en": "Order"
+                },
+                "list":{
+                    "column":1,
+                    "order":true
                 }
+
             },
             {
                 "name": "customer",
@@ -56,7 +60,10 @@
                     "es": "Cliente",
                     "en": "Customer"
                 },
-                "list": 2,
+                "list": {
+                    "column":2,
+                    "order":true
+                },
                 "form": {
                     "column": 0,
                     "row": 0
@@ -68,6 +75,10 @@
                 "label": {
                     "es": "Fecha de Pedido",
                     "en": "Order Date"
+                },
+                "list": {
+                    "column":3,
+                    "order":true
                 },
                 "form": {
                     "column": 1,
@@ -101,7 +112,9 @@
                     "es": "Número de Productos",
                     "en": "Product Count"
                 },
-                "list": 3,
+                "list": {
+                    "column":4
+                },
                 "form": {
                     "column": 0,
                     "row": 1
@@ -113,6 +126,9 @@
                 "label": {
                     "es": "Porcentaje Entregado",
                     "en": "Percentage Delivered"
+                },
+                "list": {
+                    "column":5
                 },
                 "form": {
                     "column": 1,
@@ -135,7 +151,9 @@
                     "es": "Total",
                     "en": "Total"
                 },
-                "list": 4,
+                "list": {
+                    "column": 4
+                },
                 "form": {
                     "column": 0,
                     "row": 2
@@ -148,7 +166,9 @@
                     "es": "Revisado",
                     "en": "Checked"
                 },
-                "list": 5,
+                "list": {
+                    "column":6
+                },
                 "form": {
                     "column": 1,
                     "row": 2
@@ -161,7 +181,9 @@
                     "es": "Avatar",
                     "en": "Avatar"
                 },
-                "list": 0
+                "list": {
+                    "column":7
+                }
             },
             {
                 "name": "tags",
@@ -179,7 +201,10 @@
                     "es": "Estado",
                     "en": "Status"
                 },
-                "list": 7
+                "list": {
+                    "column":8,
+                    "order":true
+                }
             }
         ]
     },

@@ -24,5 +24,8 @@ class UserQuery:
             uuid=user.uuid,
             name=user.name,
             email=user.email,
+            avatar_url=user.avatar_url,
+            theme=user.theme.value,
+            lang=user.lang.name if user.lang else None,
             active=user.active,
         )
