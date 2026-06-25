@@ -50,8 +50,10 @@
                 "list":{
                     "column":1,
                     "order":true
-                }
+                },
+                "kanban":{
 
+                }
             },
             {
                 "name": "customer",
@@ -63,6 +65,9 @@
                 "list": {
                     "column":2,
                     "order":true
+                },
+                "kanban":{
+
                 },
                 "form": {
                     "column": 0,
@@ -79,6 +84,9 @@
                 "list": {
                     "column":3,
                     "order":true
+                },
+                "kanban":{
+
                 },
                 "form": {
                     "column": 1,
@@ -130,6 +138,9 @@
                 "list": {
                     "column":5
                 },
+                "kanban":{
+
+                },
                 "form": {
                     "column": 1,
                     "row": 1
@@ -153,6 +164,9 @@
                 },
                 "list": {
                     "column": 4
+                },
+                "kanban":{
+
                 },
                 "form": {
                     "column": 0,
@@ -192,7 +206,10 @@
                     "es": "Etiquetas",
                     "en": "Tags"
                 },
-                "list": false
+                "list": false,
+                "kanban":{
+
+                }
             },
             {
                 "name": "status",

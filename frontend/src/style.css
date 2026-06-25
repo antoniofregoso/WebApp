@@ -2198,3 +2198,38 @@ body {
   border-radius: 999px;
   background: var(--dash-info, var(--dash-accent));
 }
+
+/* ── Calendar drag-and-drop ───────────────────────────────────────────────── */
+
+.cal-month-event,
+.cal-time-event {
+  cursor: grab;
+}
+
+/* Ghost = the hole/placeholder where the item will land */
+.cal-drag-ghost {
+  opacity: 0.25 !important;
+  border-radius: 6px;
+  background: var(--dash-accent-soft) !important;
+  border-color: var(--dash-accent) !important;
+}
+
+/* Chosen = the original element while being dragged */
+.cal-drag-chosen {
+  opacity: 0.5;
+  cursor: grabbing !important;
+}
+
+/* Drag item = the floating clone following the cursor */
+.cal-drag-item {
+  cursor: grabbing !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18) !important;
+  rotate: 1.5deg;
+}
+
+/* Drop zone highlight for month cells */
+.cal-month-cell.sortable-over {
+  background: var(--dash-surface-hover);
+  outline: 2px dashed var(--dash-accent);
+  outline-offset: -2px;
+}

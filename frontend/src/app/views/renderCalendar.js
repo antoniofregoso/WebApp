@@ -1,3 +1,4 @@
+import Sortable from 'sortablejs';
 import { icon, faChevronLeft, faChevronRight } from '../components/icon.js';
 import { t } from '../../i18n/translations.js';
 import { buildRecordUrl } from '../utils';
@@ -38,6 +39,7 @@ const state = {
 let _nowTimer = null;
 let _clickHandler = null;
 let _changeHandler = null;
+let _calSortables = [];
 
 function escape(value) {
     return String(value)
@@ -253,12 +255,12 @@ function buildToolbar(lang) {
 
 function renderMonthEvents(day, lang) {
     const events = eventsForDay(day);
-    if (events.length === 0) return '';
 
     const visible = events.slice(0, 3).map((event) => {
         const slice = getEventSlice(event, day);
         return `
-        <a href="${event.href}" class="cal-month-event" style="${styleForStatus(event.color)}"
+        <a href="${event.href}" class="cal-month-event" data-event-id="${escapeAttr(event.id)}"
+           style="${styleForStatus(event.color)}"
            title="${escapeAttr(`${event.title} ${formatEventRange(event, lang)}`)}">
             <span class="cal-event-time">${escape(formatEventTime(slice.startsAt, lang))}</span>
             <span class="cal-event-title">${escape(event.title)}</span>
@@ -284,7 +286,8 @@ function renderTimedEvents(day, lang) {
         const top = (minutes / 60) * HOUR_HEIGHT;
         const height = (durationMinutes / 60) * HOUR_HEIGHT;
         return `
-        <a href="${event.href}" class="cal-time-event" style="top:${top}px;height:${height}px;${styleForStatus(event.color)}">
+        <a href="${event.href}" class="cal-time-event" data-event-id="${escapeAttr(event.id)}"
+           style="top:${top}px;height:${height}px;${styleForStatus(event.color)}">
             <span class="cal-time-event-hour">${escape(formatEventTime(slice.startsAt, lang))}</span>
             <span class="cal-time-event-title">${escape(event.title)}</span>
             ${event.customer ? `<span class="cal-time-event-subtitle">${escape(event.customer)}</span>` : ''}
@@ -350,11 +353,12 @@ function buildTimeGrid(days, lang) {
 
     const cols = days.map((d) => {
         const isToday = isSameDay(d, today);
+        const dayKey = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
         const nowLine = isToday
             ? `<div class="cal-nowline" data-cal-nowline><span class="cal-nowdot"></span></div>`
             : '';
         return `
-        <div class="cal-day-col ${isToday ? 'cal-day-col--today' : ''}">
+        <div class="cal-day-col ${isToday ? 'cal-day-col--today' : ''}" data-cal-day="${dayKey}">
             ${hourLines}
             ${nowLine}
             ${renderTimedEvents(d, lang)}
@@ -394,6 +398,92 @@ function buildInner(lang) {
     return buildToolbar(lang) + buildBody(lang);
 }
 
+// ── Drag-and-drop (SortableJS) ────────────────────────────────────────────────
+
+function destroyCalendarDrag() {
+    _calSortables.forEach((s) => s.destroy());
+    _calSortables = [];
+}
+
+function initMonthDrag() {
+    document.querySelectorAll('.cal-month-events').forEach((container) => {
+        const inst = Sortable.create(container, {
+            group: { name: 'cal-month', pull: true, put: true },
+            animation: 150,
+            draggable: '.cal-month-event',
+            ghostClass: 'cal-drag-ghost',
+            chosenClass: 'cal-drag-chosen',
+            dragClass: 'cal-drag-item',
+            onAdd(evt) {
+                const eventId = evt.item.dataset.eventId;
+                const event = state.events.find((e) => e.id === eventId);
+                if (!event) { requestAnimationFrame(rerender); return; }
+
+                const targetCell = evt.to.closest('[data-cal-day]');
+                if (!targetCell) { requestAnimationFrame(rerender); return; }
+                const [ty, tm, td] = targetCell.dataset.calDay.split('-').map(Number);
+                const targetDay = new Date(ty, tm, td);
+                const oldDay = startOfDay(event.startsAt);
+                const dayDiff = Math.round((targetDay - oldDay) / 86_400_000);
+
+                if (dayDiff !== 0) {
+                    const duration = event.endsAt - event.startsAt;
+                    event.startsAt = new Date(event.startsAt.getTime() + dayDiff * 86_400_000);
+                    event.endsAt = new Date(event.startsAt.getTime() + duration);
+                }
+                requestAnimationFrame(rerender);
+            },
+        });
+        _calSortables.push(inst);
+    });
+}
+
+function initTimeDrag() {
+    document.querySelectorAll('.cal-day-col').forEach((col) => {
+        const inst = Sortable.create(col, {
+            group: { name: 'cal-time', pull: true, put: true },
+            animation: 150,
+            draggable: '.cal-time-event',
+            ghostClass: 'cal-drag-ghost',
+            chosenClass: 'cal-drag-chosen',
+            dragClass: 'cal-drag-item',
+            onEnd(evt) {
+                const eventId = evt.item.dataset.eventId;
+                const event = state.events.find((e) => e.id === eventId);
+                if (!event) { requestAnimationFrame(rerender); return; }
+
+                const targetCol = evt.to;
+                const dayStr = targetCol.dataset.calDay;
+                if (!dayStr) { requestAnimationFrame(rerender); return; }
+                const [ty, tm, td] = dayStr.split('-').map(Number);
+
+                // Compute new time from pointer Y, snap to 15-min slots.
+                const colRect = targetCol.getBoundingClientRect();
+                const pointerY = evt.originalEvent?.clientY ?? 0;
+                const offsetY = Math.max(0, pointerY - colRect.top);
+                const snappedMinutes = Math.round((offsetY / HOUR_HEIGHT) * 60 / 15) * 15;
+                const newHour = Math.min(23, Math.floor(snappedMinutes / 60));
+                const newMin = snappedMinutes % 60;
+
+                const duration = event.endsAt - event.startsAt;
+                event.startsAt = new Date(ty, tm, td, newHour, newMin, 0, 0);
+                event.endsAt = new Date(event.startsAt.getTime() + duration);
+                requestAnimationFrame(rerender);
+            },
+        });
+        _calSortables.push(inst);
+    });
+}
+
+function initCalendarDrag() {
+    destroyCalendarDrag();
+    if (state.view === 'month') {
+        initMonthDrag();
+    } else {
+        initTimeDrag();
+    }
+}
+
 // ── Now-line positioning (moves with the minutes) ─────────────────────────────
 function positionNowLine() {
     const now = new Date();
@@ -405,11 +495,11 @@ function positionNowLine() {
 
 function afterRender() {
     positionNowLine();
-    // Bring the current time into view on the scrollable content area.
     if (state.view !== 'month') {
         const nowEl = document.querySelector('[data-cal-nowline]');
         if (nowEl) nowEl.scrollIntoView({ block: 'center' });
     }
+    initCalendarDrag();
 }
 
 // ── Re-render the calendar interior in place (keeps the delegated listener) ────
@@ -508,6 +598,7 @@ export function initCalendar(lang = 'en') {
 
     return () => {
         if (_nowTimer) { clearInterval(_nowTimer); _nowTimer = null; }
+        destroyCalendarDrag();
         if (root) {
             if (_clickHandler) root.removeEventListener('click', _clickHandler);
             if (_changeHandler) root.removeEventListener('change', _changeHandler);
