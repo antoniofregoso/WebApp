@@ -436,6 +436,12 @@ export function initList(lang = 'en') {
 
     const destroySortable = makeSortable(tbody, {
         handle: '.js-list-drag-handle',
+        sortableOptions: {
+            forceFallback: true,
+            ghostClass:    'list-drag-ghost',
+            chosenClass:   'list-drag-chosen',
+            dragClass:     'list-drag-item',
+        },
         onReorder: (uuids) => {
             // New row order, by record uuid. Persisting it is decided later.
             console.debug('list reordered:', uuids);

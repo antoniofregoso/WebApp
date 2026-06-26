@@ -52,7 +52,7 @@
                     "order":true
                 },
                 "kanban":{
-
+                    "header":"Title"
                 }
             },
             {
@@ -67,7 +67,7 @@
                     "order":true
                 },
                 "kanban":{
-
+                    "header":"subtitle"
                 },
                 "form": {
                     "column": 0,
@@ -86,7 +86,7 @@
                     "order":true
                 },
                 "kanban":{
-
+                    "leftColumn":0
                 },
                 "form": {
                     "column": 1,
@@ -139,7 +139,7 @@
                     "column":5
                 },
                 "kanban":{
-
+                    "footer":0
                 },
                 "form": {
                     "column": 1,
@@ -152,6 +152,9 @@
                 "label": {
                     "es": "Numero decimal",
                     "en": "Decimal number"
+                },
+                "kanban":{
+                    "rightColumn":1
                 }
             },
             {
@@ -166,7 +169,7 @@
                     "column": 4
                 },
                 "kanban":{
-
+                    "rightColumn":0
                 },
                 "form": {
                     "column": 0,
@@ -197,6 +200,9 @@
                 },
                 "list": {
                     "column":7
+                },
+                "kanban":{
+                    "header":"image"
                 }
             },
             {
@@ -208,7 +214,7 @@
                 },
                 "list": false,
                 "kanban":{
-
+                    "footer":1
                 }
             },
             {

@@ -2306,3 +2306,55 @@ body {
   outline: 2px dashed var(--dash-accent);
   outline-offset: -2px;
 }
+
+/* ── Kanban drag-and-drop ─────────────────────────────────────────────────── */
+
+/* Ghost = placeholder que muestra donde caerá la tarjeta */
+.kanban-drag-ghost {
+  opacity: 0.3 !important;
+  background: var(--dash-accent-soft) !important;
+  border: 1.5px dashed var(--dash-accent) !important;
+  box-shadow: none !important;
+}
+
+/* Chosen = tarjeta original mientras está siendo arrastrada */
+.kanban-drag-chosen {
+  opacity: 0.45 !important;
+  cursor: grabbing !important;
+}
+
+/* ── List drag-and-drop ───────────────────────────────────────────────────── */
+
+.list-drag-ghost {
+  opacity: 0.3 !important;
+  background: var(--dash-accent-soft) !important;
+  outline: 1.5px dashed var(--dash-accent);
+  outline-offset: -1px;
+}
+
+.list-drag-chosen {
+  opacity: 0.45 !important;
+  cursor: grabbing !important;
+}
+
+.list-drag-item {
+  cursor: grabbing !important;
+  background: var(--dash-accent-soft) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+  opacity: 1 !important;
+}
+
+/* Drag = clon flotante que sigue el cursor */
+@keyframes kanban-float {
+  0%, 100% { translate: 0 0;    }
+  50%       { translate: 0 -5px; }
+}
+
+.kanban-drag-item {
+  cursor: grabbing !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  rotate: 1.5deg;
+  scale: 1.02;
+  opacity: 1 !important;
+  animation: kanban-float 1s ease-in-out infinite;
+}
