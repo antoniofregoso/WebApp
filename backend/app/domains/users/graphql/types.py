@@ -1,6 +1,11 @@
 import strawberry
 import uuid as uuid_lib
+from datetime import datetime
 from typing import Optional
+
+from app.domains.users.models.user_log import UserLogStatus
+
+UserLogStatusType = strawberry.enum(UserLogStatus)
 
 
 @strawberry.type
@@ -13,6 +18,17 @@ class UserType:
     theme: str
     lang: Optional[str]
     active: bool
+
+
+@strawberry.type
+class UserLogType:
+    uuid: uuid_lib.UUID
+    status: UserLogStatusType
+    start_date: datetime
+    last_seen_at: Optional[datetime]
+    end_date: Optional[datetime]
+    duration: Optional[int]
+    created_at: datetime
 
 
 @strawberry.input

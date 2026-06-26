@@ -27,6 +27,15 @@
 - [ ] Repetir la petición original después de renovar el token.
 - [ ] Cerrar la sesión y redirigir al login si la renovación falla.
 
+## Logs de actividad de usuario
+
+- [ ] Crear endpoint o mutación GraphQL de heartbeat/ping para el usuario autenticado.
+- [ ] En cada ping, buscar el `UserLog` abierto del usuario (`status = ONLINE`, sin `end_date`) y actualizar `last_seen_at` con la hora del servidor.
+- [ ] Hacer que el frontend envíe el ping cada 30-60 segundos mientras la sesión esté activa y la pestaña esté visible.
+- [ ] Crear una tarea programada que marque como `OFFLINE` los logs sin ping reciente, usando un timeout definido, por ejemplo 2-5 minutos.
+- [ ] Al cerrar automáticamente, usar `last_seen_at` como `end_date` para que `duration` no cuente tiempo inactivo.
+- [ ] Probar login, logout explícito, cierre de pestaña/navegador, suspensión de laptop y múltiples pestañas.
+
 ## Base de datos y pruebas
 
 - [ ] Crear el modelo y la migración para sesiones o refresh tokens.

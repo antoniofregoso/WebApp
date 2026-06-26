@@ -31,6 +31,54 @@ query Me {
 }
 ```
 
+## Logs de actividad
+
+Retorna los logs de actividad del usuario autenticado. Es de solo lectura para el frontend: no hay mutaciones publicas para crear o modificar logs.
+
+```graphql
+query UserLogs($limit: Int = 20) {
+  userLogs(limit: $limit) {
+    uuid
+    status
+    startDate
+    lastSeenAt
+    endDate
+    duration
+    createdAt
+  }
+}
+```
+
+Obtiene un log por UUID, solo si pertenece al usuario autenticado.
+
+```graphql
+query UserLog($logUuid: UUID!) {
+  userLog(logUuid: $logUuid) {
+    uuid
+    status
+    startDate
+    lastSeenAt
+    endDate
+    duration
+    createdAt
+  }
+}
+```
+
+Estados de log:
+
+```text
+Online
+Offline
+```
+
+Campos principales:
+
+- `startDate`: inicio de la sesion/log.
+- `lastSeenAt`: ultimo ping recibido por backend.
+- `endDate`: cierre real o automatico del log.
+- `duration`: duracion calculada en milisegundos.
+
 ## Contadores pendientes
 
 Retorna el numero de mensajes y alertas pendientes de leer para el usuario autenticado.

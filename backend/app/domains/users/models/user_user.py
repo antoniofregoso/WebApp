@@ -10,9 +10,11 @@ if TYPE_CHECKING:
     from app.domains.system.models.system_notification import SystemNotification
     from app.domains.system.models.system_company import SystemCompany
     from app.domains.system.models.system_lang import SystemLang
+    from app.domains.users.models.user_log import UserLog
 
 from app.domains.system.models.system_message_user_rel import SystemMessageUserRel
 from app.domains.system.models.system_notification_user_rel import SystemNotificationUserRel
+from app.domains.system.models.system_audit import SystemAudit
 
 
 class ThemeMode(str, Enum):
@@ -27,7 +29,7 @@ class UserType(str, Enum):
     AIAGENT = "AIAGENT"
 
 
-class UserUser(SQLModel, table=True):
+class UserUser(SystemAudit, SQLModel, table=True):
     __tablename__ = "user_user"
 
     id: Optional[int] = Field(default=None, primary_key=True, nullable=False)
@@ -78,4 +80,9 @@ class UserUser(SQLModel, table=True):
     group_notifications: List["SystemNotification"] = Relationship(
         back_populates="users",
         link_model=SystemNotificationUserRel,
+    )
+
+    logs: List["UserLog"] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"foreign_keys": "[UserLog.user_id]"},
     )
