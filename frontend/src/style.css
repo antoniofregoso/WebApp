@@ -2508,3 +2508,78 @@ body {
   opacity: 1 !important;
   animation: kanban-float 1s ease-in-out infinite;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   QUILL EDITOR — theme overrides
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ql-container.ql-snow,
+.ql-toolbar.ql-snow {
+  border-color: var(--dash-border) !important;
+  background: var(--dash-surface);
+}
+
+.ql-toolbar.ql-snow {
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.ql-container.ql-snow {
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+
+.ql-editor {
+  color: var(--dash-text);
+  min-height: 6rem;
+}
+
+.ql-editor.ql-blank::before {
+  color: var(--dash-text-muted) !important;
+  font-style: normal;
+}
+
+/* Toolbar buttons & icons */
+.ql-snow .ql-stroke {
+  stroke: var(--dash-text-muted) !important;
+}
+
+.ql-snow .ql-fill {
+  fill: var(--dash-text-muted) !important;
+}
+
+.ql-snow .ql-picker {
+  color: var(--dash-text-muted) !important;
+}
+
+.ql-snow .ql-picker-options {
+  background: var(--dash-surface) !important;
+  border-color: var(--dash-border) !important;
+}
+
+.ql-snow .ql-picker-item {
+  color: var(--dash-text) !important;
+}
+
+.ql-snow.ql-toolbar button:hover .ql-stroke,
+.ql-snow .ql-toolbar button:hover .ql-stroke,
+.ql-snow.ql-toolbar button.ql-active .ql-stroke,
+.ql-snow .ql-toolbar button.ql-active .ql-stroke {
+  stroke: var(--dash-accent) !important;
+}
+
+.ql-snow.ql-toolbar button:hover .ql-fill,
+.ql-snow .ql-toolbar button:hover .ql-fill,
+.ql-snow.ql-toolbar button.ql-active .ql-fill,
+.ql-snow .ql-toolbar button.ql-active .ql-fill {
+  fill: var(--dash-accent) !important;
+}
+
+/* Blockquote & code block */
+.ql-editor blockquote {
+  border-left-color: var(--dash-border) !important;
+  color: var(--dash-text-muted);
+}
+
+.ql-editor pre.ql-syntax {
+  background: var(--dash-surface-hover) !important;
+  color: var(--dash-text) !important;
+}
