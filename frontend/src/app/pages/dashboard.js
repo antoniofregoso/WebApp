@@ -103,12 +103,23 @@ function initActiveView(view, lang) {
  * Bind the dock view-switch buttons and reflect the active view.
  * Call after the topbar is (re)injected into the DOM.
  */
+function navigateToUrl(url) {
+    window.history.pushState({}, '', url);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+}
+
 function initViewButtons(currentView) {
     document.querySelectorAll('.topbar-view-group .topbar-tool-btn[data-view]').forEach((btn) => {
         const view = btn.dataset.view;
         btn.classList.toggle('topbar-tool-btn--active', view === currentView);
         btn.addEventListener('click', () => {
-            dashboardActions.setView(view);
+            if (hasRecordRoute()) {
+                const area = appSignal.value.context.active_area;
+                dashboardActions.setView(view);
+                navigateToUrl(`/dashboard/${area}`);
+            } else {
+                dashboardActions.setView(view);
+            }
         });
     });
 }
@@ -131,7 +142,7 @@ function getTopbarBreadcrumb(area, subarea, lang) {
 }
 
 function shouldShowTopbarTools(area, subarea) {
-    return Boolean(area) && subarea !== 'insights' && !hasRecordRoute();
+    return Boolean(area) && subarea !== 'insights';
 }
 
 
@@ -262,7 +273,12 @@ export function dashboard(req, router) {
     // Open record URLs directly in form view; otherwise reset when leaving a page.
     if (isRecordRoute) {
         dashboardActions.setView('form');
-    } else if (areaChanged || subareaChanged || hadRecordRoute) {
+    } else if (areaChanged || subareaChanged) {
+        dashboardActions.setView(DEFAULT_VIEW);
+    } else if (hadRecordRoute && getView(appSignal.value) === 'form') {
+        // Leaving a record route via browser back — reset to default view.
+        // If the user clicked a view button, the signal is already set to the target
+        // view (not 'form'), so this branch is skipped and their choice is respected.
         dashboardActions.setView(DEFAULT_VIEW);
     }
 

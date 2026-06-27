@@ -1,4 +1,4 @@
-import { formatCurrency, locale } from '../utils';
+import { formatCurrency, locale, localizedValue } from '../utils';
 
 export function escape(value) {
     return String(value)
@@ -111,7 +111,9 @@ export function renderFieldControl(field, value, data, lang, extraClass = '') {
             </select>`;
         }
         case 'many2many_pills':
-            return renderInput(field, Array.isArray(value) ? value.map((item) => item.name).join(', ') : value ?? '', extraClass);
+            return renderInput(field, Array.isArray(value)
+                ? value.map((item) => localizedValue(item.name, lang)).join(', ')
+                : value ?? '', extraClass);
         default:
             return renderInput(field, value ?? '', extraClass);
     }

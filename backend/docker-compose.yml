@@ -13,11 +13,15 @@ services:
       - DB_CONFIG=postgresql+asyncpg://postgres:postgres@db:5432/app_db
       - DB_ECHO=true
       - LOG_LEVEL=INFO
+      - FILESTORE_ROOT=/var/lib/webapp/filestore
+      - FILESTORE_NAMESPACE=app_db
+      - ATTACHMENT_MAX_SIZE_BYTES=26214400
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - .:/code # Hot reload enabled because we map local dir to container
+      - filestore_data:/var/lib/webapp/filestore
 
   db:
     image: postgres:15-alpine
@@ -37,3 +41,4 @@ services:
 
 volumes:
   postgres_data:
+  filestore_data:

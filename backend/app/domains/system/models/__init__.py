@@ -1,5 +1,6 @@
 from app.domains.system.models.system_app import SystemApp
 from app.domains.system.models.system_app_settings import SystemAppSettings
+from app.domains.system.models.system_attachment import SystemAttachment
 from app.domains.system.models.system_colors import SystemColor
 from app.domains.system.models.system_company import SystemCompany
 from app.domains.system.models.system_country import SystemCountry, SystemCountryState
@@ -22,6 +23,7 @@ from app.domains.system.models.system_timezone import SystemTimezone
 __all__ = [
     "SystemApp",
     "SystemAppSettings",
+    "SystemAttachment",
     "SystemColor",
     "SystemCompany",
     "SystemCountry",

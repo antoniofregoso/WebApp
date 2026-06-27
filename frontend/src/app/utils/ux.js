@@ -32,3 +32,10 @@ export function locale(lang) {
     return lang === 'es' ? 'es-MX' : 'en-US';
 }
 
+/** Resolve a translated value while remaining compatible with plain strings. */
+export function localizedValue(value, lang = 'en') {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+        return value[lang] ?? value.en ?? value.es ?? '';
+    }
+    return value ?? '';
+}

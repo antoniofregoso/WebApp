@@ -1,5 +1,6 @@
 
 import { formatCurrency, formatDate, formatDateTime } from './formatters';
+import { localizedValue } from './ux.js';
 
 export function renderValue(data, type, locale, currency, model) {
     switch (type) {
@@ -42,7 +43,7 @@ export function renderValue(data, type, locale, currency, model) {
 
 function groupPills(data, locale) {
     const group = data.reduce((acc, item) => {
-        const key = item.name?.[locale.slice(0, 2)] || item;
+        const key = localizedValue(item.name, locale.slice(0, 2));
         if (!acc[key]) {
             acc[key] = {
                 name: key,

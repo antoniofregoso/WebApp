@@ -1,6 +1,8 @@
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 from functools import lru_cache
+from pathlib import Path
+from typing import Optional
 
 
 class Settings(BaseSettings):
@@ -27,6 +29,26 @@ class Settings(BaseSettings):
     CORS_CREDENTIALS: bool = True
     CORS_METHODS: list[str] = ["*"]
     CORS_HEADERS: list[str] = ["*"]
+
+    # Attachment filestore
+    FILESTORE_ROOT: Path = Path("data/filestore")
+    FILESTORE_NAMESPACE: Optional[str] = None
+    ATTACHMENT_MAX_SIZE_BYTES: int = 25 * 1024 * 1024
+    ATTACHMENT_ALLOWED_CONTENT_TYPES: list[str] = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.oasis.opendocument.text",
+        "application/vnd.oasis.opendocument.spreadsheet",
+        "image/gif",
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "text/csv",
+        "text/plain",
+    ]
 
 
 @lru_cache()

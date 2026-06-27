@@ -1,7 +1,9 @@
 import {
-    icon, faEnvelope, faFileLines, faFloppyDisk, faPen,
+    icon, faBoxArchive, faChevronLeft, faChevronRight, faEnvelope, faFileLines,
+    faFloppyDisk, faPen, faTrash, faUser,
 } from '../components/icon.js';
 import { renderViewHeader } from '../components';
+import { buildRecordUrl } from '../utils';
 import {
     getField, label, renderFieldControl, renderFormLayout, renderTextArea, setFormInputsEnabled,
 } from './formFields.js';
@@ -81,9 +83,9 @@ function avatar(record) {
                     class="h-20 w-20 rounded-xl object-cover ring-1 ring-[var(--dash-border)]" />`;
     }
     return `<span class="inline-flex h-20 w-20 items-center justify-center rounded-xl
-                 bg-[var(--dash-surface-hover)] text-lg font-semibold text-[var(--dash-text-muted)]
+                 bg-[var(--dash-surface-hover)] text-[var(--dash-text-muted)]
                  ring-1 ring-[var(--dash-border)]">
-        ${escape(initials(name))}
+        ${icon(faUser, 'h-10 w-10')}
     </span>`;
 }
 
@@ -134,6 +136,8 @@ function renderActivityPanel(showWhatsapp, lang) {
 function renderFormActions(lang) {
     const editLabel = lang === 'es' ? 'Editar' : 'Edit';
     const saveLabel = lang === 'es' ? 'Guardar' : 'Save';
+    const archiveLabel = lang === 'es' ? 'Archivar' : 'Archive';
+    const deleteLabel = lang === 'es' ? 'Borrar' : 'Delete';
 
     return `<div class="flex items-center gap-2">
         <button type="button"
@@ -147,10 +151,81 @@ function renderFormActions(lang) {
             class="topbar-action-btn"
             aria-label="${saveLabel}"
             data-tooltip="${saveLabel}"
-            data-form-save>
+            data-form-save
+            disabled>
             ${icon(faFloppyDisk, 'topbar-action-icon')}
         </button>
+        <button type="button"
+            class="topbar-action-btn"
+            aria-label="${archiveLabel}"
+            data-tooltip="${archiveLabel}"
+            data-form-archive>
+            ${icon(faBoxArchive, 'topbar-action-icon')}
+        </button>
+        <button type="button"
+            class="topbar-action-btn"
+            aria-label="${deleteLabel}"
+            data-tooltip="${deleteLabel}"
+            data-form-delete>
+            ${icon(faTrash, 'topbar-action-icon')}
+        </button>
     </div>`;
+}
+
+function getNavigableRecords(data, recordModel) {
+    const records = data?.records ?? [];
+    const modelName = data?.model?.name;
+    if (!recordModel || recordModel === modelName) return records;
+
+    const relatedRecords = new Map();
+    records.forEach((record) => {
+        Object.values(record).forEach((value) => {
+            if (value && typeof value === 'object' && !Array.isArray(value)
+                && value.model === recordModel && value.uuid != null) {
+                relatedRecords.set(String(value.uuid), value);
+            }
+        });
+    });
+    return Array.from(relatedRecords.values());
+}
+
+function renderRecordNavigation(data, record, recordModel, lang) {
+    const records = getNavigableRecords(data, recordModel);
+    const modelName = recordModel || data?.model?.name;
+    const currentIndex = records.findIndex((item) => String(item.uuid) === String(record.uuid));
+    const position = currentIndex >= 0 ? currentIndex + 1 : 0;
+    const previousRecord = currentIndex > 0 ? records[currentIndex - 1] : null;
+    const nextRecord = currentIndex >= 0 && currentIndex < records.length - 1
+        ? records[currentIndex + 1]
+        : null;
+    const previousLabel = lang === 'es' ? 'Registro anterior' : 'Previous record';
+    const nextLabel = lang === 'es' ? 'Registro siguiente' : 'Next record';
+    const positionLabel = lang === 'es'
+        ? `Registro ${position} de ${records.length}`
+        : `Record ${position} of ${records.length}`;
+
+    const navigationButton = (targetRecord, label, direction, iconDef) => targetRecord && modelName
+        ? `<a href="${buildRecordUrl(modelName, targetRecord.uuid)}"
+                class="topbar-action-btn form-record-nav-btn"
+                aria-label="${label}" data-tooltip="${label}" data-form-nav="${direction}">
+                ${icon(iconDef, 'topbar-action-icon')}
+            </a>`
+        : `<button type="button" class="topbar-action-btn form-record-nav-btn"
+                aria-label="${label}" data-form-nav="${direction}" disabled>
+                ${icon(iconDef, 'topbar-action-icon')}
+            </button>`;
+
+    return `<footer class="form-record-footer">
+        <nav class="form-record-navigation" aria-label="${lang === 'es' ? 'Navegación de registros' : 'Record navigation'}">
+            ${navigationButton(previousRecord, previousLabel, 'previous', faChevronLeft)}
+            ${navigationButton(nextRecord, nextLabel, 'next', faChevronRight)}
+            <span class="form-record-counter" aria-label="${positionLabel}">
+                <span class="form-record-counter-current">${position}</span>
+                <span aria-hidden="true">/</span>
+                <span>${records.length}</span>
+            </span>
+        </nav>
+    </footer>`;
 }
 
 /**
@@ -172,7 +247,7 @@ export function renderForm(data = {}, lang = 'en', options = {}) {
         label: { es: 'Nombre', en: 'Name' },
     };
     const descriptionField = getField(schema, 'description');
-    const showAvatar = Boolean(record.avatar);
+    const showAvatar = true;
     const showWhatsapp = shouldShowWhatsapp(data, options);
 
     return `
@@ -182,7 +257,7 @@ export function renderForm(data = {}, lang = 'en', options = {}) {
         <div class="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
             <section data-form-record class="rounded-xl border border-[var(--dash-border)]
                             bg-[var(--dash-surface)] shadow-[var(--dash-shadow)]">
-                <div class="flex gap-4 border-b border-[var(--dash-border)] px-5 py-4">
+                <div class="form-record-header flex gap-4 border-b border-[var(--dash-border)] px-5 py-4">
                     ${showAvatar ? `<div class="shrink-0">${avatar(record)}</div>` : ''}
                     <div class="min-w-0 flex-1">
                         <div class="flex items-start justify-between gap-4">
@@ -201,6 +276,7 @@ export function renderForm(data = {}, lang = 'en', options = {}) {
                 </div>
 
                 ${renderFormLayout(schema, record, data, lang)}
+                ${renderRecordNavigation(data, record, options.recordModel, lang)}
             </section>
 
             ${renderActivityPanel(showWhatsapp, lang)}
@@ -221,6 +297,7 @@ export function initForm(lang = 'en') {
     const enterEditMode = () => {
         root.dataset.formMode = 'edit';
         setFormInputsEnabled(recordForm, true, lang);
+        saveButton.disabled = false;
         editButton.classList.add('topbar-action-btn--active');
         editButton.setAttribute('aria-pressed', 'true');
         recordForm.querySelector('[data-form-input]')?.focus();
@@ -229,6 +306,7 @@ export function initForm(lang = 'en') {
     const enterReadonlyMode = () => {
         root.dataset.formMode = 'readonly';
         setFormInputsEnabled(recordForm, false, lang);
+        saveButton.disabled = true;
         editButton.classList.remove('topbar-action-btn--active');
         editButton.setAttribute('aria-pressed', 'false');
     };

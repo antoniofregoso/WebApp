@@ -77,6 +77,26 @@ modelo `UserUser`.
 *   **Auth**: JWT + Argon2
 *   **Settings**: Pydantic Settings
 
+## 📎 Archivos adjuntos
+
+Los documentos e imágenes se guardan en un filestore local y PostgreSQL conserva
+únicamente sus metadatos. En Docker, el volumen persistente `filestore_data` se
+monta en `/var/lib/webapp/filestore`.
+
+Endpoints autenticados:
+
+* `POST /api/system/attachments`: sube un archivo con `model_uuid`, `record_uuid`
+  y `file` mediante `multipart/form-data`.
+* `GET /api/system/attachments/record/{model_uuid}/{record_uuid}`: lista los
+  adjuntos de un registro.
+* `GET /api/system/attachments/{attachment_uuid}/content`: descarga un adjunto.
+* `DELETE /api/system/attachments/{attachment_uuid}`: elimina la asociación y
+  borra el contenido físico cuando ya no tiene referencias.
+
+El acceso requiere `Authorization: Bearer <token>` y queda aislado por compañía.
+La ruta física usa SHA-256 (`<namespace>/<2 primeros caracteres>/<checksum>`) para
+evitar colisiones y deduplicar contenido.
+
 ## 📝 Logging y Observabilidad
 
 El backend cuenta con un sistema de logging estructurado. Puedes controlar el nivel de detalle mediante la variable de entorno `LOG_LEVEL`.

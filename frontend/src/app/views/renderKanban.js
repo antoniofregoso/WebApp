@@ -15,7 +15,7 @@
  * ══════════════════════════════════════════════════════════════════════════ */
 
 import {
-    COLOR_CLASS, COLOR_FALLBACK, buildRecordUrl, locale, makeSortable, formatCurrency, formatDate,
+    COLOR_CLASS, COLOR_FALLBACK, buildRecordUrl, locale, localizedValue, makeSortable, formatCurrency, formatDate,
 } from '../utils';
 import { icon, faGripVertical } from '../components/icon.js';
 import { renderViewHeader } from '../components';
@@ -130,18 +130,18 @@ function renderFieldValue(record, fieldDef, ctx) {
                 : name;
         }
         case 'many2many_pills':
-            return renderTags(raw);
+            return renderTags(raw, lang);
         default:
             return escape(String(raw));
     }
 }
 
-function renderTags(tags) {
+function renderTags(tags, lang) {
     if (!Array.isArray(tags) || tags.length === 0) return '';
     return tags.map((tag) => {
         const cls = COLOR_CLASS[tag.color] ?? COLOR_FALLBACK;
         return `<span class="inline-flex items-center rounded-full px-2 py-0.5
-                    text-[10px] font-medium ${cls}">${escape(tag.name)}</span>`;
+                    text-[10px] font-medium ${cls}">${escape(localizedValue(tag.name, lang))}</span>`;
     }).join('');
 }
 
@@ -230,7 +230,7 @@ function renderFooterField(record, fieldDef, ctx) {
     }
 
     if (fieldDef.type === 'many2many_pills') {
-        const tagsHtml = renderTags(raw);
+        const tagsHtml = renderTags(raw, lang);
         return tagsHtml ? `<div class="flex flex-wrap gap-1">${tagsHtml}</div>` : '';
     }
 

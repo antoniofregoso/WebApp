@@ -1435,8 +1435,8 @@ body {
 .topbar-tool-btn[data-tooltip]:focus-visible::after,
 .topbar-search-btn[data-tooltip]:hover::after,
 .topbar-search-btn[data-tooltip]:focus-visible::after,
-.topbar-action-btn[data-tooltip]:hover::after,
-.topbar-action-btn[data-tooltip]:focus-visible::after {
+.topbar-action-btn[data-tooltip]:not(:disabled):hover::after,
+.topbar-action-btn[data-tooltip]:not(:disabled):focus-visible::after {
   opacity: 1;
   transform: translate(-50%, 0);
 }
@@ -1525,6 +1525,17 @@ body {
   border-color: var(--dash-accent);
 }
 
+.topbar-action-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.topbar-action-btn:disabled:hover {
+  border-color: var(--dash-border);
+  background: var(--dash-surface);
+  color: var(--dash-text-muted);
+}
+
 .topbar-action-btn--active {
   background: var(--dash-accent-soft);
   color: var(--dash-accent);
@@ -1535,6 +1546,41 @@ body {
   width: 16px;
   height: 16px;
   fill: currentColor;
+}
+
+.form-record-footer {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--dash-border);
+  padding: 0.75rem 1.25rem;
+}
+
+.form-record-navigation {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-record-nav-btn {
+  text-decoration: none;
+}
+
+.form-record-counter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-width: 3.5rem;
+  height: 36px;
+  font-size: 1rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--dash-text-muted);
+}
+
+.form-record-counter-current {
+  color: var(--dash-text);
+  font-weight: 600;
 }
 
 .topbar-action-badge {
@@ -1654,6 +1700,10 @@ body {
   min-height: 36px;
   font-size: 1.5rem;
   font-weight: 600;
+}
+
+.form-record-header {
+  min-height: 113px;
 }
 
 .form-control--textarea {

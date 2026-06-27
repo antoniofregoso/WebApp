@@ -10,7 +10,7 @@
  * ══════════════════════════════════════════════════════════════════════════ */
 
 import {
-    COLOR_CLASS, COLOR_FALLBACK, NUMERIC_TYPES, locale, makeSortable, buildRecordUrl,
+    COLOR_CLASS, COLOR_FALLBACK, NUMERIC_TYPES, locale, localizedValue, makeSortable, buildRecordUrl,
 } from '../utils';
 import { icon, faGripVertical, faTrash, faBoxArchive } from '../components/icon.js';
 import { renderViewHeader } from '../components';
@@ -250,7 +250,7 @@ function formatCell(field, value, statusLabels, modelName, recordUuidValue, lang
             return avatarCell(value);
 
         case 'many2many_pills':
-            return pillsCell(value);
+            return pillsCell(value, lang);
 
         case 'selection':
             return statusCell(value, statusLabels, lang);
@@ -321,14 +321,14 @@ function avatarCell(src) {
 }
 
 /** A row of colored pills from a many2many list of { name, color }. */
-function pillsCell(tags) {
+function pillsCell(tags, lang) {
     if (!Array.isArray(tags) || tags.length === 0) {
         return `<span class="text-[var(--dash-text-soft)]">—</span>`;
     }
     return `<div class="flex flex-wrap gap-1">${tags.map((tag) => {
         const cls = COLOR_CLASS[tag.color] ?? COLOR_FALLBACK;
         return `<span class="inline-flex items-center rounded-full px-2 py-0.5
-                    text-xs font-medium ${cls}">${escape(tag.name)}</span>`;
+                    text-xs font-medium ${cls}">${escape(localizedValue(tag.name, lang))}</span>`;
     }).join('')}</div>`;
 }
 

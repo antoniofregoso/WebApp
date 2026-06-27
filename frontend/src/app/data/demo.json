@@ -271,12 +271,18 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000003",
-                    "name": "VIP",
+                    "name": {
+                        "en": "VIP",
+                        "es": "VIP"
+                    },
                     "color": "purple"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000004",
-                    "name": "Recurrente",
+                    "name": {
+                        "en": "Recurrent",
+                        "es": "Recurrente"
+                    },
                     "color": "green"
                 }
             ],
@@ -302,17 +308,26 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000004",
-                    "name": "Recurrente",
+                    "name": {
+                        "en": "Recurrent",
+                        "es": "Recurrente"
+                    },
                     "color": "green"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000005",
-                    "name": "Exportación",
+                    "name": {
+                        "en": "Export",
+                        "es": "Exportación"
+                    },
                     "color": "orange"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000001",
-                    "name": "Urgente",
+                    "name": {
+                        "en": "Urgent",
+                        "es": "Urgente"
+                    },
                     "color": "red"
                 }
             ],
@@ -358,7 +373,10 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000001",
-                    "name": "Urgente",
+                    "name": {
+                        "en": "Urgent",
+                        "es": "Urgente"
+                    },
                     "color": "red"
                 }
             ],
@@ -384,12 +402,18 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000002",
-                    "name": "Mayoreo",
+                    "name": {
+                        "en": "Wholesale",
+                        "es": "Mayoreo"
+                    },
                     "color": "blue"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000003",
-                    "name": "VIP",
+                    "name": {
+                        "en": "VIP",
+                        "es": "VIP"
+                    },
                     "color": "purple"
                 }
             ],
@@ -415,17 +439,26 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000003",
-                    "name": "VIP",
+                    "name": {
+                        "en": "VIP",
+                        "es": "VIP"
+                    },
                     "color": "purple"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000004",
-                    "name": "Recurrente",
+                    "name": {
+                        "en": "Recurrent",
+                        "es": "Recurrente"
+                    },
                     "color": "green"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000005",
-                    "name": "Exportación",
+                    "name": {
+                        "en": "Export",
+                        "es": "Exportación"
+                    },
                     "color": "orange"
                 }
             ],
@@ -469,7 +502,10 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000005",
-                    "name": "Exportación",
+                    "name": {
+                        "en": "Export",
+                        "es": "Exportación"
+                    },
                     "color": "orange"
                 }
             ],
@@ -495,12 +531,18 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000001",
-                    "name": "Urgente",
+                    "name": {
+                        "en": "Urgent",
+                        "es": "Urgente"
+                    },
                     "color": "red"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000002",
-                    "name": "Mayoreo",
+                    "name": {
+                        "en": "Wholesale",
+                        "es": "Mayoreo"
+                    },
                     "color": "blue"
                 }
             ],
@@ -526,17 +568,26 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000002",
-                    "name": "Mayoreo",
+                    "name": {
+                        "en": "Wholesale",
+                        "es": "Mayoreo"
+                    },
                     "color": "blue"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000003",
-                    "name": "VIP",
+                    "name": {
+                        "en": "VIP",
+                        "es": "VIP"
+                    },
                     "color": "purple"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000004",
-                    "name": "Recurrente",
+                    "name": {
+                        "en": "Recurrent",
+                        "es": "Recurrente"
+                    },
                     "color": "green"
                 }
             ],
@@ -582,7 +633,10 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000004",
-                    "name": "Recurrente",
+                    "name": {
+                        "en": "Recurrent",
+                        "es": "Recurrente"
+                    },
                     "color": "green"
                 }
             ],
@@ -608,12 +662,18 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000005",
-                    "name": "Exportación",
+                    "name": {
+                        "en": "Export",
+                        "es": "Exportación"
+                    },
                     "color": "orange"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000001",
-                    "name": "Urgente",
+                    "name": {
+                        "en": "Urgent",
+                        "es": "Urgente"
+                    },
                     "color": "red"
                 }
             ],
@@ -639,17 +699,26 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000001",
-                    "name": "Urgente",
+                    "name": {
+                        "en": "Urgent",
+                        "es": "Urgente"
+                    },
                     "color": "red"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000002",
-                    "name": "Mayoreo",
+                    "name": {
+                        "en": "Wholesale",
+                        "es": "Mayoreo"
+                    },
                     "color": "blue"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000003",
-                    "name": "VIP",
+                    "name": {
+                        "en": "VIP",
+                        "es": "VIP"
+                    },
                     "color": "purple"
                 }
             ],
@@ -695,7 +764,10 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000003",
-                    "name": "VIP",
+                    "name": {
+                        "en": "VIP",
+                        "es": "VIP"
+                    },
                     "color": "purple"
                 }
             ],
@@ -721,12 +793,18 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000004",
-                    "name": "Recurrente",
+                    "name": {
+                        "en": "Recurrent",
+                        "es": "Recurrente"
+                    },
                     "color": "green"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000005",
-                    "name": "Exportación",
+                    "name": {
+                        "en": "Export",
+                        "es": "Exportación"
+                    },
                     "color": "orange"
                 }
             ],
@@ -752,17 +830,26 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000005",
-                    "name": "Exportación",
+                    "name": {
+                        "en": "Export",
+                        "es": "Exportación"
+                    },
                     "color": "orange"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000001",
-                    "name": "Urgente",
+                    "name": {
+                        "en": "Urgent",
+                        "es": "Urgente"
+                    },
                     "color": "red"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000002",
-                    "name": "Mayoreo",
+                    "name": {
+                        "en": "Wholesale",
+                        "es": "Mayoreo"
+                    },
                     "color": "blue"
                 }
             ],
@@ -808,7 +895,10 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000002",
-                    "name": "Mayoreo",
+                    "name": {
+                        "en": "Wholesale",
+                        "es": "Mayoreo"
+                    },
                     "color": "blue"
                 }
             ],
@@ -834,12 +924,18 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000003",
-                    "name": "VIP",
+                    "name": {
+                        "en": "VIP",
+                        "es": "VIP"
+                    },
                     "color": "purple"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000004",
-                    "name": "Recurrente",
+                    "name": {
+                        "en": "Recurrent",
+                        "es": "Recurrente"
+                    },
                     "color": "green"
                 }
             ],
@@ -865,17 +961,26 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000004",
-                    "name": "Recurrente",
+                    "name": {
+                        "en": "Recurrent",
+                        "es": "Recurrente"
+                    },
                     "color": "green"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000005",
-                    "name": "Exportación",
+                    "name": {
+                        "en": "Export",
+                        "es": "Exportación"
+                    },
                     "color": "orange"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000001",
-                    "name": "Urgente",
+                    "name": {
+                        "en": "Urgent",
+                        "es": "Urgente"
+                    },
                     "color": "red"
                 }
             ],
@@ -921,7 +1026,10 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000001",
-                    "name": "Urgente",
+                    "name": {
+                        "en": "Urgent",
+                        "es": "Urgente"
+                    },
                     "color": "red"
                 }
             ],
@@ -947,12 +1055,18 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000002",
-                    "name": "Mayoreo",
+                    "name": {
+                        "en": "Wholesale",
+                        "es": "Mayoreo"
+                    },
                     "color": "blue"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000003",
-                    "name": "VIP",
+                    "name": {
+                        "en": "VIP",
+                        "es": "VIP"
+                    },
                     "color": "purple"
                 }
             ],
@@ -978,17 +1092,26 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000003",
-                    "name": "VIP",
+                    "name": {
+                        "en": "VIP",
+                        "es": "VIP"
+                    },
                     "color": "purple"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000004",
-                    "name": "Recurrente",
+                    "name": {
+                        "en": "Recurrent",
+                        "es": "Recurrente"
+                    },
                     "color": "green"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000005",
-                    "name": "Exportación",
+                    "name": {
+                        "en": "Export",
+                        "es": "Exportación"
+                    },
                     "color": "orange"
                 }
             ],
@@ -1034,7 +1157,10 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000005",
-                    "name": "Exportación",
+                    "name": {
+                        "en": "Export",
+                        "es": "Exportación"
+                    },
                     "color": "orange"
                 }
             ],
@@ -1060,12 +1186,18 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000001",
-                    "name": "Urgente",
+                    "name": {
+                        "en": "Urgent",
+                        "es": "Urgente"
+                    },
                     "color": "red"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000002",
-                    "name": "Mayoreo",
+                    "name": {
+                        "en": "Wholesale",
+                        "es": "Mayoreo"
+                    },
                     "color": "blue"
                 }
             ],
@@ -1091,17 +1223,26 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000002",
-                    "name": "Mayoreo",
+                    "name": {
+                        "en": "Wholesale",
+                        "es": "Mayoreo"
+                    },
                     "color": "blue"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000003",
-                    "name": "VIP",
+                    "name": {
+                        "en": "VIP",
+                        "es": "VIP"
+                    },
                     "color": "purple"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000004",
-                    "name": "Recurrente",
+                    "name": {
+                        "en": "Recurrent",
+                        "es": "Recurrente"
+                    },
                     "color": "green"
                 }
             ],
@@ -1146,7 +1287,10 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000004",
-                    "name": "Recurrente",
+                    "name": {
+                        "en": "Recurrent",
+                        "es": "Recurrente"
+                    },
                     "color": "green"
                 }
             ],
@@ -1172,12 +1316,18 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000005",
-                    "name": "Exportación",
+                    "name": {
+                        "en": "Export",
+                        "es": "Exportación"
+                    },
                     "color": "orange"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000001",
-                    "name": "Urgente",
+                    "name": {
+                        "en": "Urgent",
+                        "es": "Urgente"
+                    },
                     "color": "red"
                 }
             ],
@@ -1203,17 +1353,26 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000001",
-                    "name": "Urgente",
+                    "name": {
+                        "en": "Urgent",
+                        "es": "Urgente"
+                    },
                     "color": "red"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000002",
-                    "name": "Mayoreo",
+                    "name": {
+                        "en": "Wholesale",
+                        "es": "Mayoreo"
+                    },
                     "color": "blue"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000003",
-                    "name": "VIP",
+                    "name": {
+                        "en": "VIP",
+                        "es": "VIP"
+                    },
                     "color": "purple"
                 }
             ],
@@ -1259,7 +1418,10 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000003",
-                    "name": "VIP",
+                    "name": {
+                        "en": "VIP",
+                        "es": "VIP"
+                    },
                     "color": "purple"
                 }
             ],
@@ -1285,12 +1447,18 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000004",
-                    "name": "Recurrente",
+                    "name": {
+                        "en": "Recurrent",
+                        "es": "Recurrente"
+                    },
                     "color": "green"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000005",
-                    "name": "Exportación",
+                    "name": {
+                        "en": "Export",
+                        "es": "Exportación"
+                    },
                     "color": "orange"
                 }
             ],
@@ -1316,17 +1484,26 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000005",
-                    "name": "Exportación",
+                    "name": {
+                        "en": "Export",
+                        "es": "Exportación"
+                    },
                     "color": "orange"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000001",
-                    "name": "Urgente",
+                    "name": {
+                        "en": "Urgent",
+                        "es": "Urgente"
+                    },
                     "color": "red"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000002",
-                    "name": "Mayoreo",
+                    "name": {
+                        "en": "Wholesale",
+                        "es": "Mayoreo"
+                    },
                     "color": "blue"
                 }
             ],
@@ -1372,7 +1549,10 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000002",
-                    "name": "Mayoreo",
+                    "name": {
+                        "en": "Wholesale",
+                        "es": "Mayoreo"
+                    },
                     "color": "blue"
                 }
             ],
@@ -1398,12 +1578,18 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000003",
-                    "name": "VIP",
+                    "name": {
+                        "en": "VIP",
+                        "es": "VIP"
+                    },
                     "color": "purple"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000004",
-                    "name": "Recurrente",
+                    "name": {
+                        "en": "Recurrent",
+                        "es": "Recurrente"
+                    },
                     "color": "green"
                 }
             ],
@@ -1429,17 +1615,26 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000004",
-                    "name": "Recurrente",
+                    "name": {
+                        "en": "Recurrent",
+                        "es": "Recurrente"
+                    },
                     "color": "green"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000005",
-                    "name": "Exportación",
+                    "name": {
+                        "en": "Export",
+                        "es": "Exportación"
+                    },
                     "color": "orange"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000001",
-                    "name": "Urgente",
+                    "name": {
+                        "en": "Urgent",
+                        "es": "Urgente"
+                    },
                     "color": "red"
                 }
             ],
@@ -1485,7 +1680,10 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000001",
-                    "name": "Urgente",
+                    "name": {
+                        "en": "Urgent",
+                        "es": "Urgente"
+                    },
                     "color": "red"
                 }
             ],
@@ -1511,12 +1709,18 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000002",
-                    "name": "Mayoreo",
+                    "name": {
+                        "en": "Wholesale",
+                        "es": "Mayoreo"
+                    },
                     "color": "blue"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000003",
-                    "name": "VIP",
+                    "name": {
+                        "en": "VIP",
+                        "es": "VIP"
+                    },
                     "color": "purple"
                 }
             ],
@@ -1542,17 +1746,26 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000003",
-                    "name": "VIP",
+                    "name": {
+                        "en": "VIP",
+                        "es": "VIP"
+                    },
                     "color": "purple"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000004",
-                    "name": "Recurrente",
+                    "name": {
+                        "en": "Recurrent",
+                        "es": "Recurrente"
+                    },
                     "color": "green"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000005",
-                    "name": "Exportación",
+                    "name": {
+                        "en": "Export",
+                        "es": "Exportación"
+                    },
                     "color": "orange"
                 }
             ],
@@ -1597,7 +1810,10 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000005",
-                    "name": "Exportación",
+                    "name": {
+                        "en": "Export",
+                        "es": "Exportación"
+                    },
                     "color": "orange"
                 }
             ],
@@ -1623,12 +1839,18 @@
             "tags": [
                 {
                     "uuid": "33333333-0000-4000-8000-000000000001",
-                    "name": "Urgente",
+                    "name": {
+                        "en": "Urgent",
+                        "es": "Urgente"
+                    },
                     "color": "red"
                 },
                 {
                     "uuid": "33333333-0000-4000-8000-000000000002",
-                    "name": "Mayoreo",
+                    "name": {
+                        "en": "Wholesale",
+                        "es": "Mayoreo"
+                    },
                     "color": "blue"
                 }
             ],
