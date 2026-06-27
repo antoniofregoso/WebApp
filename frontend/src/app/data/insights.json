@@ -1,5 +1,5 @@
 {
-    "period":"monthly",
+    "period":"today",
     "layout":{
         "graphics":4
     },

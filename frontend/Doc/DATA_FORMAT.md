@@ -1,6 +1,6 @@
 # Data Format
 
-## Data types
+## Data visualization
 
 - string
 - integer
@@ -17,6 +17,8 @@
 - many2one_avatar
 - many2many
 - many2many_pills
+- many2many_kanban
+- many2many_list
 - one2many
 
 ## Data format
@@ -43,8 +45,7 @@
     "period":"",
     "kpis":[],
     "gauges":[],
-    "graphics":[],
-    "tables":[]
+    "graphics":[]
 }
 
 ```

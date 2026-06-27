@@ -3,17 +3,18 @@ import { initInsightGraphics, renderInsightGraphics } from '../components/insigh
 
 const PERIOD_LABELS = {
     today: { en: 'Today', es: 'Hoy' },
-    monthly: { en: 'Last 30 days', es: 'Últimos 30 días' },
     weekly: { en: 'Last 7 days', es: 'Últimos 7 días' },
-    yearly: { en: 'Yearly', es: 'Anual' },
-    annual: { en: 'Annual', es: 'Anual' },
+    monthly: { en: 'Last 30 days', es: 'Últimos 30 días' },
+    yearly: { en: 'Last 365 days', es: 'Últimos 365 días' },
+    annual: { en: 'This year', es: 'Este año' },
 };
 
-const PERIOD_OPTIONS = ['today', 'weekly', 'monthly'];
+const PERIOD_OPTIONS = ['today', 'weekly', 'monthly', 'yearly', 'annual'];
 
 let _gauges = [];
 let _graphics = [];
 let _lang = 'en';
+let _data = {};
 let _gaugeCharts = [];
 let _graphicsCleanup = null;
 
@@ -158,6 +159,7 @@ function renderGauges(gauges = [], lang) {
 }
 
 export function renderInsights(data = {}, lang = 'en') {
+    _data = data;
     const period = data?.period ?? '';
     _gauges = Array.isArray(data?.gauges) ? data.gauges : [];
     _graphics = Array.isArray(data?.graphics) ? data.graphics : [];
@@ -257,6 +259,18 @@ export function initInsights(lang = 'en') {
     _graphicsCleanup?.();
     _graphicsCleanup = null;
     _graphicsCleanup = initInsightGraphics(_graphics, lang);
+
+    const periodSelect = document.querySelector('[data-insight-period]');
+    if (periodSelect) {
+        periodSelect.addEventListener('change', (e) => {
+            const updatedData = { ..._data, period: e.target.value };
+            const contentEl = document.getElementById('dashboard-content');
+            if (contentEl) {
+                contentEl.outerHTML = renderInsights(updatedData, _lang);
+                initInsights(_lang);
+            }
+        });
+    }
 
     document.querySelectorAll('[data-insight-gauge]').forEach((el) => {
         const index = Number(el.dataset.insightGauge);

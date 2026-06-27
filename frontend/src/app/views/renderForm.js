@@ -1,6 +1,6 @@
 import {
     icon, faBoxArchive, faChevronLeft, faChevronRight, faEnvelope, faFileLines,
-    faFloppyDisk, faPen, faTrash, faUser,
+    faFloppyDisk, faNoteSticky, faPen, faPlus, faTrash, faUser, faWhatsapp,
 } from '../components/icon.js';
 import { renderViewHeader } from '../components';
 import { buildRecordUrl } from '../utils';
@@ -8,6 +8,10 @@ import {
     getField, label, renderFieldControl, renderFormLayout, renderTextArea, setFormInputsEnabled,
 } from './formFields.js';
 import { initCreateModal, renderCreateModal } from './renderCreateModal.js';
+import {
+    appendItem, initDocumentEditor, initQuillEditor, initTextEditor,
+    renderDocumentPicker, renderItemList, renderQuillComposer, renderTextComposer,
+} from './noteEditor.js';
 
 function escape(value) {
     return String(value)
@@ -89,47 +93,92 @@ function avatar(record) {
     </span>`;
 }
 
+const ACTIVITY_TABS = {
+    notes: {
+        icon: (l) => icon(faNoteSticky, 'topbar-action-icon'),
+        label: { es: 'Notas', en: 'Notes' },
+        addLabel: { es: 'Agregar nota', en: 'Add note' },
+        empty: { es: 'Aún no hay notas.', en: 'No notes yet.' },
+    },
+    whatsapp: {
+        icon: (l) => icon(faWhatsapp, 'topbar-action-icon'),
+        label: { es: 'WhatsApp', en: 'WhatsApp' },
+        addLabel: { es: 'Nueva conversación', en: 'New conversation' },
+        empty: { es: 'Sin conversaciones de WhatsApp.', en: 'No WhatsApp conversations.' },
+    },
+    messages: {
+        icon: (l) => icon(faEnvelope, 'topbar-action-icon'),
+        label: { es: 'Mensajes', en: 'Messages' },
+        addLabel: { es: 'Nuevo mensaje', en: 'New message' },
+        empty: { es: 'Sin mensajes.', en: 'No messages.' },
+    },
+    documents: {
+        icon: (l) => icon(faFileLines, 'topbar-action-icon'),
+        label: { es: 'Documentos', en: 'Documents' },
+        addLabel: { es: 'Subir documento', en: 'Upload document' },
+        empty: { es: 'Sin documentos adjuntos.', en: 'No documents attached.' },
+    },
+};
+
+const TAB_ORDER = ['notes', 'whatsapp', 'messages', 'documents'];
+
+const COMPOSERS = {
+    notes:     (lang) => renderQuillComposer('notes', lang),
+    messages:  (lang) => renderQuillComposer('messages', lang),
+    whatsapp:  (lang) => renderTextComposer('whatsapp', lang),
+    documents: ()     => renderDocumentPicker(),
+};
+
+function renderTabPanel(key, lang, isActive) {
+    const def = ACTIVITY_TABS[key];
+    const addLabel = def.addLabel[lang] ?? def.addLabel.en;
+    const empty = def.empty[lang] ?? def.empty.en;
+    const composer = COMPOSERS[key]?.(lang) ?? '';
+    return `
+    <div data-form-tab-panel="${key}"${isActive ? '' : ' hidden'}>
+        <div class="flex items-center justify-between border-b border-[var(--dash-border)] px-4 py-2">
+            <span class="text-xs font-medium text-[var(--dash-text-muted)]">${escape(def.label[lang] ?? def.label.en)}</span>
+            <button type="button"
+                class="topbar-action-btn"
+                aria-label="${escape(addLabel)}"
+                data-tooltip="${escape(addLabel)}"
+                data-form-tab-add="${key}">
+                ${icon(faPlus, 'topbar-action-icon')}
+            </button>
+        </div>
+        ${composer}
+        <div data-note-empty class="min-h-48 px-4 py-5 text-sm text-[var(--dash-text-muted)]">
+            ${escape(empty)}
+        </div>
+        ${composer ? renderItemList() : ''}
+    </div>`;
+}
+
 function renderActivityPanel(showWhatsapp, lang) {
-    const activeTab = 'messages';
-    const tabs = [
-        showWhatsapp ? {
-            key: 'whatsapp',
-            label: 'WhatsApp',
-            icon: '<span class="text-[10px] font-bold leading-none">WA</span>',
-        } : null,
-        {
-            key: 'messages',
-            label: lang === 'es' ? 'Mensajes' : 'Messages',
-            icon: icon(faEnvelope, 'topbar-action-icon'),
-        },
-        {
-            key: 'documents',
-            label: lang === 'es' ? 'Documentos' : 'Documents',
-            icon: icon(faFileLines, 'topbar-action-icon'),
-        },
-    ].filter(Boolean);
+    const activeTab = 'notes';
 
     return `<aside class="rounded-xl border border-[var(--dash-border)]
-                    bg-[var(--dash-surface)] shadow-[var(--dash-shadow)]">
+                    bg-[var(--dash-surface)] shadow-[var(--dash-shadow)]"
+                data-form-activity>
         <div class="grid border-b border-[var(--dash-border)] px-3 py-2"
-             style="grid-template-columns: repeat(${tabs.length}, minmax(0, 1fr));">
-            ${tabs.map((tab) => {
-                const isActive = tab.key === activeTab;
+             style="grid-template-columns: repeat(${TAB_ORDER.length}, minmax(0, 1fr));">
+            ${TAB_ORDER.map((key) => {
+                const def = ACTIVITY_TABS[key];
+                const tabLabel = def.label[lang] ?? def.label.en;
+                const isActive = key === activeTab;
                 return `<div class="form-activity-tab ${isActive ? 'form-activity-tab--active' : ''}">
                     <button type="button"
                         class="topbar-action-btn"
-                        aria-label="${escape(tab.label)}"
+                        aria-label="${escape(tabLabel)}"
                         aria-pressed="${isActive}"
-                        data-tooltip="${escape(tab.label)}"
-                        data-form-tab="${tab.key}">
-                        ${tab.icon}
+                        data-tooltip="${escape(tabLabel)}"
+                        data-form-tab="${key}">
+                        ${ACTIVITY_TABS[key].icon(lang)}
                     </button>
                 </div>`;
             }).join('')}
         </div>
-        <div class="min-h-48 px-4 py-5 text-sm text-[var(--dash-text-muted)]">
-            ${lang === 'es' ? 'Sin actividad reciente' : 'No recent activity'}
-        </div>
+        ${TAB_ORDER.map((key) => renderTabPanel(key, lang, key === activeTab)).join('')}
     </aside>`;
 }
 
@@ -314,9 +363,38 @@ export function initForm(lang = 'en') {
     editButton.addEventListener('click', enterEditMode);
     saveButton.addEventListener('click', enterReadonlyMode);
 
+    const activityAside = root.querySelector('[data-form-activity]');
+    activityAside?.querySelectorAll('[data-form-tab]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const key = btn.dataset.formTab;
+            activityAside.querySelectorAll('[data-form-tab]').forEach((b) => {
+                const active = b.dataset.formTab === key;
+                b.setAttribute('aria-pressed', String(active));
+                b.closest('.form-activity-tab')?.classList.toggle('form-activity-tab--active', active);
+            });
+            activityAside.querySelectorAll('[data-form-tab-panel]').forEach((panel) => {
+                panel.hidden = panel.dataset.formTabPanel !== key;
+            });
+        });
+    });
+
+    const panel = (key) => activityAside?.querySelector(`[data-form-tab-panel="${key}"]`);
+
+    const cleanupNotes     = initQuillEditor(panel('notes'), lang, 'notes',
+        (html) => appendItem(panel('notes'), html));
+    const cleanupMessages  = initQuillEditor(panel('messages'), lang, 'messages',
+        (html) => appendItem(panel('messages'), html));
+    const cleanupWhatsapp  = initTextEditor(panel('whatsapp'), lang, 'whatsapp',
+        (text) => appendItem(panel('whatsapp'), text));
+    const cleanupDocuments = initDocumentEditor(panel('documents'));
+
     return () => {
         editButton.removeEventListener('click', enterEditMode);
         saveButton.removeEventListener('click', enterReadonlyMode);
+        cleanupNotes?.();
+        cleanupMessages?.();
+        cleanupWhatsapp?.();
+        cleanupDocuments?.();
         cleanupCreateModal();
     };
 }

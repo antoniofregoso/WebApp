@@ -31,6 +31,8 @@ import {
     faXmark,
     faTrash,
     faBoxArchive,
+    faNoteSticky,
+    faPaperPlane,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -39,6 +41,8 @@ import {
     faEnvelope,
     faFileLines,
 } from '@fortawesome/free-regular-svg-icons';
+
+import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 
 // Register all icons with the library
 library.add(
@@ -69,10 +73,13 @@ library.add(
     faXmark,
     faTrash,
     faBoxArchive,
+    faNoteSticky,
+    faPaperPlane,
     faBell,
     faCircleUser,
     faEnvelope,
     faFileLines,
+    faWhatsapp,
 );
 
 /**
@@ -121,8 +128,11 @@ export {
     faXmark,
     faTrash,
     faBoxArchive,
+    faNoteSticky,
+    faPaperPlane,
     faBell,
     faCircleUser,
     faEnvelope,
     faFileLines,
+    faWhatsapp,
 };
