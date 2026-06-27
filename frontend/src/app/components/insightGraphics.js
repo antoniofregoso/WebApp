@@ -1,3 +1,5 @@
+import ApexCharts from 'apexcharts';
+
 function escape(value) {
     return String(value)
         .replace(/&/g, '&amp;')
@@ -29,6 +31,179 @@ function formatValue(value, lang) {
     return new Intl.NumberFormat(locale(lang), {
         maximumFractionDigits: 2,
     }).format(Number(value) || 0);
+}
+
+function getApexTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+}
+
+function getCssVar(name, fallback) {
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || fallback;
+}
+
+function getCategories(graphic, lang) {
+    const cats = graphic.categories;
+    if (!cats) return [];
+    return cats[lang] ?? cats.en ?? cats.es ?? [];
+}
+
+function getSeries(graphic, lang) {
+    if (Array.isArray(graphic.series)) {
+        return graphic.series.map((s) => ({
+            name: getLocalized(s.name, lang),
+            data: Array.isArray(s.data) ? s.data : [],
+        }));
+    }
+    return [{
+        name: getLocalized(graphic.title, lang),
+        data: Array.isArray(graphic.data) ? graphic.data : [],
+    }];
+}
+
+function buildBarOptions(graphic, lang) {
+    const isHorizontal = graphic.mode === 'horizontal';
+    const series = getSeries(graphic, lang);
+    const stacked = series.length > 1;
+    return {
+        chart: {
+            type: 'bar',
+            height: 420,
+            width: '100%',
+            background: 'transparent',
+            stacked,
+            toolbar: { show: false },
+            foreColor: getCssVar('--dash-text', '#374151'),
+        },
+        plotOptions: {
+            bar: {
+                horizontal: isHorizontal,
+                borderRadius: stacked ? 0 : 4,
+                columnWidth: '60%',
+                barHeight: '60%',
+            },
+        },
+        series,
+        xaxis: {
+            categories: getCategories(graphic, lang),
+            axisBorder: { color: getCssVar('--dash-border', '#e5e7eb') },
+            axisTicks: { color: getCssVar('--dash-border', '#e5e7eb') },
+        },
+        yaxis: isHorizontal ? { labels: { maxWidth: 160 } } : {},
+        grid: { borderColor: getCssVar('--dash-border', '#e5e7eb') },
+        dataLabels: { enabled: false },
+        legend: { show: stacked },
+        tooltip: { shared: stacked, intersect: false, theme: getApexTheme() },
+    };
+}
+
+function buildLineOptions(graphic, lang) {
+    const series = getSeries(graphic, lang);
+    const multi = series.length > 1;
+    return {
+        chart: {
+            type: 'line',
+            height: 420,
+            width: '100%',
+            background: 'transparent',
+            toolbar: { show: false },
+            foreColor: getCssVar('--dash-text', '#374151'),
+        },
+        series,
+        xaxis: {
+            categories: getCategories(graphic, lang),
+            axisBorder: { color: getCssVar('--dash-border', '#e5e7eb') },
+            axisTicks: { color: getCssVar('--dash-border', '#e5e7eb') },
+        },
+        grid: { borderColor: getCssVar('--dash-border', '#e5e7eb') },
+        stroke: { curve: 'smooth', width: 2 },
+        markers: { size: 4 },
+        dataLabels: { enabled: false },
+        legend: { show: multi },
+        tooltip: { shared: true, intersect: false, theme: getApexTheme() },
+    };
+}
+
+function buildRadarOptions(graphic, lang) {
+    const series = getSeries(graphic, lang);
+    return {
+        chart: {
+            type: 'radar',
+            height: 420,
+            width: '100%',
+            background: 'transparent',
+            toolbar: { show: false },
+            foreColor: getCssVar('--dash-text', '#374151'),
+        },
+        series,
+        xaxis: { categories: getCategories(graphic, lang) },
+        yaxis: { show: false },
+        markers: { size: 4 },
+        fill: { opacity: 0.2 },
+        stroke: { width: 2 },
+        legend: { show: series.length > 1, position: 'bottom' },
+        tooltip: { theme: getApexTheme() },
+    };
+}
+
+function buildTreemapOptions(graphic, lang) {
+    const data = Array.isArray(graphic.data)
+        ? graphic.data.map((item) => ({ x: getLocalized(item.x, lang), y: item.y }))
+        : [];
+    return {
+        chart: {
+            type: 'treemap',
+            height: 420,
+            width: '100%',
+            background: 'transparent',
+            toolbar: { show: false },
+            foreColor: getCssVar('--dash-text', '#374151'),
+        },
+        series: [{ data }],
+        dataLabels: { enabled: true, style: { fontSize: '13px' } },
+        colors: [getCssVar('--dash-accent', '#10b981')],
+        plotOptions: { treemap: { distributed: true, enableShades: true } },
+        legend: { show: false },
+        tooltip: { theme: getApexTheme() },
+    };
+}
+
+function buildDonutOptions(graphic, lang) {
+    const labels = graphic.labels;
+    const localizedLabels = Array.isArray(labels)
+        ? labels
+        : (labels?.[lang] ?? labels?.en ?? labels?.es ?? []);
+    return {
+        chart: {
+            type: 'donut',
+            height: 420,
+            width: '100%',
+            background: 'transparent',
+            toolbar: { show: false },
+            foreColor: getCssVar('--dash-text', '#374151'),
+        },
+        series: Array.isArray(graphic.series) ? graphic.series : [],
+        labels: localizedLabels,
+        dataLabels: { enabled: true },
+        legend: { show: true, position: 'bottom' },
+        plotOptions: {
+            pie: {
+                donut: { size: '60%' },
+                expandOnClick: false,
+            },
+        },
+        tooltip: { theme: getApexTheme(), fillSeriesColor: false },
+    };
+}
+
+function renderApexChart(el, options) {
+    el.innerHTML = '';
+    const chart = new ApexCharts(el, options);
+    chart.render()?.catch?.((error) => {
+        console.error('[insights] Failed to render chart:', error);
+    });
+    el._apexChart = chart;
+    return chart;
 }
 
 export function renderInsightGraphics(graphics = [], lang = 'en', layout = {}) {
@@ -410,6 +585,15 @@ function bindExpandButtons() {
                     document.body.appendChild(tooltip);
                 }
             }
+
+            const chartEl = card.querySelector('[data-insight-graphic]');
+            const apexChart = chartEl?._apexChart;
+            if (apexChart) {
+                requestAnimationFrame(() => {
+                    const height = isFullscreen ? (chartEl.clientHeight || 420) : 420;
+                    apexChart.updateOptions({ chart: { height } }, false, false);
+                });
+            }
         });
     });
 }
@@ -428,6 +612,21 @@ export function initInsightGraphics(graphics = [], lang = 'en') {
             if (graphic.type === 'sankey') {
                 const instance = renderSankey(el, graphic, lang);
                 if (instance) instances.push(instance);
+            } else if (graphic.type === 'bar') {
+                const chart = renderApexChart(el, buildBarOptions(graphic, lang));
+                instances.push(chart);
+            } else if (graphic.type === 'line') {
+                const chart = renderApexChart(el, buildLineOptions(graphic, lang));
+                instances.push(chart);
+            } else if (graphic.type === 'radar') {
+                const chart = renderApexChart(el, buildRadarOptions(graphic, lang));
+                instances.push(chart);
+            } else if (graphic.type === 'treemap') {
+                const chart = renderApexChart(el, buildTreemapOptions(graphic, lang));
+                instances.push(chart);
+            } else if (graphic.type === 'donut') {
+                const chart = renderApexChart(el, buildDonutOptions(graphic, lang));
+                instances.push(chart);
             } else {
                 el.innerHTML = `<div class="insight-empty">${escape(graphic.type ?? 'Unsupported chart')}</div>`;
             }

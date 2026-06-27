@@ -555,12 +555,16 @@ body {
   width: 100%;
   margin-top: 0.75rem;
   position: relative;
+  overflow: hidden;
+}
+
+.insight-graphic-chart[data-insight-graphic-type="sankey"] {
   overflow-x: auto;
   overflow-y: hidden;
 }
 
-.insight-graphic-chart > div,
-.insight-graphic-chart svg {
+.insight-graphic-chart[data-insight-graphic-type="sankey"] > div,
+.insight-graphic-chart[data-insight-graphic-type="sankey"] svg {
   display: block;
   min-width: 980px;
   width: 100%;

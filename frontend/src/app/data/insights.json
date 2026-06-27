@@ -305,7 +305,318 @@
     ]
   }
 }
-    }
+    },
+     {
+            "type": "bar",
+            "mode":"vertical",
+            "title": {
+                "en": "Monthly Inflation in Argentina, 2002",
+                "es": "Inflación mensual en Argentina, 2002"
+            },
+            "data": [2.3, 3.1, 4.0, 10.1, 4.0, 3.6, 3.2, 2.3, 1.4, 0.8, 0.5, 0.2],
+            "categories": {
+                            "en":["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+                            "es":["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
+                        }
+        
+        },
+     {
+            "type": "bar",
+            "mode":"horizontal",
+            "title": {
+                "en": "Monthly Inflation in Argentina, 2002",
+                "es": "Inflación mensual en Argentina, 2002"
+            },
+            "data": [2.3, 3.1, 4.0, 10.1, 4.0, 3.6, 3.2, 2.3, 1.4, 0.8, 0.5, 0.2],
+            "categories": {
+                            "en":["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+                            "es":["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
+                        }
+        
+        },
+     {
+            "type": "line",
+            "title": {
+                "en": "Monthly Inflation in Argentina, 2002",
+                "es": "Inflación mensual en Argentina, 2002"
+            },
+            "data": [2.3, 3.1, 4.0, 10.1, 4.0, 3.6, 3.2, 2.3, 1.4, 0.8, 0.5, 0.2],
+            "categories": {
+                            "en":["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+                            "es":["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
+                        }
+        
+        },
+        {
+            "type": "bar",
+            "title": {
+                "en": "Monthly Inflation in Argentina, 2002",
+                "es": "Inflación mensual en Argentina, 2002"
+            },
+            "series": [
+                {
+                "name": {
+                    "en":"PRODUCT A",
+                    "es":"PRODUCTO A"
+                },
+                "data": [44, 55, 41, 67, 22, 43]
+                },
+                {
+                "name": {
+                    "en":"PRODUCT B",
+                    "es":"PRODUCTO B"
+                },
+                "data": [13, 23, 20, 8, 13, 27]
+                },
+                {
+                "name": {
+                    "en":"PRODUCT C",
+                    "es":"PRODUCTO C"
+                },
+                "data": [11, 17, 15, 15, 21, 14]
+                },
+                {
+                "name": {
+                    "en":"PRODUCT D",
+                    "es":"PRODUCTO D"
+                },
+                "data": [21, 7, 25, 13, 22, 8]
+                }
+            ],
+            "categories":{
+                "en": ["01/01/2011 GMT","01/02/2011 GMT","01/03/2011 GMT","01/04/2011 GMT","01/05/2011 GMT","01/06/2011 GMT"],
+                "es": ["01/01/2011 GMT","01/02/2011 GMT","01/03/2011 GMT","01/04/2011 GMT","01/05/2011 GMT","01/06/2011 GMT"]
+            }
+        },
+        {
+            "type": "bar",
+            "mode":"horizontal",
+            "title": {
+                "en": "Monthly Inflation in Argentina, 2002",
+                "es": "Inflación mensual en Argentina, 2002"
+            },
+            "series": [
+                {
+                "name": {
+                    "en":"PRODUCT A",
+                    "es":"PRODUCTO A"
+                },
+                "data": [44, 55, 41, 67, 22, 43]
+                },
+                {
+                "name": {
+                    "en":"PRODUCT B",
+                    "es":"PRODUCTO B"
+                },
+                "data": [13, 23, 20, 8, 13, 27]
+                },
+                {
+                "name": {
+                    "en":"PRODUCT C",
+                    "es":"PRODUCTO C"
+                },
+                "data": [11, 17, 15, 15, 21, 14]
+                },
+                {
+                "name": {
+                    "en":"PRODUCT D",
+                    "es":"PRODUCTO D"
+                },
+                "data": [21, 7, 25, 13, 22, 8]
+                }
+            ],
+            "categories":{
+                "en": ["01/01/2011 GMT","01/02/2011 GMT","01/03/2011 GMT","01/04/2011 GMT","01/05/2011 GMT","01/06/2011 GMT"],
+                "es": ["01/01/2011 GMT","01/02/2011 GMT","01/03/2011 GMT","01/04/2011 GMT","01/05/2011 GMT","01/06/2011 GMT"]
+            }
+        },
+        {
+            "type": "line",
+            "title": {
+                "en": "Monthly Inflation in Argentina, 2002",
+                "es": "Inflación mensual en Argentina, 2002"
+            },
+            "series": [
+                {
+                "name": {
+                    "en":"PRODUCT A",
+                    "es":"PRODUCTO A"
+                },
+                "data": [44, 55, 41, 67, 22, 43]
+                },
+                {
+                "name": {
+                    "en":"PRODUCT B",
+                    "es":"PRODUCTO B"
+                },
+                "data": [13, 23, 20, 8, 13, 27]
+                },
+                {
+                "name": {
+                    "en":"PRODUCT C",
+                    "es":"PRODUCTO C"
+                },
+                "data": [11, 17, 15, 15, 21, 14]
+                },
+                {
+                "name": {
+                    "en":"PRODUCT D",
+                    "es":"PRODUCTO D"
+                },
+                "data": [21, 7, 25, 13, 22, 8]
+                }
+            ],
+            "categories":{
+                "en": ["01/01/2011 GMT","01/02/2011 GMT","01/03/2011 GMT","01/04/2011 GMT","01/05/2011 GMT","01/06/2011 GMT"],
+                "es": ["01/01/2011 GMT","01/02/2011 GMT","01/03/2011 GMT","01/04/2011 GMT","01/05/2011 GMT","01/06/2011 GMT"]
+            }
+        },
+        {
+            "type": "donut",
+            "title": {
+                "en": "Monthly Inflation in Argentina, 2002",
+                "es": "Inflación mensual en Argentina, 2002"
+            },
+            "series": [44, 55, 41, 17, 15],
+            "labels":{
+                "en":["Comedy", "Action", "SciFi", "Drama", "Horror"],
+                "es":["Comedia", "Acción", "SciFi", "Drama", "Horror"]
+            }
+        },
+        {
+            "type": "treemap",
+            "title": {
+                "en": "Basic Treemap",
+                "es": "Mapa de Árbol Básico"
+            },
+            "data": [
+        {
+          "x": {
+            "en":"New Delhi",
+            "es":"Nueva Delhi"
+          },
+          "y": 218
+        },
+        {
+          "x": {
+            "en":"Kolkata",
+            "es":"Calcuta"
+          },
+          "y": 149
+        },
+        {
+          "x": {
+            "en":"Mumbai",
+            "es":"Bombay"
+          },
+          "y": 184
+        },
+        {
+          "x": {
+            "en":"Ahmedabad",
+            "es":"Ahmedabad"
+          },
+          "y": 55
+        },
+        {
+          "x": {
+            "en":"Bangaluru",
+            "es":"Bangaluru"
+          },
+          "y": 84
+        },
+        {
+          "x": {
+            "en":"Pune",
+            "es":"Pune"
+          },
+          "y": 31
+        },
+        {
+          "x": {
+            "en":"Chennai",
+            "es":"Chennai"
+          },
+          "y": 70
+        },
+        {
+          "x": {
+            "en":"Jaipur",
+            "es":"Jaipur"
+          },
+          "y": 30
+        },
+        {
+          "x": {
+            "en":"Surat",
+            "es":"Surat"
+          },
+          "y": 44
+        },
+        {
+          "x": {
+            "en":"Hyderabad",
+            "es":"Hyderabad"
+          },
+          "y": 68
+        },
+        {
+          "x": {
+            "en":"Lucknow",
+            "es":"Lucknow"
+          },
+          "y": 28
+        },
+        {
+          "x": {
+            "en":"Indore",
+            "es":"Indore"
+          },
+          "y": 19
+        },
+        {
+          "x": {
+            "en":"Kanpur",
+            "es":"Kanpur"
+          },
+          "y": 29
+        }
+      ]
+        },
+        {
+            "type": "radar",
+            "title": {
+                "en": "Basic Radar",
+                "es": "Radar Básico"
+            },
+            "categories": {
+                "en":["2011", "2012", "2013", "2014", "2015", "2016"],
+                "es":["2011", "2012", "2013", "2014", "2015", "2016"]
+            },
+            "series": [
+                {
+                "name": {
+                    "en":"Value 1",
+                    "es":"Valor 1"
+                },
+                "data": [80, 50, 30, 40, 100, 20]
+                },
+                {
+                "name": {
+                    "en":"Value 2",
+                    "es":"Valor 2"
+                },
+                "data": [20, 30, 40, 80, 20, 80]
+                },
+                {
+                "name": {
+                    "en":"Value 3",
+                    "es":"Valor 3"
+                },
+                "data": [44, 76, 78, 13, 43, 10]
+                }
+            ]
+        }
             
             
             ]
