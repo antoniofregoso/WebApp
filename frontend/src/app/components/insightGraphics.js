@@ -33,6 +33,13 @@ function formatValue(value, lang) {
     }).format(Number(value) || 0);
 }
 
+function hexLighten(hex, amount) {
+    const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+    if (!m) return hex;
+    const ch = (i) => Math.round(parseInt(m[i], 16) + (255 - parseInt(m[i], 16)) * amount);
+    return `#${ch(1).toString(16).padStart(2,'0')}${ch(2).toString(16).padStart(2,'0')}${ch(3).toString(16).padStart(2,'0')}`;
+}
+
 function getApexTheme() {
     return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
 }
@@ -122,6 +129,73 @@ function buildLineOptions(graphic, lang) {
         legend: { show: multi },
         tooltip: { shared: true, intersect: false, theme: getApexTheme() },
     };
+}
+
+function renderHeatmap(el, graphic, lang) {
+    const rawRows = Array.isArray(graphic.data) ? graphic.data : [];
+    const dayNames = rawRows.map((row) => getLocalized(row.name, lang));
+    const hourLabels = (rawRows[0]?.data ?? []).map((pt) => getLocalized(pt.x, lang));
+
+    const series = hourLabels.map((hour, hi) => ({
+        name: hour,
+        data: rawRows.map((row, di) => ({ x: dayNames[di], y: row.data[hi]?.y ?? 0 })),
+    }));
+
+    const maxVal = Math.max(1, ...series.flatMap((s) => s.data.map((pt) => pt.y)));
+    const midVal = Math.round(maxVal / 2);
+    const accent = getCssVar('--dash-accent', '#10b981');
+    const colorMid = hexLighten(accent, 0.5);
+
+    el.innerHTML = `
+        <div class="heatmap-wrapper">
+            <div class="heatmap-chart-inner"></div>
+            <div class="heatmap-scale" aria-hidden="true">
+                <span class="heatmap-scale-value">${escape(String(maxVal))}</span>
+                <div class="heatmap-scale-track">
+                    <div class="heatmap-scale-bar"></div>
+                    <div class="heatmap-scale-ticks">
+                        <span class="heatmap-scale-tick"></span>
+                        <span class="heatmap-scale-tick heatmap-scale-tick--mid">
+                            <span class="heatmap-scale-tick-label">${escape(String(midVal))}</span>
+                        </span>
+                        <span class="heatmap-scale-tick"></span>
+                    </div>
+                </div>
+                <span class="heatmap-scale-value heatmap-scale-value--min">0</span>
+            </div>
+        </div>`;
+
+    el.querySelector('.heatmap-scale-bar').style.background =
+        `linear-gradient(to bottom, ${accent}, ${colorMid}, #ffffff)`;
+
+    const chartEl = el.querySelector('.heatmap-chart-inner');
+    const height = el.clientHeight || 420;
+
+    const chart = new ApexCharts(chartEl, {
+        chart: {
+            type: 'heatmap',
+            height,
+            width: '100%',
+            background: 'transparent',
+            toolbar: { show: false },
+            foreColor: getCssVar('--dash-text', '#374151'),
+        },
+        series,
+        colors: [accent],
+        dataLabels: { enabled: false },
+        plotOptions: {
+            heatmap: {
+                shadeIntensity: 0.4,
+                colorScale: { min: 0, max: maxVal },
+            },
+        },
+        legend: { show: false },
+        tooltip: { theme: getApexTheme() },
+    });
+
+    chart.render()?.catch?.((error) => console.error('[insights] Failed to render heatmap:', error));
+    el._apexChart = chart;
+    return chart;
 }
 
 function buildRadarOptions(graphic, lang) {
@@ -617,6 +691,9 @@ export function initInsightGraphics(graphics = [], lang = 'en') {
                 instances.push(chart);
             } else if (graphic.type === 'line') {
                 const chart = renderApexChart(el, buildLineOptions(graphic, lang));
+                instances.push(chart);
+            } else if (graphic.type === 'heatmap') {
+                const chart = renderHeatmap(el, graphic, lang);
                 instances.push(chart);
             } else if (graphic.type === 'radar') {
                 const chart = renderApexChart(el, buildRadarOptions(graphic, lang));
