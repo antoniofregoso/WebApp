@@ -1,13 +1,14 @@
 import { icon, faFloppyDisk, faXmark } from '../components/icon.js';
+import { initFormRichTextEditors } from './noteEditor.js';
 import {
     createEmptyRecord,
     escape,
     escapeAttr,
-    getField,
+    getFormLayout,
+    initPercentageSliders,
     label,
     renderFieldControl,
     renderFormLayout,
-    renderTextArea,
     setFormInputsEnabled,
 } from './formFields.js';
 
@@ -15,12 +16,7 @@ export function renderCreateModal(data = {}, lang = 'en') {
     const schema = data?.model?.schema ?? [];
     const modelTitle = data?.model?.label?.[lang] ?? data?.model?.name ?? '';
     const record = createEmptyRecord(schema);
-    const nameField = getField(schema, 'name') ?? {
-        name: 'name',
-        type: 'string',
-        label: { es: 'Nombre', en: 'Name' },
-    };
-    const descriptionField = getField(schema, 'description');
+    const { header } = getFormLayout(schema);
     const title = lang === 'es' ? `Crear ${modelTitle}` : `Create ${modelTitle}`;
     const closeLabel = lang === 'es' ? 'Cerrar' : 'Close';
     const saveLabel = lang === 'es' ? 'Guardar' : 'Save';
@@ -36,12 +32,16 @@ export function renderCreateModal(data = {}, lang = 'en') {
                 </button>
             </header>
             <div class="form-modal-body" data-form-mode="edit">
-                <div class="border-b border-[var(--dash-border)] px-5 py-4">
-                    ${renderFieldControl(nameField, '', data, lang, 'form-control--title')}
-                    ${descriptionField ? `<div class="mt-4">
-                        <label class="text-xs font-medium text-[var(--dash-text-muted)]">${label(descriptionField, lang)}</label>
-                        <div class="mt-1">${renderTextArea(descriptionField, '', 'form-control--textarea')}</div>
+                <div class="flex gap-4 border-b border-[var(--dash-border)] px-5 py-4">
+                    ${header.image ? `<div class="form-image-placeholder" data-form-header="image">
+                        <span>${label(header.image, lang)}</span>
                     </div>` : ''}
+                    <div class="min-w-0 flex-1">
+                        ${header.title ? renderFieldControl(header.title, '', data, lang, 'form-control--title') : ''}
+                        ${header.subtitle ? `<div class="mt-1">
+                            ${renderFieldControl(header.subtitle, '', data, lang, 'form-control--subtitle')}
+                        </div>` : ''}
+                    </div>
                 </div>
                 ${renderFormLayout(schema, record, data, lang)}
             </div>
@@ -59,13 +59,17 @@ export function initCreateModal(root = document, lang = 'en') {
     const createButton = root.querySelector('[data-create-open]');
     const modal = root.querySelector('[data-form-modal]');
     if (!createButton || !modal) return () => {};
+    const richTextEditors = initFormRichTextEditors(modal);
+    const cleanupPercentageSliders = initPercentageSliders(modal);
 
     const open = () => {
         modal.hidden = false;
         setFormInputsEnabled(modal, true, lang);
+        richTextEditors.setEnabled(true);
         modal.querySelector('[data-form-input]')?.focus();
     };
     const close = () => {
+        richTextEditors.setEnabled(false);
         modal.hidden = true;
         setFormInputsEnabled(modal, false, lang);
     };
@@ -81,5 +85,7 @@ export function initCreateModal(root = document, lang = 'en') {
         createButton.removeEventListener('click', open);
         modal.querySelectorAll('[data-form-modal-close]').forEach((button) => button.removeEventListener('click', close));
         document.removeEventListener('keydown', closeOnEscape);
+        cleanupPercentageSliders();
+        richTextEditors.cleanup();
     };
 }

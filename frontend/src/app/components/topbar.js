@@ -15,8 +15,9 @@ import {
     faRectangleList,
     faCalendarDays,
 } from './icon.js';
-import { contextActions } from '../store/actions/index.js';
+import { contextActions, dashboardActions } from '../store/actions/index.js';
 import { t } from '../../i18n/translations.js';
+import { normalizePagination } from '../utils';
 
 let _topbarCleanup = null;
 
@@ -29,7 +30,9 @@ let _topbarCleanup = null;
  * @param {boolean} showTools — whether to show the floating tools dock
  * @returns {string}       — HTML string
  */
-export function renderTopbar(lang, theme, pageTitle, breadcrumb = null, showTools = true) {
+export function renderTopbar(lang, theme, pageTitle, breadcrumb = null, showTools = true, pagination = {}) {
+    const { page, totalPages } = normalizePagination(pagination);
+    const pageStatus = lang === 'es' ? `Página ${page} de ${totalPages}` : `Page ${page} of ${totalPages}`;
     const themes = [
         { key: 'light', icon: faSun, labelEn: 'Light', labelEs: 'Claro' },
         { key: 'dark', icon: faMoon, labelEn: 'Dark', labelEs: 'Oscuro' },
@@ -165,11 +168,15 @@ export function renderTopbar(lang, theme, pageTitle, breadcrumb = null, showTool
             </form>
 
             <div class="topbar-pagination" aria-label="${t('topbar.pagination', lang)}">
-                <button class="topbar-tool-btn" aria-label="${t('topbar.page_prev', lang)}" data-tooltip="${t('topbar.page_prev', lang)}">
+                <button class="topbar-tool-btn" data-page-previous
+                    aria-label="${t('topbar.page_prev', lang)}" data-tooltip="${t('topbar.page_prev', lang)}"
+                    ${page <= 1 ? 'disabled' : ''}>
                     ${icon(faChevronLeft, 'topbar-tool-icon')}
                 </button>
-                <span class="topbar-page-indicator" aria-label="${t('topbar.page_status', lang)}">1 / 10</span>
-                <button class="topbar-tool-btn" aria-label="${t('topbar.page_next', lang)}" data-tooltip="${t('topbar.page_next', lang)}">
+                <span class="topbar-page-indicator" aria-label="${pageStatus}">${page} / ${totalPages}</span>
+                <button class="topbar-tool-btn" data-page-next
+                    aria-label="${t('topbar.page_next', lang)}" data-tooltip="${t('topbar.page_next', lang)}"
+                    ${page >= totalPages ? 'disabled' : ''}>
                     ${icon(faChevronRight, 'topbar-tool-icon')}
                 </button>
             </div>
@@ -237,5 +244,12 @@ export function initTopbar() {
 
     document.querySelector('.topbar-search')?.addEventListener('submit', (event) => {
         event.preventDefault();
+    });
+
+    document.querySelector('[data-page-previous]')?.addEventListener('click', () => {
+        dashboardActions.previousPage();
+    });
+    document.querySelector('[data-page-next]')?.addEventListener('click', () => {
+        dashboardActions.nextPage();
     });
 }

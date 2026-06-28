@@ -317,6 +317,7 @@ export function renderKanban(data = {}, lang = 'en') {
     const modelName = data?.model?.name ?? '';
     const currency  = schema.find((f) => f.type === 'monetary')?.currency ?? 'MXN';
     const title     = data?.model?.label?.[lang] ?? '';
+    const total     = data?.pagination?.total ?? records.length;
 
     _records = records;
 
@@ -330,7 +331,7 @@ export function renderKanban(data = {}, lang = 'en') {
 
     return `
     <main id="dashboard-content" class="dash-content" role="main" aria-label="Kanban Board">
-        ${renderViewHeader({ title, count: records.length, lang })}
+        ${renderViewHeader({ title, count: total, lang })}
         <div class="flex items-start gap-4 overflow-x-auto pb-2">
             ${columns}
         </div>

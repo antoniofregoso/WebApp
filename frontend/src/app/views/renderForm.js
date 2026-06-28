@@ -5,11 +5,11 @@ import {
 import { renderViewHeader } from '../components';
 import { buildRecordUrl } from '../utils';
 import {
-    getField, label, renderFieldControl, renderFormLayout, renderTextArea, setFormInputsEnabled,
+    getFormLayout, initPercentageSliders, renderFieldControl, renderFormLayout, setFormInputsEnabled,
 } from './formFields.js';
 import { initCreateModal, renderCreateModal } from './renderCreateModal.js';
 import {
-    appendItem, initDocumentEditor, initQuillEditor, initTextEditor,
+    appendItem, initDocumentEditor, initFormRichTextEditors, initQuillEditor, initTextEditor,
     renderDocumentPicker, renderItemList, renderQuillComposer, renderTextComposer,
 } from './noteEditor.js';
 
@@ -79,9 +79,10 @@ function initials(name) {
         .join('') || '?';
 }
 
-function avatar(record) {
-    const src = record.avatar;
-    const name = record.name ?? '';
+function avatar(record, imageField, titleField) {
+    const src = record[imageField.name];
+    const titleValue = titleField ? record[titleField.name] : record.name;
+    const name = titleValue?.name ?? titleValue ?? '';
     if (src) {
         return `<img src="${escape(src)}" alt="${escape(name)}"
                     class="h-20 w-20 rounded-xl object-cover ring-1 ring-[var(--dash-border)]" />`;
@@ -188,7 +189,7 @@ function renderFormActions(lang) {
     const archiveLabel = lang === 'es' ? 'Archivar' : 'Archive';
     const deleteLabel = lang === 'es' ? 'Borrar' : 'Delete';
 
-    return `<div class="flex items-center gap-2">
+    return `<div class="form-record-actions flex items-center gap-2">
         <button type="button"
             class="topbar-action-btn"
             aria-label="${editLabel}"
@@ -290,13 +291,8 @@ export function renderForm(data = {}, lang = 'en', options = {}) {
     const modelTitle = isMainModel
         ? (data?.model?.label?.[lang] ?? data?.model?.name ?? '')
         : (options.recordModel ?? record.model ?? '');
-    const nameField = getField(schema, 'name') ?? {
-        name: 'name',
-        type: 'string',
-        label: { es: 'Nombre', en: 'Name' },
-    };
-    const descriptionField = getField(schema, 'description');
-    const showAvatar = true;
+    const formLayout = getFormLayout(schema);
+    const { image: imageField, title: titleField, subtitle: subtitleField } = formLayout.header;
     const showWhatsapp = shouldShowWhatsapp(data, options);
 
     return `
@@ -307,20 +303,29 @@ export function renderForm(data = {}, lang = 'en', options = {}) {
             <section data-form-record class="rounded-xl border border-[var(--dash-border)]
                             bg-[var(--dash-surface)] shadow-[var(--dash-shadow)]">
                 <div class="form-record-header flex gap-4 border-b border-[var(--dash-border)] px-5 py-4">
-                    ${showAvatar ? `<div class="shrink-0">${avatar(record)}</div>` : ''}
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-start justify-between gap-4">
-                            <div class="min-w-0">
-                                ${renderFieldControl(nameField, record.name ?? '', data, lang, 'form-control--title')}
+                    ${imageField ? `<div class="shrink-0" data-form-header="image">${avatar(record, imageField, titleField)}</div>` : ''}
+                    <div class="form-record-header-main min-w-0 flex-1">
+                        <div class="form-record-title-row flex items-start justify-between gap-4">
+                            <div class="min-w-0 flex-1" data-form-header="title">
+                                ${titleField ? renderFieldControl(
+                                    titleField,
+                                    record[titleField.name],
+                                    data,
+                                    lang,
+                                    'form-control--title',
+                                ) : ''}
+                                ${subtitleField ? `<div class="mt-1" data-form-header="subtitle">
+                                    ${renderFieldControl(
+                                        subtitleField,
+                                        record[subtitleField.name],
+                                        data,
+                                        lang,
+                                        'form-control--subtitle',
+                                    )}
+                                </div>` : ''}
                             </div>
                             ${renderFormActions(lang)}
                         </div>
-                        ${descriptionField ? `<div class="mt-4">
-                            <label class="text-xs font-medium text-[var(--dash-text-muted)]">
-                                ${label(descriptionField, lang)}
-                            </label>
-                            <div class="mt-1">${renderTextArea(descriptionField, record.description, 'form-control--textarea')}</div>
-                        </div>` : ''}
                     </div>
                 </div>
 
@@ -342,10 +347,13 @@ export function initForm(lang = 'en') {
     const recordForm = root?.querySelector('[data-form-record]');
     const cleanupCreateModal = initCreateModal(root, lang);
     if (!root || !editButton || !saveButton || !recordForm) return cleanupCreateModal;
+    const richTextEditors = initFormRichTextEditors(recordForm);
+    const cleanupPercentageSliders = initPercentageSliders(recordForm);
 
     const enterEditMode = () => {
         root.dataset.formMode = 'edit';
         setFormInputsEnabled(recordForm, true, lang);
+        richTextEditors.setEnabled(true);
         saveButton.disabled = false;
         editButton.classList.add('topbar-action-btn--active');
         editButton.setAttribute('aria-pressed', 'true');
@@ -353,6 +361,7 @@ export function initForm(lang = 'en') {
     };
 
     const enterReadonlyMode = () => {
+        richTextEditors.setEnabled(false);
         root.dataset.formMode = 'readonly';
         setFormInputsEnabled(recordForm, false, lang);
         saveButton.disabled = true;
@@ -364,6 +373,23 @@ export function initForm(lang = 'en') {
     saveButton.addEventListener('click', enterReadonlyMode);
 
     const activityAside = root.querySelector('[data-form-activity]');
+
+    root.querySelectorAll('[data-record-tabs]').forEach((tabs) => {
+        tabs.querySelectorAll('[data-record-tab]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const selectedTab = button.dataset.recordTab;
+                tabs.querySelectorAll('[data-record-tab]').forEach((tabButton) => {
+                    const active = tabButton.dataset.recordTab === selectedTab;
+                    tabButton.classList.toggle('form-record-tab--active', active);
+                    tabButton.setAttribute('aria-selected', String(active));
+                });
+                tabs.querySelectorAll('[data-record-tab-panel]').forEach((panel) => {
+                    panel.hidden = panel.dataset.recordTabPanel !== selectedTab;
+                });
+            });
+        });
+    });
+
     activityAside?.querySelectorAll('[data-form-tab]').forEach((btn) => {
         btn.addEventListener('click', () => {
             const key = btn.dataset.formTab;
@@ -395,6 +421,8 @@ export function initForm(lang = 'en') {
         cleanupMessages?.();
         cleanupWhatsapp?.();
         cleanupDocuments?.();
+        cleanupPercentageSliders();
+        richTextEditors.cleanup();
         cleanupCreateModal();
     };
 }

@@ -5,7 +5,7 @@ import { renderSidebar, initSidebar, updateSidebarExpansion, MENU_ITEMS } from '
 import { renderTopbar, initTopbar } from '../components';
 import { t } from '../../i18n';
 import { renderCalendar, renderForm, renderInsights, renderKanban, renderList, initCalendar, initForm, initInsights, initList, initKanban } from '../views';
-import { applyTheme, getAreaTitle } from '../utils';
+import { applyTheme, getAreaTitle, normalizePagination, paginateData } from '../utils';
 
 import demoData from '../data/demo.json';
 import demoInsights from '../data/insights.json';
@@ -16,6 +16,9 @@ let _lastTheme = null;
 let _lastExpanded = null;
 let _lastArea = null;
 let _lastView = null;
+let _lastPage = null;
+let _lastPerPage = null;
+let _lastTotal = null;
 let _lastRecordRoute = false;
 let _lastRecordModel = null;
 let _lastRecordUuid = null;
@@ -55,16 +58,21 @@ function hasRecordRoute() {
     return _currentRecordModel && _currentRecordUuid != null;
 }
 
+function getPagination(state = appSignal.value) {
+    return normalizePagination(state.dashboard, demoData.records.length);
+}
+
 /** Render the content markup for the currently selected view. */
-function renderView(view, area, lang) {
+function renderView(view, area, lang, pagination) {
     const renderFn = VIEW_RENDERERS[view] ?? VIEW_RENDERERS[DEFAULT_VIEW];
+    const paginatedData = paginateData(demoData, pagination);
     // TEMP: feed demo data to the data-driven views for testing.
     if (renderFn === renderList || renderFn === renderKanban || renderFn === renderCalendar) {
-        return renderFn(demoData, lang);
+        return renderFn(paginatedData, lang);
     }
     if (renderFn === renderForm) {
         const commercialAreas = new Set(['crm', 'sales', 'sale', 'ventas']);
-        return renderFn(demoData, lang, {
+        return renderFn(hasRecordRoute() ? demoData : paginatedData, lang, {
             recordModel: _currentRecordModel,
             recordUuid: _currentRecordUuid,
             showWhatsapp: commercialAreas.has(area),
@@ -82,11 +90,11 @@ function isInsightsContext(area, subarea) {
 }
 
 /** Pick the content markup for the current page (insights or the dock view). */
-function renderContent(area, subarea, view, lang) {
+function renderContent(area, subarea, view, lang, pagination = getPagination()) {
     if (isInsightsContext(area, subarea)) {
         return renderInsights(demoInsights, lang);
     }
-    return renderView(view, area, lang);
+    return renderView(view, area, lang, pagination);
 }
 
 /**
@@ -154,6 +162,7 @@ function renderDashboard(lang, theme, expanded, area, subarea, view) {
     const pageTitle = area ? getAreaTitle(area, lang, MENU_ITEMS) : '';
     const breadcrumb = getTopbarBreadcrumb(area, subarea, lang);
     const showTopbarTools = shouldShowTopbarTools(area, subarea);
+    const pagination = getPagination();
     const appEl = document.getElementById('app');
     if (!appEl) return;
 
@@ -161,8 +170,8 @@ function renderDashboard(lang, theme, expanded, area, subarea, view) {
     <div class="dash-layout">
         ${renderSidebar(lang, expanded, area)}
         <div class="dash-main">
-            ${renderTopbar(lang, theme, pageTitle, breadcrumb, showTopbarTools)}
-            ${renderContent(area, subarea, view, lang)}
+            ${renderTopbar(lang, theme, pageTitle, breadcrumb, showTopbarTools, pagination)}
+            ${renderContent(area, subarea, view, lang, pagination)}
         </div>
     </div>
     `;
@@ -185,6 +194,10 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
     const themeChanged = theme !== prevTheme;
     const expandedChanged = expanded !== prevExpanded;
     const viewChanged = view !== prevView;
+    const pagination = getPagination();
+    const paginationChanged = pagination.page !== _lastPage
+        || pagination.perPage !== _lastPerPage
+        || pagination.total !== _lastTotal;
     const recordRouteChanged =
         hasRecordRoute() !== _lastRecordRoute ||
         _currentRecordModel !== _lastRecordModel ||
@@ -205,13 +218,20 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
     }
 
     // Patch topbar (theme, lang change)
-    if (themeChanged || langChanged || areaChanged || recordRouteChanged) {
+    if (themeChanged || langChanged || areaChanged || recordRouteChanged || paginationChanged) {
         const topbarEl = document.getElementById('dashboard-topbar-shell');
         const pageTitle = area ? getAreaTitle(area, lang, MENU_ITEMS) : '';
         const breadcrumb = getTopbarBreadcrumb(area, _currentSubarea, lang);
         const showTopbarTools = shouldShowTopbarTools(area, _currentSubarea);
         if (topbarEl) {
-            topbarEl.outerHTML = renderTopbar(lang, theme, pageTitle, breadcrumb, showTopbarTools);
+            topbarEl.outerHTML = renderTopbar(
+                lang,
+                theme,
+                pageTitle,
+                breadcrumb,
+                showTopbarTools,
+                pagination,
+            );
             initTopbar();
             // Re-bind the dock view-switch buttons after topbar replacement
             initViewButtons(view);
@@ -219,10 +239,10 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
     }
 
     // Patch content (area, lang, view, or selected record change)
-    if (areaChanged || langChanged || viewChanged || recordRouteChanged) {
+    if (areaChanged || langChanged || viewChanged || recordRouteChanged || paginationChanged) {
         const contentEl = document.getElementById('dashboard-content');
         if (contentEl) {
-            contentEl.outerHTML = renderContent(area, _currentSubarea, view, lang);
+            contentEl.outerHTML = renderContent(area, _currentSubarea, view, lang, pagination);
             initActiveView(isInsightsContext(area, _currentSubarea) ? 'insights' : view, lang);
         }
         // Reflect the active view on the dock buttons (when topbar was not re-rendered)
@@ -264,6 +284,7 @@ export function dashboard(req, router) {
     }
     const areaChanged = areaFromUrl !== appSignal.value.context.active_area;
     const subareaChanged = _currentSubarea !== prevSubarea;
+    dashboardActions.setTotal(demoData.records.length);
     if (areaFromUrl && areaChanged) {
         contextActions.setActiveArea(areaFromUrl);
     }
@@ -302,6 +323,10 @@ export function dashboard(req, router) {
     _lastExpanded = expanded;
     _lastArea = area;
     _lastView = view;
+    const pagination = getPagination(state);
+    _lastPage = pagination.page;
+    _lastPerPage = pagination.perPage;
+    _lastTotal = pagination.total;
     _lastRecordRoute = isRecordRoute;
     _lastRecordModel = _currentRecordModel;
     _lastRecordUuid = _currentRecordUuid;
@@ -320,6 +345,7 @@ export function dashboard(req, router) {
         const newExpanded = s.context.sidebar_expanded;
         const newArea = s.context.active_area;
         const newView = getEffectiveView(getView(s));
+        const newPagination = getPagination(s);
 
         const changed =
             newLang !== _lastLang ||
@@ -327,6 +353,9 @@ export function dashboard(req, router) {
             newExpanded !== _lastExpanded ||
             newArea !== _lastArea ||
             newView !== _lastView ||
+            newPagination.page !== _lastPage ||
+            newPagination.perPage !== _lastPerPage ||
+            newPagination.total !== _lastTotal ||
             hasRecordRoute() !== _lastRecordRoute ||
             _currentRecordModel !== _lastRecordModel ||
             _currentRecordUuid !== _lastRecordUuid;
@@ -343,6 +372,9 @@ export function dashboard(req, router) {
         _lastExpanded = newExpanded;
         _lastArea = newArea;
         _lastView = newView;
+        _lastPage = newPagination.page;
+        _lastPerPage = newPagination.perPage;
+        _lastTotal = newPagination.total;
         _lastRecordRoute = hasRecordRoute();
         _lastRecordModel = _currentRecordModel;
         _lastRecordUuid = _currentRecordUuid;

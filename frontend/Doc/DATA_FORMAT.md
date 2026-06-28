@@ -1,27 +1,9 @@
 # Data Format
 
-## Data visualization
 
-- string
-- integer
-- decimal
-- monetary
-- percentage
-- date
-- datetime
-- boolean
-- image
-- text
-- html
-- many2one
-- many2one_avatar
-- many2many
-- many2many_pills
-- many2many_kanban
-- many2many_list
-- one2many
+## Views
 
-## Data format
+### Business objects
 
 ```json
 {
@@ -36,8 +18,9 @@
     },
     "records":[]
 }
-
 ```
+
+
 ## Insights
 ```json
 

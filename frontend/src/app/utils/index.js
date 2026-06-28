@@ -4,3 +4,4 @@ export * from './formatters.js';
 export * from './renderValues.js';
 export * from './sortable.js';
 export * from './routing.js';
+export * from './pagination.js';

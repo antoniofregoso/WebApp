@@ -45,6 +45,36 @@ def inline_threadpool(monkeypatch):
 
 
 class TestSystemAttachmentService:
+    async def test_stores_avatar_image_in_local_filestore(
+        self,
+        monkeypatch,
+        storage,
+        model,
+    ):
+        avatar_content = b"\xff\xd8\xffavatar-image\xff\xd9"
+
+        async def create(attachment):
+            attachment.id = 1
+            return attachment
+
+        monkeypatch.setattr(SystemAttachmentRepository, "create", create)
+
+        attachment = await SystemAttachmentService.create(
+            model_uuid=model.uuid,
+            record_uuid=uuid.uuid4(),
+            original_name="avatar.jpg",
+            content_type="image/jpeg",
+            stream=BytesIO(avatar_content),
+            user_id=3,
+            company_id=5,
+            storage=storage,
+        )
+
+        assert attachment.original_name == "avatar.jpg"
+        assert attachment.content_type == "image/jpeg"
+        assert attachment.storage_provider == "local"
+        assert storage.path(attachment.storage_key).read_bytes() == avatar_content
+
     async def test_creates_metadata_for_stored_content(
         self,
         monkeypatch,

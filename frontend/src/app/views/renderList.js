@@ -72,13 +72,14 @@ export function renderList(data = {}, lang = 'en') {
     const statusLabels = data?.model?.status ?? [];
     const modelName = data?.model?.name ?? '';
     const title = data?.model?.label?.[lang] ?? '';
+    const total = data?.pagination?.total ?? records.length;
 
     const columns = getListColumns(schema);
     const hasData = columns.length > 0 && records.length > 0;
 
     return `
     <main id="dashboard-content" class="dash-content" role="main" aria-label="List">
-        ${renderViewHeader({ title, count: records.length, lang, actions: renderSelectionActions(lang) })}
+        ${renderViewHeader({ title, count: total, lang, actions: renderSelectionActions(lang) })}
         <div class="w-full overflow-hidden rounded-xl border border-[var(--dash-border)]
                     bg-[var(--dash-surface)] shadow-[var(--dash-shadow)]">
             ${hasData ? `

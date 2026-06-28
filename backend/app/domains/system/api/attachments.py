@@ -65,6 +65,9 @@ async def download_attachment(
         path=path,
         media_type=attachment.content_type,
         filename=attachment.original_name,
+        content_disposition_type=(
+            "inline" if attachment.content_type.startswith("image/") else "attachment"
+        ),
         headers={"X-Content-Type-Options": "nosniff"},
     )
 
