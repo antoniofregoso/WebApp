@@ -1750,10 +1750,95 @@ body {
 
 .form-field-label {
   display: block;
-  margin-bottom: 0.25rem;
+  margin: 0;
   color: var(--dash-text-muted);
   font-size: 0.75rem;
   font-weight: 600;
+}
+
+.form-field-label-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.form-field-label-row--help-only {
+  justify-content: flex-end;
+}
+
+.form-help {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.form-help-trigger {
+  display: inline-flex;
+  width: 1.25rem;
+  height: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dash-text-soft);
+  cursor: pointer;
+  transition: background 150ms, color 150ms, box-shadow 150ms;
+}
+
+.form-help-trigger:hover,
+.form-help--open .form-help-trigger {
+  background: var(--dash-accent-soft);
+  color: var(--dash-accent);
+}
+
+.form-help-trigger:focus-visible {
+  outline: 2px solid var(--dash-accent);
+  outline-offset: 2px;
+}
+
+.form-help-icon {
+  width: 0.8125rem;
+  height: 0.8125rem;
+}
+
+.form-help-popover {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  width: max-content;
+  max-width: min(18rem, calc(100vw - 2rem));
+  border: 1px solid var(--dash-border);
+  border-radius: 0.625rem;
+  background: var(--dash-surface);
+  box-shadow: var(--dash-shadow-md);
+  padding: 0.625rem 0.75rem;
+  color: var(--dash-text);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+}
+
+.form-help-popover::before {
+  position: absolute;
+  top: -0.3125rem;
+  left: 0.3125rem;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-top: 1px solid var(--dash-border);
+  border-left: 1px solid var(--dash-border);
+  background: var(--dash-surface);
+  content: '';
+  transform: rotate(45deg);
+}
+
+.form-help-popover[hidden] {
+  display: none;
 }
 
 .form-field-control {
@@ -2123,13 +2208,6 @@ body {
 
 .form-required-mark {
   color: var(--dash-danger);
-}
-
-.form-field-help {
-  margin-top: 0.25rem;
-  color: var(--dash-text-muted);
-  font-size: 0.75rem;
-  line-height: 1.4;
 }
 
 .form-record-tabs {

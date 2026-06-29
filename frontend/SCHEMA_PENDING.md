@@ -25,3 +25,26 @@ Ideas para evolucionar el schema declarativo del frontend:
 - `permissions`: permisos por accion (`create`, `read`, `update`, `delete`) para ocultar botones o bloquear campos.
 - `actions`: acciones declarativas por vista o registro.
 - `i18n`: completar etiquetas, placeholders y ayudas por idioma.
+
+## Constructor visual de schemas
+
+- [ ] Crear una herramienta visual tipo Studio para construir y mantener schemas sin editar JSON manualmente.
+- [ ] Usar `SystemModel` como definición del modelo y `SystemModelField` como catálogo de campos, tipos y reglas.
+- [ ] Permitir crear, editar, eliminar y ordenar campos mediante drag-and-drop.
+- [ ] Configurar por campo: nombre técnico, etiquetas traducidas, tipo, valor predeterminado, `required`, `readonly`, `placeholder`, `help`, validaciones y opciones del widget.
+- [ ] Configurar relaciones `many2one`, `many2many` y `one2many`, incluyendo modelo relacionado, dominio y widget de presentación.
+- [ ] Diseñar visualmente la ubicación de cada campo en formulario, lista, kanban y calendario.
+- [ ] Incluir una previsualización en tiempo real para escritorio, tableta, móvil y temas claro/oscuro.
+- [ ] Generar y guardar la configuración resultante en `SystemModelSchema.view`, manteniendo `SystemModel` y `SystemModelField` como fuente de verdad.
+- [ ] Validar antes de guardar nombres duplicados, posiciones incompatibles, referencias inexistentes, tipos no soportados y configuraciones incompletas.
+- [ ] Incorporar historial de versiones, comparación de cambios y restauración de una versión anterior del schema.
+- [ ] Respetar permisos para separar quién puede visualizar, editar, publicar o restaurar schemas.
+- [ ] Definir un flujo de borrador, previsualización y publicación para evitar que un cambio incompleto afecte inmediatamente las vistas activas.
+
+### Criterios de aceptación iniciales
+
+- Un usuario autorizado puede crear un modelo y sus campos desde la interfaz.
+- Puede organizar al menos las vistas de formulario, lista y kanban sin escribir JSON.
+- La previsualización utiliza los mismos renderers que la aplicación real.
+- Al publicar, la herramienta produce un `SystemModelSchema.view` válido y consumible por las vistas actuales.
+- Los errores de configuración se muestran antes de publicar y señalan el campo o la vista afectados.

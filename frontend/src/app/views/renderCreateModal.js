@@ -5,6 +5,7 @@ import {
     escape,
     escapeAttr,
     getFormLayout,
+    initHelpTooltips,
     initPercentageSliders,
     initTagPickers,
     label,
@@ -63,6 +64,7 @@ export function initCreateModal(root = document, lang = 'en') {
     const richTextEditors = initFormRichTextEditors(modal);
     const cleanupPercentageSliders = initPercentageSliders(modal);
     const tagPickers = initTagPickers(modal, lang);
+    const cleanupHelpTooltips = initHelpTooltips(modal);
 
     const open = () => {
         modal.hidden = false;
@@ -91,6 +93,7 @@ export function initCreateModal(root = document, lang = 'en') {
         document.removeEventListener('keydown', closeOnEscape);
         cleanupPercentageSliders();
         tagPickers.cleanup();
+        cleanupHelpTooltips();
         richTextEditors.cleanup();
     };
 }

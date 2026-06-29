@@ -5,8 +5,8 @@ import {
 import { renderViewHeader } from '../components';
 import { buildRecordUrl } from '../utils';
 import {
-    getFormLayout, initPercentageSliders, initTagPickers, renderFieldControl, renderFormLayout,
-    setFormInputsEnabled,
+    getFormLayout, initHelpTooltips, initPercentageSliders, initTagPickers, renderFieldControl,
+    renderFormLayout, setFormInputsEnabled,
 } from './formFields.js';
 import { initCreateModal, renderCreateModal } from './renderCreateModal.js';
 import {
@@ -351,6 +351,7 @@ export function initForm(lang = 'en') {
     const richTextEditors = initFormRichTextEditors(recordForm);
     const cleanupPercentageSliders = initPercentageSliders(recordForm);
     const tagPickers = initTagPickers(recordForm, lang);
+    const cleanupHelpTooltips = initHelpTooltips(recordForm);
 
     const enterEditMode = () => {
         root.dataset.formMode = 'edit';
@@ -427,6 +428,7 @@ export function initForm(lang = 'en') {
         cleanupDocuments?.();
         cleanupPercentageSliders();
         tagPickers.cleanup();
+        cleanupHelpTooltips();
         richTextEditors.cleanup();
         cleanupCreateModal();
     };

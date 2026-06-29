@@ -2,7 +2,9 @@ import {
     buildRecordUrl, COLOR_CLASS, COLOR_FALLBACK, formatCurrency, locale, localizedValue,
     resolveTags,
 } from '../utils';
-import { faMagnifyingGlass, faXmark, icon } from '../components/icon.js';
+import {
+    faCircleQuestion, faMagnifyingGlass, faXmark, icon,
+} from '../components/icon.js';
 
 export function escape(value) {
     return String(value)
@@ -115,20 +117,14 @@ function plainText(value) {
     return String(value).replace(/<[^>]*>/g, '').trim();
 }
 
-function helpId(field) {
-    return `form-help-${String(field.name).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
-}
-
 function controlAttributes(field, lang) {
     const placeholder = plainText(localizedConfig(field, 'placeholder', lang));
-    const help = localizedConfig(field, 'help', lang);
     const accessibleLabel = field?.label?.[lang] ?? field?.label?.en ?? field?.name ?? '';
     return [
         accessibleLabel ? `aria-label="${escapeAttr(accessibleLabel)}"` : '',
         placeholder ? `placeholder="${escapeAttr(placeholder)}"` : '',
         field?.form?.required ? 'required aria-required="true"' : '',
         field?.form?.readonly ? 'data-form-readonly="true" aria-readonly="true"' : '',
-        help ? `aria-describedby="${helpId(field)}"` : '',
     ].filter(Boolean).join(' ');
 }
 
@@ -334,34 +330,50 @@ export function renderFieldControl(field, value, data, lang, extraClass = '') {
     }
 }
 
+function renderHelpControl(help, lang) {
+    const openLabel = lang === 'es' ? 'Mostrar ayuda' : 'Show help';
+    return `<span class="form-help" data-form-help>
+        <button type="button" class="form-help-trigger"
+            aria-label="${escapeAttr(`${openLabel}: ${help}`)}"
+            aria-expanded="false" data-form-help-trigger>
+            ${icon(faCircleQuestion, 'form-help-icon')}
+        </button>
+        <span class="form-help-popover" role="tooltip" data-form-help-popover hidden>
+            ${escape(help)}
+        </span>
+    </span>`;
+}
+
 function renderField(field, record, data, lang, variant = '') {
     const requiredMark = field.form?.required
         ? '<span class="form-required-mark" aria-hidden="true">*</span>'
         : '';
     const help = localizedConfig(field, 'help', lang);
-    const helpText = help
-        ? `<p id="${helpId(field)}" class="form-field-help">${escape(help)}</p>`
-        : '';
+    const helpControl = help ? renderHelpControl(help, lang) : '';
     const classes = ['form-field', variant === 'tab' ? 'form-field--tab' : ''].filter(Boolean).join(' ');
     const hideRepeatedTabLabel = variant === 'tab-primary' && field.type === 'html';
 
     if (field.type === 'boolean') {
         return `<div class="${classes}" data-form-field="${escapeAttr(field.name)}">
-            <label class="form-boolean-label">
-                ${renderFieldControl(field, record[field.name], data, lang)}
-                <span>${label(field, lang)} ${requiredMark}</span>
-            </label>
-            ${helpText}
+            <div class="form-field-label-row">
+                <label class="form-boolean-label">
+                    ${renderFieldControl(field, record[field.name], data, lang)}
+                    <span>${label(field, lang)} ${requiredMark}</span>
+                </label>
+                ${helpControl}
+            </div>
         </div>`;
     }
     return `<div class="${classes}" data-form-field="${escapeAttr(field.name)}">
-        ${hideRepeatedTabLabel ? '' : `<label class="form-field-label">
-            ${label(field, lang)} ${requiredMark}
-        </label>`}
+        ${hideRepeatedTabLabel
+        ? (helpControl ? `<div class="form-field-label-row form-field-label-row--help-only">${helpControl}</div>` : '')
+        : `<div class="form-field-label-row">
+            <label class="form-field-label">${label(field, lang)} ${requiredMark}</label>
+            ${helpControl}
+        </div>`}
         <div class="form-field-control">
             ${renderFieldControl(field, record[field.name], data, lang)}
         </div>
-        ${helpText}
     </div>`;
 }
 
@@ -664,5 +676,62 @@ export function initTagPickers(container, lang = 'en') {
         cleanup() {
             cleanups.forEach((cleanup) => cleanup());
         },
+    };
+}
+
+export function initHelpTooltips(container) {
+    if (!container) return () => {};
+    const helpers = Array.from(container.querySelectorAll('[data-form-help]'));
+
+    const close = (helper, restoreFocus = false) => {
+        const trigger = helper.querySelector('[data-form-help-trigger]');
+        const popover = helper.querySelector('[data-form-help-popover]');
+        popover.hidden = true;
+        trigger.setAttribute('aria-expanded', 'false');
+        helper.classList.remove('form-help--open');
+        if (restoreFocus) trigger.focus();
+    };
+
+    const closeAll = (except = null) => {
+        helpers.forEach((helper) => {
+            if (helper !== except) close(helper);
+        });
+    };
+
+    const clickHandlers = helpers.map((helper) => {
+        const trigger = helper.querySelector('[data-form-help-trigger]');
+        const popover = helper.querySelector('[data-form-help-popover]');
+        const onClick = () => {
+            const shouldOpen = popover.hidden;
+            closeAll(helper);
+            popover.hidden = !shouldOpen;
+            trigger.setAttribute('aria-expanded', String(shouldOpen));
+            helper.classList.toggle('form-help--open', shouldOpen);
+        };
+        trigger.addEventListener('click', onClick);
+        return { trigger, onClick };
+    });
+
+    const onPointerDown = (event) => {
+        if (!event.target.closest('[data-form-help]')) closeAll();
+    };
+    const onKeyDown = (event) => {
+        if (event.key !== 'Escape') return;
+        const openHelper = helpers.find((helper) => (
+            helper.querySelector('[data-form-help-trigger]')?.getAttribute('aria-expanded') === 'true'
+        ));
+        if (openHelper) {
+            event.preventDefault();
+            close(openHelper, true);
+        }
+    };
+
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+
+    return () => {
+        clickHandlers.forEach(({ trigger, onClick }) => trigger.removeEventListener('click', onClick));
+        document.removeEventListener('pointerdown', onPointerDown);
+        document.removeEventListener('keydown', onKeyDown);
     };
 }

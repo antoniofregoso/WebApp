@@ -33,6 +33,7 @@ import {
     faBoxArchive,
     faNoteSticky,
     faPaperPlane,
+    faCircleQuestion,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -75,6 +76,7 @@ library.add(
     faBoxArchive,
     faNoteSticky,
     faPaperPlane,
+    faCircleQuestion,
     faBell,
     faCircleUser,
     faEnvelope,
@@ -130,6 +132,7 @@ export {
     faBoxArchive,
     faNoteSticky,
     faPaperPlane,
+    faCircleQuestion,
     faBell,
     faCircleUser,
     faEnvelope,
