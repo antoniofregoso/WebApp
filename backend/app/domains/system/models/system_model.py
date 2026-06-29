@@ -29,6 +29,9 @@ class FieldType(str, enum.Enum):
     many2many = "many2many"
     many2many_pills = "many2many_pills"
     one2many = "one2many"
+    many2many_kanban = "many2many_kanban"
+    many2many_list = "many2many_list"
+    model_followers = "model_followers"
 
 class SystemModel(SystemAudit, SQLModel, table=True):
     __tablename__ = "system_models"
