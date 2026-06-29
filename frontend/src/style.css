@@ -1441,6 +1441,18 @@ body {
   transform: translate(-50%, 0);
 }
 
+/* Keep tooltips on right-edge actions inside the viewport. */
+.topbar-action-btn[data-tooltip][data-tooltip-align="end"]::after {
+  right: 0;
+  left: auto;
+  transform: translateY(-2px);
+}
+
+.topbar-action-btn[data-tooltip][data-tooltip-align="end"]:not(:disabled):hover::after,
+.topbar-action-btn[data-tooltip][data-tooltip-align="end"]:not(:disabled):focus-visible::after {
+  transform: translateY(0);
+}
+
 /* ── Theme buttons ───────────────────────────────────────────────────────── */
 
 .topbar-theme-group,

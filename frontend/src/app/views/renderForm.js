@@ -21,6 +21,17 @@ function escape(value) {
         .replace(/>/g, '&gt;');
 }
 
+function renderMessageItem(message) {
+    return `<article class="min-w-0">
+        <h4 class="truncate text-sm font-semibold text-[var(--dash-text)]">
+            ${escape(message.subject)}
+        </h4>
+        <div class="ql-editor mt-1 p-0 text-sm text-[var(--dash-text-muted)]">
+            ${message.html}
+        </div>
+    </article>`;
+}
+
 function findRelatedRecord(records, model, uuid) {
     for (const record of records) {
         const related = Object.values(record).find((value) => (
@@ -144,6 +155,7 @@ function renderTabPanel(key, lang, isActive) {
                 class="topbar-action-btn"
                 aria-label="${escape(addLabel)}"
                 data-tooltip="${escape(addLabel)}"
+                data-tooltip-align="end"
                 data-form-tab-add="${key}">
                 ${icon(faPlus, 'topbar-action-icon')}
             </button>
@@ -414,7 +426,7 @@ export function initForm(lang = 'en') {
     const cleanupNotes     = initQuillEditor(panel('notes'), lang, 'notes',
         (html) => appendItem(panel('notes'), html));
     const cleanupMessages  = initQuillEditor(panel('messages'), lang, 'messages',
-        (html) => appendItem(panel('messages'), html));
+        (message) => appendItem(panel('messages'), renderMessageItem(message)));
     const cleanupWhatsapp  = initTextEditor(panel('whatsapp'), lang, 'whatsapp',
         (text) => appendItem(panel('whatsapp'), text));
     const cleanupDocuments = initDocumentEditor(panel('documents'));

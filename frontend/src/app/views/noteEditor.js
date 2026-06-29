@@ -10,6 +10,9 @@ const i18n = {
     },
     messages: {
         placeholder: { es: 'Escribe un mensaje...',         en: 'Write a message...' },
+        subject:     { es: 'Asunto',                        en: 'Subject' },
+        subjectPlaceholder: { es: '¿De qué trata el mensaje?', en: 'What is this message about?' },
+        subjectRequired: { es: 'Escribe un asunto para continuar.', en: 'Add a subject to continue.' },
         save:        { es: 'Enviar mensaje',                 en: 'Send message' },
         cancel:      { es: 'Cancelar',                      en: 'Cancel' },
     },
@@ -42,11 +45,34 @@ function cancelSaveButtons(tab, lang, saveIcon) {
     </div>`;
 }
 
-const RICH_TEXT_TOOLBAR = [
+const TEXT_COLORS = [
+    false,
+    '#18181b',
+    '#dc2626',
+    '#ea580c',
+    '#ca8a04',
+    '#16a34a',
+    '#2563eb',
+    '#9333ea',
+];
+
+const BACKGROUND_COLORS = [
+    false,
+    '#fee2e2',
+    '#ffedd5',
+    '#fef3c7',
+    '#dcfce7',
+    '#dbeafe',
+    '#f3e8ff',
+    '#f4f4f5',
+];
+
+export const RICH_TEXT_TOOLBAR = [
     ['bold', 'italic', 'underline', 'strike'],
+    [{ color: TEXT_COLORS }, { background: BACKGROUND_COLORS }],
     [{ list: 'ordered' }, { list: 'bullet' }],
-    ['blockquote', 'code-block'],
-    ['clean'],
+    ['blockquote'],
+    ['link', 'image'],
 ];
 
 function quillOptions(placeholder = '') {
@@ -60,8 +86,23 @@ function quillOptions(placeholder = '') {
 // ── Notes & Messages: Quill rich-text composer ────────────────────────────────
 
 export function renderQuillComposer(tab, lang) {
+    const subject = tab === 'messages' ? `
+        <label class="flex min-w-0 flex-col gap-1.5 text-xs font-semibold text-[var(--dash-text-muted)]">
+            <span>${t(tab, 'subject', lang)}</span>
+            <input type="text" maxlength="160" data-message-subject
+                class="box-border w-full min-w-0 rounded-lg border border-[var(--dash-border)]
+                       bg-[var(--dash-surface)] px-3 py-2 text-sm font-normal text-[var(--dash-text)]
+                       outline-none transition-colors placeholder:text-[var(--dash-text-soft)]
+                       focus:border-[var(--dash-accent)] focus:ring-2 focus:ring-[var(--dash-accent-soft)]"
+                placeholder="${t(tab, 'subjectPlaceholder', lang)}"
+                aria-required="true" aria-invalid="false" />
+            <span class="hidden font-normal text-[var(--dash-danger)]" data-message-subject-error>
+                ${t(tab, 'subjectRequired', lang)}
+            </span>
+        </label>` : '';
     return `
     <div data-quill-composer class="hidden border-b border-[var(--dash-border)] p-4 flex flex-col gap-3">
+        ${subject}
         <div data-quill-el class="bg-[var(--dash-surface)] rounded-lg"></div>
         ${cancelSaveButtons(tab, lang, faFloppyDisk)}
     </div>`;
@@ -73,6 +114,8 @@ export function initQuillEditor(panel, lang, tab, onSave) {
     const quillEl   = panel.querySelector('[data-quill-el]');
     const cancelBtn = panel.querySelector('[data-composer-cancel]');
     const saveBtn   = panel.querySelector('[data-composer-save]');
+    const subjectInput = panel.querySelector('[data-message-subject]');
+    const subjectError = panel.querySelector('[data-message-subject-error]');
 
     if (!addBtn || !composer || !quillEl) return () => {};
 
@@ -83,26 +126,49 @@ export function initQuillEditor(panel, lang, tab, onSave) {
         if (!quill) {
             quill = new Quill(quillEl, quillOptions(t(tab, 'placeholder', lang)));
         }
-        quill.focus();
+        if (subjectInput) subjectInput.focus();
+        else quill.focus();
     };
 
     const closeEditor = () => {
         composer.classList.add('hidden');
         quill?.setContents([]);
+        if (subjectInput) {
+            subjectInput.value = '';
+            subjectInput.setAttribute('aria-invalid', 'false');
+        }
+        subjectError?.classList.add('hidden');
     };
 
     const save = () => {
         const html = quillEl.querySelector('.ql-editor')?.innerHTML ?? '';
+        const subject = subjectInput?.value.trim() ?? '';
+        if (subjectInput && !subject) {
+            subjectInput.setAttribute('aria-invalid', 'true');
+            subjectError?.classList.remove('hidden');
+            subjectInput.focus();
+            return;
+        }
         if (!html || html === '<p><br></p>') return;
-        onSave(html);
+        onSave(subjectInput ? { subject, html } : html);
         closeEditor();
+    };
+
+    const clearSubjectError = () => {
+        if (!subjectInput?.value.trim()) return;
+        subjectInput.setAttribute('aria-invalid', 'false');
+        subjectError?.classList.add('hidden');
     };
 
     addBtn.addEventListener('click', openEditor);
     cancelBtn?.addEventListener('click', closeEditor);
     saveBtn?.addEventListener('click', save);
+    subjectInput?.addEventListener('input', clearSubjectError);
 
-    return () => { quill = null; };
+    return () => {
+        subjectInput?.removeEventListener('input', clearSubjectError);
+        quill = null;
+    };
 }
 
 /** Quill instances used by schema fields with type `html`. */
