@@ -1,6 +1,60 @@
 import { appSignal } from '../appStore';
 
+const INSIGHT_COLLECTIONS = new Set(['kpis', 'gauges', 'graphics']);
+
+function updateInsightCollection(collection, id, patch) {
+    if (!INSIGHT_COLLECTIONS.has(collection)) {
+        throw new Error(`Unknown insight collection: ${collection}`);
+    }
+    if (!id) throw new Error('An insight id is required');
+
+    const state = appSignal.value;
+    const insights = state.insights ?? {};
+    const items = Array.isArray(insights[collection]) ? insights[collection] : [];
+    let found = false;
+    const nextItems = items.map((item) => {
+        if (item.id !== id) return item;
+        found = true;
+        const changes = typeof patch === 'function' ? patch(item) : patch;
+        return { ...item, ...changes, id };
+    });
+
+    if (!found) throw new Error(`Insight not found: ${collection}.${id}`);
+
+    appSignal.value = {
+        ...state,
+        insights: { ...insights, [collection]: nextItems },
+    };
+}
+
 export const dashboardActions = {
+
+    setInsights(insights) {
+        appSignal.value = { ...appSignal.value, insights };
+    },
+
+    setInsightPeriod(period) {
+        appSignal.value = {
+            ...appSignal.value,
+            insights: { ...appSignal.value.insights, period },
+        };
+    },
+
+    updateInsight(collection, id, patch) {
+        updateInsightCollection(collection, id, patch);
+    },
+
+    updateKpi(id, patch) {
+        updateInsightCollection('kpis', id, patch);
+    },
+
+    updateGauge(id, patch) {
+        updateInsightCollection('gauges', id, patch);
+    },
+
+    updateGraphic(id, patch) {
+        updateInsightCollection('graphics', id, patch);
+    },
 
     setView(view) {
         appSignal.value = {

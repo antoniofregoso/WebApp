@@ -5,7 +5,7 @@ export const App = new Router();
 App.on('/', home);
 App.on('/login', login);
 App.on('/password_reset', passwordReset)
-App.on('/dashboard', dashboard);
+App.on('/dashboard', dashboard).setName("dash");
 App.on('/dashboard/{area}/{subarea}/{model}/{uuid}', dashboard);
 App.on('/dashboard/{area}/{model}/{uuid}', dashboard);
 App.on('/dashboard/{area}', dashboard);

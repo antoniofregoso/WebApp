@@ -5,6 +5,7 @@
     },
     "kpis": [
         {
+            "id": "profit_margin",
             "name":{
                 "en": "Profit margin",
                 "es": "Margen de beneficio"
@@ -14,6 +15,7 @@
             "trend": "up"
         },
         {
+            "id": "cash_flow",
             "name":{
                 "en": "Cash Flow",
                 "es": "Flujo de efectivo"
@@ -23,6 +25,7 @@
             "trend": "up"
         },
         {
+            "id": "customer_acquisition_cost",
             "name":{
                 "en": "Customer Acquisition Cost",
                 "es": "Costo de Adquisición de Clientes"
@@ -32,6 +35,7 @@
             "trend": "down"
         },
         {
+            "id": "average_revenue_per_user",
             "name":{
                 "en": "Average Revenue Per User",
                 "es": "Ingreso Promedio Por Usuario"
@@ -41,6 +45,7 @@
             "trend": "down"
         },
         {
+            "id": "conversion_rate",
             "name":{
                 "en": "Conversion Rate",
                 "es": "Tasa de Conversión"
@@ -52,6 +57,7 @@
     ],
     "gauges": [ 
         {
+            "id": "operational_efficiency",
             "name":{
                 "en": "Operational Efficiency",
                 "es": "Eficiencia Operativa"
@@ -66,6 +72,7 @@
             }
         },
         {
+            "id": "customer_satisfaction",
             "name":{
                 "en": "Customer Satisfaction",
                 "es": "Satisfacción del Cliente"
@@ -80,6 +87,7 @@
             }
         },
         {
+            "id": "sales_per_hour",
             "name":{
                 "en": "Sales per hour",
                 "es": "Ventas por hora"
@@ -96,6 +104,7 @@
     ],
     "graphics": [
         {
+            "id": "cash_flow_sankey",
             "type": "sankey",
             "title": {
                 "en": "Cash Flow",
@@ -147,6 +156,7 @@
         }   
                 },
     {
+            "id": "income_statement_sankey",
             "type": "sankey",
             "title": {
                 "en": "Income Statement",
@@ -215,6 +225,7 @@
 }
             },
     {
+            "id": "balance_sheet_sankey",
             "type": "sankey",
             "title": {
                 "en": "Balance Sheet",
@@ -307,6 +318,7 @@
 }
     },
      {
+            "id": "monthly_inflation_bar_vertical",
             "type": "bar",
             "mode":"vertical",
             "title": {
@@ -321,6 +333,7 @@
         
         },
      {
+            "id": "monthly_inflation_bar_horizontal",
             "type": "bar",
             "mode":"horizontal",
             "title": {
@@ -335,6 +348,7 @@
         
         },
      {
+            "id": "monthly_inflation_line",
             "type": "line",
             "title": {
                 "en": "Monthly Inflation in Argentina, 2002",
@@ -348,6 +362,7 @@
         
         },
         {
+            "id": "product_comparison_bar",
             "type": "bar",
             "title": {
                 "en": "Monthly Inflation in Argentina, 2002",
@@ -389,6 +404,7 @@
             }
         },
         {
+            "id": "product_comparison_bar_horizontal",
             "type": "bar",
             "mode":"horizontal",
             "title": {
@@ -431,6 +447,7 @@
             }
         },
         {
+            "id": "product_comparison_line",
             "type": "line",
             "title": {
                 "en": "Monthly Inflation in Argentina, 2002",
@@ -472,6 +489,7 @@
             }
         },
         {
+            "id": "genre_distribution_donut",
             "type": "donut",
             "title": {
                 "en": "Monthly Inflation in Argentina, 2002",
@@ -484,6 +502,7 @@
             }
         },
         {
+            "id": "city_values_treemap",
             "type": "treemap",
             "title": {
                 "en": "Basic Treemap",
@@ -584,6 +603,7 @@
       ]
         },
         {
+            "id": "value_comparison_radar",
             "type": "radar",
             "title": {
                 "en": "Basic Radar",
@@ -618,6 +638,7 @@
             ]
         },
         {
+            "id": "users_per_hour_heatmap",
             "type": "heatmap",
             "title": {
                 "en": "Users per Hour",

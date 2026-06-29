@@ -1,5 +1,10 @@
 import ApexCharts from 'apexcharts';
-import { initInsightGraphics, renderInsightGraphics } from '../components/insightGraphics.js';
+import { dashboardActions } from '../store/actions';
+import {
+    initInsightGraphics,
+    renderInsightGraphics,
+    updateInsightGraphic,
+} from '../components/insightGraphics.js';
 
 const PERIOD_LABELS = {
     today: { en: 'Today', es: 'Hoy' },
@@ -15,7 +20,7 @@ let _gauges = [];
 let _graphics = [];
 let _lang = 'en';
 let _data = {};
-let _gaugeCharts = [];
+let _gaugeCharts = new Map();
 let _graphicsCleanup = null;
 
 function escape(value) {
@@ -23,6 +28,19 @@ function escape(value) {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
+}
+
+function escapeAttribute(value) {
+    return escape(value).replace(/"/g, '&quot;');
+}
+
+function insightId(item, index, prefix) {
+    return String(item?.id ?? `${prefix}_${index}`);
+}
+
+function findByDataAttribute(attribute, id) {
+    return [...document.querySelectorAll(`[${attribute}]`)]
+        .find((element) => element.getAttribute(attribute) === String(id));
 }
 
 function locale(lang) {
@@ -124,16 +142,20 @@ function renderKpis(kpis = [], period, lang) {
     <section class="insight-section" aria-labelledby="insight-kpis-title">
         <h3 id="insight-kpis-title" class="sr-only">KPIs</h3>
         <div class="insight-kpi-grid">
-            ${kpis.map((kpi) => `
-            <article class="insight-kpi-card">
+            ${kpis.map((kpi, index) => renderKpiCard(kpi, lang, insightId(kpi, index, 'kpi'))).join('')}
+        </div>
+    </section>`;
+}
+
+function renderKpiCard(kpi, lang, id) {
+    return `
+            <article class="insight-kpi-card" data-insight-kpi-id="${escapeAttribute(id)}">
                 <div class="insight-kpi-head">
                     <h4 class="insight-kpi-name">${escape(getLocalized(kpi.name, lang))}</h4>
                     ${renderTrend(kpi.trend, lang)}
                 </div>
                 <p class="insight-kpi-value">${formatKpiValue(kpi, lang)}</p>
-            </article>`).join('')}
-        </div>
-    </section>`;
+            </article>`;
 }
 
 function renderGauges(gauges = [], lang) {
@@ -143,17 +165,20 @@ function renderGauges(gauges = [], lang) {
     <section class="insight-section" aria-labelledby="insight-gauges-title">
         <h3 id="insight-gauges-title" class="sr-only">Gauges</h3>
         <div class="insight-gauge-grid">
-            ${gauges.map((gauge, index) => `
-            <article class="insight-gauge-card">
+            ${gauges.map((gauge, index) => {
+                const id = insightId(gauge, index, 'gauge');
+                return `
+            <article class="insight-gauge-card" data-insight-gauge-id="${escapeAttribute(id)}">
                 <div class="insight-gauge-head">
                     <h4 class="insight-gauge-name">${escape(getLocalized(gauge.name, lang))}</h4>
                     <span class="insight-gauge-value">${escape(formatGaugeValue(gauge, lang))}</span>
                 </div>
-                <div class="insight-gauge-visual" data-insight-gauge-visual="${index}">
+                <div class="insight-gauge-visual" data-insight-gauge-visual="${escapeAttribute(id)}">
                     <div class="insight-gauge-needle" aria-hidden="true"></div>
-                    <div class="insight-gauge-chart" data-insight-gauge="${index}"></div>
+                    <div class="insight-gauge-chart" data-insight-gauge="${escapeAttribute(id)}"></div>
                 </div>
-            </article>`).join('')}
+            </article>`;
+            }).join('')}
         </div>
     </section>`;
 }
@@ -255,7 +280,7 @@ function buildGaugeOptions(gauge) {
 export function initInsights(lang = 'en') {
     _lang = lang;
     _gaugeCharts.forEach((chart) => chart.destroy());
-    _gaugeCharts = [];
+    _gaugeCharts = new Map();
     _graphicsCleanup?.();
     _graphicsCleanup = null;
     _graphicsCleanup = initInsightGraphics(_graphics, lang);
@@ -263,18 +288,13 @@ export function initInsights(lang = 'en') {
     const periodSelect = document.querySelector('[data-insight-period]');
     if (periodSelect) {
         periodSelect.addEventListener('change', (e) => {
-            const updatedData = { ..._data, period: e.target.value };
-            const contentEl = document.getElementById('dashboard-content');
-            if (contentEl) {
-                contentEl.outerHTML = renderInsights(updatedData, _lang);
-                initInsights(_lang);
-            }
+            dashboardActions.setInsightPeriod(e.target.value);
         });
     }
 
     document.querySelectorAll('[data-insight-gauge]').forEach((el) => {
-        const index = Number(el.dataset.insightGauge);
-        const gauge = _gauges[index];
+        const id = el.dataset.insightGauge;
+        const gauge = _gauges.find((item, index) => insightId(item, index, 'gauge') === id);
         if (!gauge) return;
 
         try {
@@ -285,7 +305,7 @@ export function initInsights(lang = 'en') {
             chart.render()?.catch?.((error) => {
                 console.error('[insights] Failed to render gauge:', error);
             });
-            _gaugeCharts.push(chart);
+            _gaugeCharts.set(id, chart);
         } catch (error) {
             console.error('[insights] Failed to render gauge:', error);
         }
@@ -293,8 +313,74 @@ export function initInsights(lang = 'en') {
 
     return () => {
         _gaugeCharts.forEach((chart) => chart.destroy());
-        _gaugeCharts = [];
+        _gaugeCharts = new Map();
         _graphicsCleanup?.();
         _graphicsCleanup = null;
     };
+}
+
+function sameInsightShape(previous = [], next = [], prefix) {
+    return previous.length === next.length && previous.every((item, index) =>
+        insightId(item, index, prefix) === insightId(next[index], index, prefix)
+    );
+}
+
+export function updateInsightKpi(kpi, lang = _lang) {
+    const card = findByDataAttribute('data-insight-kpi-id', kpi.id);
+    if (!card) return false;
+    card.outerHTML = renderKpiCard(kpi, lang, kpi.id);
+    return true;
+}
+
+export function updateInsightGauge(gauge, lang = _lang) {
+    const id = String(gauge.id);
+    const card = findByDataAttribute('data-insight-gauge-id', id);
+    const chart = _gaugeCharts.get(id);
+    if (!card || !chart) return false;
+
+    card.querySelector('.insight-gauge-name').textContent = getLocalized(gauge.name, lang);
+    card.querySelector('.insight-gauge-value').textContent = formatGaugeValue(gauge, lang);
+    const visual = card.querySelector('[data-insight-gauge-visual]');
+    if (visual) applyGaugeVisual(visual, gauge);
+    chart.updateOptions(buildGaugeOptions(gauge), true, true);
+    return true;
+}
+
+/**
+ * Updates existing insight elements by id. Returns false when the dashboard
+ * structure changed and the caller must render the complete insights view.
+ */
+export function patchInsights(previous = {}, next = {}, lang = _lang) {
+    const previousKpis = previous.kpis ?? [];
+    const nextKpis = next.kpis ?? [];
+    const previousGauges = previous.gauges ?? [];
+    const nextGauges = next.gauges ?? [];
+    const previousGraphics = previous.graphics ?? [];
+    const nextGraphics = next.graphics ?? [];
+
+    const structureIsStable =
+        sameInsightShape(previousKpis, nextKpis, 'kpi') &&
+        sameInsightShape(previousGauges, nextGauges, 'gauge') &&
+        sameInsightShape(previousGraphics, nextGraphics, 'graphic') &&
+        previous.layout?.graphics === next.layout?.graphics;
+    if (!structureIsStable) return false;
+
+    const periodSelect = document.querySelector('[data-insight-period]');
+    if (periodSelect && previous.period !== next.period) periodSelect.value = next.period;
+
+    nextKpis.forEach((item, index) => {
+        if (item !== previousKpis[index]) updateInsightKpi(item, lang);
+    });
+    nextGauges.forEach((item, index) => {
+        if (item !== previousGauges[index]) updateInsightGauge(item, lang);
+    });
+    nextGraphics.forEach((item, index) => {
+        if (item !== previousGraphics[index]) updateInsightGraphic(item, lang);
+    });
+
+    _data = next;
+    _gauges = nextGauges;
+    _graphics = nextGraphics;
+    _lang = lang;
+    return true;
 }

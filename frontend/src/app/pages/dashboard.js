@@ -4,11 +4,10 @@ import { contextActions, dashboardActions } from '../store/actions';
 import { renderSidebar, initSidebar, updateSidebarExpansion, MENU_ITEMS } from '../components';
 import { renderTopbar, initTopbar } from '../components';
 import { t } from '../../i18n';
-import { renderCalendar, renderForm, renderInsights, renderKanban, renderList, initCalendar, initForm, initInsights, initList, initKanban } from '../views';
+import { renderCalendar, renderForm, renderInsights, renderKanban, renderList, initCalendar, initForm, initInsights, initList, initKanban, patchInsights } from '../views';
 import { applyTheme, getAreaTitle, normalizePagination, paginateData } from '../utils';
 
 import demoData from '../data/demo.json';
-import demoInsights from '../data/insights.json';
 
 // ── Track last rendered values to avoid redundant re-renders ──────────────────
 let _lastLang = null;
@@ -22,6 +21,7 @@ let _lastTotal = null;
 let _lastRecordRoute = false;
 let _lastRecordModel = null;
 let _lastRecordUuid = null;
+let _lastInsights = null;
 let _effectCleanup = null;
 let _currentSubarea = null;
 let _currentRecordModel = null;
@@ -90,9 +90,9 @@ function isInsightsContext(area, subarea) {
 }
 
 /** Pick the content markup for the current page (insights or the dock view). */
-function renderContent(area, subarea, view, lang, pagination = getPagination()) {
+function renderContent(area, subarea, view, lang, pagination = getPagination(), insights = appSignal.value.insights) {
     if (isInsightsContext(area, subarea)) {
-        return renderInsights(demoInsights, lang);
+        return renderInsights(insights, lang);
     }
     return renderView(view, area, lang, pagination);
 }
@@ -202,6 +202,8 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
         hasRecordRoute() !== _lastRecordRoute ||
         _currentRecordModel !== _lastRecordModel ||
         _currentRecordUuid !== _lastRecordUuid;
+    const insights = appSignal.value.insights;
+    const insightsChanged = insights !== _lastInsights;
 
     if (expandedChanged && !langChanged && !areaChanged) {
         updateSidebarExpansion(expanded);
@@ -250,6 +252,22 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
             document.querySelectorAll('.topbar-view-group .topbar-tool-btn[data-view]').forEach((btn) => {
                 btn.classList.toggle('topbar-tool-btn--active', btn.dataset.view === view);
             });
+        }
+    }
+
+    // Insight data changes keep the existing layout and patch only changed ids.
+    if (
+        insightsChanged &&
+        !areaChanged && !langChanged && !viewChanged && !recordRouteChanged && !paginationChanged &&
+        isInsightsContext(area, _currentSubarea)
+    ) {
+        const patched = patchInsights(_lastInsights, insights, lang);
+        if (!patched) {
+            const contentEl = document.getElementById('dashboard-content');
+            if (contentEl) {
+                contentEl.outerHTML = renderInsights(insights, lang);
+                initActiveView('insights', lang);
+            }
         }
     }
 
@@ -330,6 +348,7 @@ export function dashboard(req, router) {
     _lastRecordRoute = isRecordRoute;
     _lastRecordModel = _currentRecordModel;
     _lastRecordUuid = _currentRecordUuid;
+    _lastInsights = state.insights;
 
     // ── Cleanup previous effect if navigating back to this page ──────────────
     if (_effectCleanup) {
@@ -346,6 +365,7 @@ export function dashboard(req, router) {
         const newArea = s.context.active_area;
         const newView = getEffectiveView(getView(s));
         const newPagination = getPagination(s);
+        const newInsights = s.insights;
 
         const changed =
             newLang !== _lastLang ||
@@ -356,6 +376,7 @@ export function dashboard(req, router) {
             newPagination.page !== _lastPage ||
             newPagination.perPage !== _lastPerPage ||
             newPagination.total !== _lastTotal ||
+            newInsights !== _lastInsights ||
             hasRecordRoute() !== _lastRecordRoute ||
             _currentRecordModel !== _lastRecordModel ||
             _currentRecordUuid !== _lastRecordUuid;
@@ -378,5 +399,6 @@ export function dashboard(req, router) {
         _lastRecordRoute = hasRecordRoute();
         _lastRecordModel = _currentRecordModel;
         _lastRecordUuid = _currentRecordUuid;
+        _lastInsights = newInsights;
     });
 }

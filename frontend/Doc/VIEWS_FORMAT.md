@@ -34,6 +34,8 @@
             "en":"Description",
             "es":"Descripción"
         },
+        "groupBy":"field",
+        "field": [],
         "kanban":{},
         "list":{},
         "form":{},
@@ -42,6 +44,7 @@
     ]
 }
 ```
+
 ## Kanban
 
 Grouping is configured at model level. `groupBy` contains the record field name,
@@ -84,6 +87,8 @@ Fields are ordered in descending order across the width of the Kanban card.
 }
 ```
 
+![Render Kanban](./images/kanban.png)
+
 ## List
 
 ```json
@@ -93,6 +98,8 @@ Fields are ordered in descending order across the width of the Kanban card.
                 },
 }
 ```
+![Render List](./images/list.png)
+
 ## Form
 
 The form view consists of four areas:
@@ -125,6 +132,8 @@ Each field must declare only one placement. `required`, `readonly`, `placeholder
 }
 ```
 
+![Render Form](./images/form.png)
+
 ## Calendar
 
 The three options are assigned to fields in the model schema. An event is
@@ -141,5 +150,58 @@ time followed by the configured title.
     }
 }
 ```
+![Render Calendar](./images/calendar.png)
 
 ## Insight
+
+### kpis
+EWS_FORMAT.MD?
+- value: number
+- unit: any
+- trend: up|down
+
+```json
+ {
+    "id": "profit_margin",
+    "name":{
+        "en": "Profit margin",
+        "es": "Margen de beneficio"
+    },
+    "value": 25.5,
+    "unit": "%",
+    "trend": "up"
+}
+```
+![Render KPI](./images/kpi.png)
+
+### gauges
+
+```json
+{
+            "id": "operational_efficiency",
+            "name":{
+                "en": "Operational Efficiency",
+                "es": "Eficiencia Operativa"
+            },
+            "value": 78,
+            "unit": "%",
+            "max": 100,
+            "thresholds": {
+                "green": 80,
+                "yellow": 60,
+                "red": 0
+            }
+        }
+```
+![Render Gauge](./images/gauge.png)
+
+### graphics
+
+
+
+The Insight view renders the `kpis`, `gauges`, and `graphics` collections. Each
+element is linked to the DOM or its chart instance using the `id` defined
+in the data format. Value changes preserve the container and update
+only the corresponding element; structural changes rebuild
+the view. See [DATA_FORMAT.md](./DATA_FORMAT.md#reactive-updates)
+for the schema and available actions.

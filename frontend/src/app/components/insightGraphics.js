@@ -1,5 +1,7 @@
 import ApexCharts from 'apexcharts';
 
+const graphicInstances = new Map();
+
 function escape(value) {
     return String(value)
         .replace(/&/g, '&amp;')
@@ -20,6 +22,15 @@ function getLocalized(value, lang) {
         return value[lang] ?? value.en ?? value.es ?? '';
     }
     return value ?? '';
+}
+
+function graphicId(graphic, index = 0) {
+    return String(graphic?.id ?? `graphic_${index}`);
+}
+
+function findGraphicElement(id) {
+    return [...document.querySelectorAll('[data-insight-graphic-id]')]
+        .find((element) => element.dataset.insightGraphicId === String(id));
 }
 
 function getNodeTitle(node, lang) {
@@ -290,7 +301,7 @@ export function renderInsightGraphics(graphics = [], lang = 'en', layout = {}) {
         <h3 id="insight-graphics-title" class="sr-only">Graphics</h3>
         <div class="insight-graphic-grid" style="--graphic-cols:${cols}" data-graphic-cols="${cols}">
             ${graphics.map((graphic, index) => `
-            <article class="insight-graphic-card">
+            <article class="insight-graphic-card" data-insight-graphic-card-id="${escapeAttribute(graphicId(graphic, index))}">
                 <div class="insight-graphic-head">
                     <h4 class="insight-graphic-title">${escape(getLocalized(graphic.title, lang))}</h4>
                     <button
@@ -311,6 +322,7 @@ export function renderInsightGraphics(graphics = [], lang = 'en', layout = {}) {
                 <div
                     class="insight-graphic-chart"
                     data-insight-graphic="${index}"
+                    data-insight-graphic-id="${escapeAttribute(graphicId(graphic, index))}"
                     data-insight-graphic-type="${escape(graphic.type ?? '')}"
                 >${graphic.type === 'sankey' ? renderFallbackSankey(graphic, lang) : ''}</div>
             </article>`).join('')}
@@ -673,7 +685,7 @@ function bindExpandButtons() {
 }
 
 export function initInsightGraphics(graphics = [], lang = 'en') {
-    const instances = [];
+    destroyInsightGraphics();
 
     bindExpandButtons();
 
@@ -681,46 +693,71 @@ export function initInsightGraphics(graphics = [], lang = 'en') {
         const index = Number(el.dataset.insightGraphic);
         const graphic = graphics[index];
         if (!graphic) return;
-
-        try {
-            if (graphic.type === 'sankey') {
-                const instance = renderSankey(el, graphic, lang);
-                if (instance) instances.push(instance);
-            } else if (graphic.type === 'bar') {
-                const chart = renderApexChart(el, buildBarOptions(graphic, lang));
-                instances.push(chart);
-            } else if (graphic.type === 'line') {
-                const chart = renderApexChart(el, buildLineOptions(graphic, lang));
-                instances.push(chart);
-            } else if (graphic.type === 'heatmap') {
-                const chart = renderHeatmap(el, graphic, lang);
-                instances.push(chart);
-            } else if (graphic.type === 'radar') {
-                const chart = renderApexChart(el, buildRadarOptions(graphic, lang));
-                instances.push(chart);
-            } else if (graphic.type === 'treemap') {
-                const chart = renderApexChart(el, buildTreemapOptions(graphic, lang));
-                instances.push(chart);
-            } else if (graphic.type === 'donut') {
-                const chart = renderApexChart(el, buildDonutOptions(graphic, lang));
-                instances.push(chart);
-            } else {
-                el.innerHTML = `<div class="insight-empty">${escape(graphic.type ?? 'Unsupported chart')}</div>`;
-            }
-        } catch (error) {
-            console.error('[insights] Failed to render graphic:', error);
-            if (graphic.type === 'sankey') {
-                el.innerHTML = renderFallbackSankey(graphic, lang);
-            } else {
-                el.innerHTML = `<div class="insight-empty">${escape(graphic.type ?? 'Chart')} error</div>`;
-            }
-        }
+        createGraphicInstance(el, graphic, lang, graphicId(graphic, index));
     });
 
-    return () => {
-        instances.forEach((instance) => {
-            instance.destroy?.();
-            instance.graph?.clear?.();
-        });
-    };
+    return destroyInsightGraphics;
+}
+
+function destroyGraphicInstance(instance) {
+    instance?.destroy?.();
+    instance?.graph?.clear?.();
+}
+
+function destroyInsightGraphics() {
+    graphicInstances.forEach(destroyGraphicInstance);
+    graphicInstances.clear();
+}
+
+function createGraphicInstance(el, graphic, lang, id) {
+    try {
+        let instance = null;
+        if (graphic.type === 'sankey') {
+            instance = renderSankey(el, graphic, lang);
+        } else if (graphic.type === 'bar') {
+            instance = renderApexChart(el, buildBarOptions(graphic, lang));
+        } else if (graphic.type === 'line') {
+            instance = renderApexChart(el, buildLineOptions(graphic, lang));
+        } else if (graphic.type === 'heatmap') {
+            instance = renderHeatmap(el, graphic, lang);
+        } else if (graphic.type === 'radar') {
+            instance = renderApexChart(el, buildRadarOptions(graphic, lang));
+        } else if (graphic.type === 'treemap') {
+            instance = renderApexChart(el, buildTreemapOptions(graphic, lang));
+        } else if (graphic.type === 'donut') {
+            instance = renderApexChart(el, buildDonutOptions(graphic, lang));
+        } else {
+            el.innerHTML = `<div class="insight-empty">${escape(graphic.type ?? 'Unsupported chart')}</div>`;
+        }
+        if (instance) graphicInstances.set(id, instance);
+        return instance;
+    } catch (error) {
+        console.error('[insights] Failed to render graphic:', error);
+        if (graphic.type === 'sankey') {
+            el.innerHTML = renderFallbackSankey(graphic, lang);
+        } else {
+            el.innerHTML = `<div class="insight-empty">${escape(graphic.type ?? 'Chart')} error</div>`;
+        }
+        return null;
+    }
+}
+
+/** Recreates only the chart identified by graphic.id. */
+export function updateInsightGraphic(graphic, lang = 'en') {
+    if (!graphic?.id) return false;
+    const id = String(graphic.id);
+    const el = findGraphicElement(id);
+    if (!el) return false;
+
+    const current = graphicInstances.get(id);
+    destroyGraphicInstance(current);
+    graphicInstances.delete(id);
+
+    const card = el.closest('.insight-graphic-card');
+    const title = card?.querySelector('.insight-graphic-title');
+    if (title) title.textContent = getLocalized(graphic.title, lang);
+    el.dataset.insightGraphicType = graphic.type ?? '';
+    el.innerHTML = graphic.type === 'sankey' ? renderFallbackSankey(graphic, lang) : '';
+    createGraphicInstance(el, graphic, lang, id);
+    return true;
 }

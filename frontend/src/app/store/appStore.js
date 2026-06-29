@@ -1,21 +1,28 @@
 import { signal, effect, computed } from '@preact/signals';
 import initialStateJson from './state.json';
+import initialInsights from '../data/insights.json';
 
-const INITIAL_STATE = initialStateJson;
+const INITIAL_STATE = {
+    ...initialStateJson,
+    insights: initialInsights,
+};
 const STORAGE_KEY = 'dashboard_state';
 
 function loadInitialState() {
-    const localData = localStorage.getItem(STORAGE_KEY);
+    const storage = globalThis.localStorage;
+    const localData = storage?.getItem(STORAGE_KEY);
 
     // CASE 1: First visit
     if (!localData) {
         const newState = JSON.parse(JSON.stringify(INITIAL_STATE));
         newState.meta.start = Date.now();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+        storage?.setItem(STORAGE_KEY, JSON.stringify(newState));
         return newState;
     }
 
     const savedState = JSON.parse(localData);
+    // States saved before insights became reactive are migrated transparently.
+    savedState.insights ??= JSON.parse(JSON.stringify(initialInsights));
     const sessionStarted = savedState.meta?.start > 0;
 
     // CASE 2: Return after 24 h — reset session but keep preferences
@@ -41,7 +48,7 @@ export const appSignal = signal(loadInitialState());
 
 // ── Auto-persist to localStorage ──────────────────────────────────────────────
 effect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(appSignal.value));
+    globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(appSignal.value));
 });
 
 // ── Computed selectors ────────────────────────────────────────────────────────
