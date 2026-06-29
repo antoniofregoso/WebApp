@@ -20,6 +20,7 @@
 - many2many_pills
 - many2many_kanban
 - many2many_list
+- model_followers
 
 
 ## Schema

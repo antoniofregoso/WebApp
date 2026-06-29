@@ -42,7 +42,6 @@ class SystemCompany(SystemAudit, SQLModel, table=True):
     logo_url: Optional[str] = None
     vat: Optional[str] = None
     lang_id: Optional[int] = Field(default=None, foreign_key="system_langs.id")
-
     users: List["UserUser"] = Relationship(
         back_populates="company",
         sa_relationship_kwargs={"foreign_keys": "[UserUser.company_id]"},

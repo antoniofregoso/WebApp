@@ -14,6 +14,7 @@ from app.domains.system.models.system_model import (
     SystemModelSchema,
     FieldType,
 )
+from app.domains.system.models.system_model_followers import SystemModelFollowers
 from app.domains.system.models.system_notification_user_rel import SystemNotificationUserRel
 from app.domains.system.models.system_message import SystemMessage, MessageStatus
 from app.domains.system.models.system_notification import SystemNotification, NotificationStatus
@@ -36,6 +37,7 @@ __all__ = [
     "SystemModel",
     "SystemModelField",
     "SystemModelSchema",
+    "SystemModelFollowers",
     "SystemNotificationUserRel",
     "FieldType",
     "SystemMessage",

@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 from app.domains.system.models.system_message_user_rel import SystemMessageUserRel
 from app.domains.system.models.system_notification_user_rel import SystemNotificationUserRel
 from app.domains.system.models.system_audit import SystemAudit
+from app.domains.system.models.system_model_followers import SystemModelFollowers
 
 
 class ThemeMode(str, Enum):
@@ -56,6 +57,13 @@ class UserUser(SystemAudit, SQLModel, table=True):
     company: Optional["SystemCompany"] = Relationship(
         back_populates="users",
         sa_relationship_kwargs={"foreign_keys": "[UserUser.company_id]"},
+    )
+
+    model_followers: List["SystemModelFollowers"] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={
+            "foreign_keys": "[SystemModelFollowers.user_id]"
+        },
     )
 
     # Messages sent by this user

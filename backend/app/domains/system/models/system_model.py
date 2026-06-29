@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 import enum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import text as sa_text
@@ -7,6 +7,9 @@ from sqlmodel import Field, Column, Relationship, SQLModel
 import uuid
 
 from app.domains.system.models.system_audit import SystemAudit
+
+if TYPE_CHECKING:
+    from app.domains.system.models.system_model_followers import SystemModelFollowers
 
 
 class FieldType(str, enum.Enum):
@@ -47,6 +50,9 @@ class SystemModel(SystemAudit, SQLModel, table=True):
     schemas: list["SystemModelSchema"] = Relationship(
         back_populates="model",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
+    model_followers: list["SystemModelFollowers"] = Relationship(
+        back_populates="model"
     )
 
 
