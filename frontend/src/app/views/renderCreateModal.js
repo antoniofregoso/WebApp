@@ -6,6 +6,7 @@ import {
     escapeAttr,
     getFormLayout,
     initPercentageSliders,
+    initTagPickers,
     label,
     renderFieldControl,
     renderFormLayout,
@@ -61,15 +62,18 @@ export function initCreateModal(root = document, lang = 'en') {
     if (!createButton || !modal) return () => {};
     const richTextEditors = initFormRichTextEditors(modal);
     const cleanupPercentageSliders = initPercentageSliders(modal);
+    const tagPickers = initTagPickers(modal, lang);
 
     const open = () => {
         modal.hidden = false;
         setFormInputsEnabled(modal, true, lang);
         richTextEditors.setEnabled(true);
+        tagPickers.setEnabled(true);
         modal.querySelector('[data-form-input]')?.focus();
     };
     const close = () => {
         richTextEditors.setEnabled(false);
+        tagPickers.setEnabled(false);
         modal.hidden = true;
         setFormInputsEnabled(modal, false, lang);
     };
@@ -86,6 +90,7 @@ export function initCreateModal(root = document, lang = 'en') {
         modal.querySelectorAll('[data-form-modal-close]').forEach((button) => button.removeEventListener('click', close));
         document.removeEventListener('keydown', closeOnEscape);
         cleanupPercentageSliders();
+        tagPickers.cleanup();
         richTextEditors.cleanup();
     };
 }

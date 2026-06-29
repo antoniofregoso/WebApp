@@ -15,13 +15,14 @@ const data = {
     model: {
         name: 'sale.order',
         label: { en: 'Orders', es: 'Órdenes' },
+        tags,
         status: [{ value: 'draft', en: 'Draft', es: 'Borrador', color: 'zinc' }],
         schema: [
             { name: 'name', type: 'string', list: { column: 0 }, kanban: { header: 'title' } },
             { name: 'tags', type: 'many2many_pills', list: { column: 1 }, kanban: { footer: 0 } },
         ],
     },
-    records: [{ uuid: 'record-1', name: 'SO-001', tags, status: 'draft' }],
+    records: [{ uuid: 'record-1', name: 'SO-001', tags: ['tag-1'], status: 'draft' }],
 };
 
 describe('localized tag names', () => {
@@ -36,12 +37,12 @@ describe('localized tag names', () => {
 
     it('renders the active language in form fields', () => {
         const field = data.model.schema[1];
-        expect(renderFieldControl(field, tags, data, 'en')).toContain('value="Recurrent"');
-        expect(renderFieldControl(field, tags, data, 'es')).toContain('value="Recurrente"');
+        expect(renderFieldControl(field, ['tag-1'], data, 'en')).toContain('>Recurrent</span>');
+        expect(renderFieldControl(field, ['tag-1'], data, 'es')).toContain('>Recurrente</span>');
     });
 
     it('renders localized pills through the shared value renderer', () => {
-        expect(renderValue(tags, 'many2many_pills', 'en-US')).toContain('Recurrent');
-        expect(renderValue(tags, 'many2many_pills', 'es-MX')).toContain('Recurrente');
+        expect(renderValue(['tag-1'], 'many2many_pills', 'en-US', null, null, tags)).toContain('Recurrent');
+        expect(renderValue(['tag-1'], 'many2many_pills', 'es-MX', null, null, tags)).toContain('Recurrente');
     });
 });

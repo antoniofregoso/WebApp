@@ -16,6 +16,7 @@
 
 import {
     COLOR_CLASS, COLOR_FALLBACK, buildRecordUrl, locale, localizedValue, makeSortable, formatCurrency, formatDate,
+    resolveTags,
 } from '../utils';
 import { icon, faGripVertical } from '../components/icon.js';
 import { renderViewHeader } from '../components';
@@ -130,7 +131,7 @@ function renderFieldValue(record, fieldDef, ctx) {
                 : name;
         }
         case 'many2many_pills':
-            return renderTags(raw, lang);
+            return renderTags(resolveTags(raw, ctx.tagCatalog), lang);
         default:
             return escape(String(raw));
     }
@@ -230,7 +231,7 @@ function renderFooterField(record, fieldDef, ctx) {
     }
 
     if (fieldDef.type === 'many2many_pills') {
-        const tagsHtml = renderTags(raw, lang);
+        const tagsHtml = renderTags(resolveTags(raw, ctx.tagCatalog), lang);
         return tagsHtml ? `<div class="flex flex-wrap gap-1">${tagsHtml}</div>` : '';
     }
 
@@ -322,7 +323,13 @@ export function renderKanban(data = {}, lang = 'en') {
     _records = records;
 
     const layout = buildKanbanLayout(schema);
-    const ctx = { currency, modelName, lang, loc: locale(lang) };
+    const ctx = {
+        currency,
+        modelName,
+        lang,
+        loc: locale(lang),
+        tagCatalog: data?.model?.tags ?? [],
+    };
 
     const columns = statuses.map((status) => {
         const cards = records.filter((r) => r.status === status.value);

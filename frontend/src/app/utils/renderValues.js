@@ -1,8 +1,8 @@
 
 import { formatCurrency, formatDate, formatDateTime } from './formatters';
-import { localizedValue } from './ux.js';
+import { localizedValue, resolveTags } from './ux.js';
 
-export function renderValue(data, type, locale, currency, model) {
+export function renderValue(data, type, locale, currency, model, tagCatalog = []) {
     switch (type) {
         case 'string':
             return data?.[locale.slice(0, 2)] || data;
@@ -23,7 +23,7 @@ export function renderValue(data, type, locale, currency, model) {
         case 'many2many':
             return data;
         case 'many2many_pills':
-            const pillsData = groupPills(data, locale);
+            const pillsData = groupPills(resolveTags(data, tagCatalog), locale);
             let pills = '<div class="field is-grouped is-grouped-multiline">';
             pillsData.forEach(item => {
                 pills += `<button><div class="control"><div class="tags has-addons"><span class="tag ${item.color || ''}">${item.name}</span><span class="tag is-dark">${item.count}</span></div></div></button>`;

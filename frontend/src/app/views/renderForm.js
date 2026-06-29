@@ -5,7 +5,8 @@ import {
 import { renderViewHeader } from '../components';
 import { buildRecordUrl } from '../utils';
 import {
-    getFormLayout, initPercentageSliders, renderFieldControl, renderFormLayout, setFormInputsEnabled,
+    getFormLayout, initPercentageSliders, initTagPickers, renderFieldControl, renderFormLayout,
+    setFormInputsEnabled,
 } from './formFields.js';
 import { initCreateModal, renderCreateModal } from './renderCreateModal.js';
 import {
@@ -349,11 +350,13 @@ export function initForm(lang = 'en') {
     if (!root || !editButton || !saveButton || !recordForm) return cleanupCreateModal;
     const richTextEditors = initFormRichTextEditors(recordForm);
     const cleanupPercentageSliders = initPercentageSliders(recordForm);
+    const tagPickers = initTagPickers(recordForm, lang);
 
     const enterEditMode = () => {
         root.dataset.formMode = 'edit';
         setFormInputsEnabled(recordForm, true, lang);
         richTextEditors.setEnabled(true);
+        tagPickers.setEnabled(true);
         saveButton.disabled = false;
         editButton.classList.add('topbar-action-btn--active');
         editButton.setAttribute('aria-pressed', 'true');
@@ -362,6 +365,7 @@ export function initForm(lang = 'en') {
 
     const enterReadonlyMode = () => {
         richTextEditors.setEnabled(false);
+        tagPickers.setEnabled(false);
         root.dataset.formMode = 'readonly';
         setFormInputsEnabled(recordForm, false, lang);
         saveButton.disabled = true;
@@ -422,6 +426,7 @@ export function initForm(lang = 'en') {
         cleanupWhatsapp?.();
         cleanupDocuments?.();
         cleanupPercentageSliders();
+        tagPickers.cleanup();
         richTextEditors.cleanup();
         cleanupCreateModal();
     };

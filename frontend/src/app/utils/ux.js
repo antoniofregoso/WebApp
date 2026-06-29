@@ -39,3 +39,13 @@ export function localizedValue(value, lang = 'en') {
     }
     return value ?? '';
 }
+
+/** Resolve many-to-many tag UUIDs against the model-level tag catalog. */
+export function resolveTags(value, catalog = []) {
+    if (!Array.isArray(value)) return [];
+    const byId = new Map((catalog ?? []).map((tag) => [String(tag?.uuid), tag]));
+    return value.map((item) => {
+        const id = typeof item === 'object' && item !== null ? item.uuid : item;
+        return byId.get(String(id)) ?? (typeof item === 'object' ? item : null);
+    }).filter(Boolean);
+}

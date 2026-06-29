@@ -1,6 +1,8 @@
 import {
     buildRecordUrl, COLOR_CLASS, COLOR_FALLBACK, formatCurrency, locale, localizedValue,
+    resolveTags,
 } from '../utils';
+import { faMagnifyingGlass, faXmark, icon } from '../components/icon.js';
 
 export function escape(value) {
     return String(value)
@@ -171,13 +173,84 @@ function renderPills(tags, lang) {
     }).join('')}</div>`;
 }
 
-function renderPillsControl(field, value, lang, extraClass) {
-    const editableValue = Array.isArray(value)
-        ? value.map((item) => localizedValue(item.name, lang)).join(', ')
-        : value ?? '';
+function tagIdentity(tag) {
+    return String(tag?.uuid ?? tag?.value ?? localizedValue(tag?.name, 'en'));
+}
+
+function mergeTagOptions(availableTags, selectedTags) {
+    const tags = new Map();
+    [...(availableTags ?? []), ...(selectedTags ?? [])].forEach((tag) => {
+        if (tag && typeof tag === 'object') tags.set(tagIdentity(tag), tag);
+    });
+    return Array.from(tags.values());
+}
+
+function renderSelectedTag(tag, lang) {
+    const classes = COLOR_CLASS[tag.color] ?? COLOR_FALLBACK;
+    const name = localizedValue(tag.name, lang);
+    return `<button type="button" class="form-tag-chip ${classes}"
+        aria-label="${escapeAttr(`${lang === 'es' ? 'Quitar' : 'Remove'} ${name}`)}"
+        data-tag-remove="${escapeAttr(tagIdentity(tag))}" disabled>
+        <span>${escape(name)}</span>
+        <span class="form-tag-chip-remove" aria-hidden="true">
+            ${icon(faXmark, 'form-tag-chip-remove-icon')}
+        </span>
+    </button>`;
+}
+
+function renderPillsControl(field, value, data, lang) {
+    const selectedTags = resolveTags(value, data?.model?.tags);
+    const availableTags = mergeTagOptions(data?.model?.tags, selectedTags);
+    const searchLabel = lang === 'es' ? 'Buscar etiquetas…' : 'Search tags…';
+    const emptyLabel = lang === 'es' ? 'No hay etiquetas que coincidan' : 'No matching tags';
+    const countLabel = lang === 'es'
+        ? `${selectedTags.length} de ${availableTags.length} seleccionadas`
+        : `${selectedTags.length} of ${availableTags.length} selected`;
     return `<div class="form-switchable-control" data-form-switchable-readonly="${field?.form?.readonly === true}">
-        <div class="form-value-display">${renderPills(value, lang)}</div>
-        ${renderInput(field, editableValue, `form-edit-control ${extraClass}`, lang)}
+        <div class="form-value-display">${renderPills(selectedTags, lang)}</div>
+        <div class="form-tag-picker form-edit-control" data-tag-picker
+            data-tag-picker-readonly="${field?.form?.readonly === true}">
+            <input type="hidden" name="${escapeAttr(field.name)}"
+                value="${escapeAttr(JSON.stringify(selectedTags.map(tagIdentity)))}"
+                data-form-input data-tag-picker-value
+                data-form-readonly="${field?.form?.readonly === true}" disabled />
+            <div class="form-tag-picker-control" data-tag-picker-control>
+                <div class="form-tag-picker-selections" data-tag-picker-selections>
+                    ${selectedTags.map((tag) => renderSelectedTag(tag, lang)).join('')}
+                </div>
+                <div class="form-tag-picker-search-row">
+                    ${icon(faMagnifyingGlass, 'form-tag-picker-search-icon')}
+                    <input type="search" class="form-tag-picker-search"
+                        aria-label="${escapeAttr(searchLabel)}" aria-expanded="false"
+                        aria-haspopup="listbox" autocomplete="off"
+                        placeholder="${escapeAttr(searchLabel)}" data-tag-picker-search disabled />
+                </div>
+            </div>
+            <div class="form-tag-picker-menu" data-tag-picker-menu hidden>
+                <div class="form-tag-picker-menu-header">
+                    <span>${lang === 'es' ? 'Etiquetas disponibles' : 'Available tags'}</span>
+                    <span data-tag-picker-count>${escape(countLabel)}</span>
+                </div>
+                <div class="form-tag-picker-options" role="listbox" aria-multiselectable="true"
+                    aria-label="${lang === 'es' ? 'Etiquetas disponibles' : 'Available tags'}">
+                    ${availableTags.map((tag) => {
+        const id = tagIdentity(tag);
+        const selected = selectedTags.some((item) => tagIdentity(item) === id);
+        const tagName = localizedValue(tag.name, lang);
+        return `<button type="button" class="form-tag-picker-option"
+                            role="option" aria-selected="${selected}"
+                            data-tag-option data-tag-id="${escapeAttr(id)}"
+                            data-tag-value="${escapeAttr(JSON.stringify(tag))}">
+                            <span class="form-tag-color form-tag-color--${escapeAttr(tag.color ?? 'zinc')}"></span>
+                            <span class="form-tag-picker-option-name">${escape(tagName)}</span>
+                            <span class="form-tag-picker-option-check" aria-hidden="true"></span>
+                        </button>`;
+    }).join('')}
+                    <p class="form-tag-picker-empty" data-tag-picker-empty hidden>${escape(emptyLabel)}</p>
+                </div>
+            </div>
+            <span class="sr-only" aria-live="polite" data-tag-picker-live>${escape(countLabel)}</span>
+        </div>
     </div>`;
 }
 
@@ -255,7 +328,7 @@ export function renderFieldControl(field, value, data, lang, extraClass = '') {
             </select>`;
         }
         case 'many2many_pills':
-            return renderPillsControl(field, value, lang, extraClass);
+            return renderPillsControl(field, value, data, lang);
         default:
             return renderInput(field, value ?? '', extraClass, lang);
     }
@@ -368,4 +441,228 @@ export function initPercentageSliders(container) {
         return { input, update };
     });
     return () => listeners.forEach(({ input, update }) => input.removeEventListener('input', update));
+}
+
+function createTagChip(tag, lang) {
+    const button = document.createElement('button');
+    const name = localizedValue(tag.name, lang);
+    button.type = 'button';
+    button.disabled = true;
+    button.dataset.tagRemove = tagIdentity(tag);
+    button.className = `form-tag-chip ${COLOR_CLASS[tag.color] ?? COLOR_FALLBACK}`;
+    button.setAttribute('aria-label', `${lang === 'es' ? 'Quitar' : 'Remove'} ${name}`);
+
+    const text = document.createElement('span');
+    text.textContent = name;
+    button.append(text);
+
+    const remove = document.createElement('span');
+    remove.className = 'form-tag-chip-remove';
+    remove.setAttribute('aria-hidden', 'true');
+    remove.innerHTML = icon(faXmark, 'form-tag-chip-remove-icon');
+    button.append(remove);
+    return button;
+}
+
+function createReadonlyTag(tag, lang) {
+    const pill = document.createElement('span');
+    pill.className = `inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${COLOR_CLASS[tag.color] ?? COLOR_FALLBACK}`;
+    pill.textContent = localizedValue(tag.name, lang);
+    return pill;
+}
+
+export function initTagPickers(container, lang = 'en') {
+    if (!container) return { setEnabled() {}, cleanup() {} };
+    const cleanups = [];
+    const controllers = Array.from(container.querySelectorAll('[data-tag-picker]')).map((picker) => {
+        const hiddenInput = picker.querySelector('[data-tag-picker-value]');
+        const search = picker.querySelector('[data-tag-picker-search]');
+        const control = picker.querySelector('[data-tag-picker-control]');
+        const selections = picker.querySelector('[data-tag-picker-selections]');
+        const menu = picker.querySelector('[data-tag-picker-menu]');
+        const count = picker.querySelector('[data-tag-picker-count]');
+        const live = picker.querySelector('[data-tag-picker-live]');
+        const empty = picker.querySelector('[data-tag-picker-empty]');
+        const readonlyDisplay = picker.closest('.form-switchable-control')?.querySelector('.form-value-display');
+        const options = Array.from(picker.querySelectorAll('[data-tag-option]'));
+        const available = new Map(options.map((option) => {
+            try {
+                return [option.dataset.tagId, JSON.parse(option.dataset.tagValue)];
+            } catch {
+                return [option.dataset.tagId, null];
+            }
+        }).filter(([, tag]) => tag));
+        let selectedValues;
+        try {
+            selectedValues = JSON.parse(hiddenInput?.value || '[]');
+        } catch {
+            selectedValues = [];
+        }
+        let selected = selectedValues.map((item) => {
+            const id = typeof item === 'object' && item !== null ? tagIdentity(item) : String(item);
+            return available.get(id) ?? (typeof item === 'object' ? item : null);
+        }).filter(Boolean);
+        let enabled = false;
+        let activeIndex = -1;
+
+        const selectedIds = () => new Set(selected.map(tagIdentity));
+        const visibleOptions = () => options.filter((option) => !option.hidden);
+        const countLabel = () => lang === 'es'
+            ? `${selected.length} de ${options.length} seleccionadas`
+            : `${selected.length} of ${options.length} selected`;
+
+        const setActiveOption = (index) => {
+            const visible = visibleOptions();
+            options.forEach((option) => option.classList.remove('form-tag-picker-option--active'));
+            if (visible.length === 0) {
+                activeIndex = -1;
+                return;
+            }
+            activeIndex = (index + visible.length) % visible.length;
+            visible[activeIndex].classList.add('form-tag-picker-option--active');
+            visible[activeIndex].scrollIntoView?.({ block: 'nearest' });
+        };
+
+        const filterOptions = () => {
+            const query = search.value.trim().toLocaleLowerCase();
+            options.forEach((option) => {
+                option.hidden = !option.textContent.toLocaleLowerCase().includes(query);
+            });
+            empty.hidden = visibleOptions().length > 0;
+            setActiveOption(0);
+        };
+
+        const render = () => {
+            const ids = selectedIds();
+            hiddenInput.value = JSON.stringify(selected.map(tagIdentity));
+            selections.replaceChildren(...selected.map((tag) => createTagChip(tag, lang)));
+            selections.querySelectorAll('[data-tag-remove]').forEach((button) => {
+                button.disabled = !enabled;
+            });
+            options.forEach((option) => {
+                option.setAttribute('aria-selected', String(ids.has(option.dataset.tagId)));
+            });
+            if (readonlyDisplay) {
+                readonlyDisplay.replaceChildren();
+                if (selected.length === 0) {
+                    const dash = document.createElement('span');
+                    dash.className = 'text-[var(--dash-text-soft)]';
+                    dash.textContent = '—';
+                    readonlyDisplay.append(dash);
+                } else {
+                    const list = document.createElement('div');
+                    list.className = 'flex flex-wrap gap-1';
+                    list.append(...selected.map((tag) => createReadonlyTag(tag, lang)));
+                    readonlyDisplay.append(list);
+                }
+            }
+            const label = countLabel();
+            count.textContent = label;
+            live.textContent = label;
+        };
+
+        const open = () => {
+            if (!enabled) return;
+            menu.hidden = false;
+            search.setAttribute('aria-expanded', 'true');
+            picker.classList.add('form-tag-picker--open');
+            filterOptions();
+        };
+
+        const close = () => {
+            menu.hidden = true;
+            search.setAttribute('aria-expanded', 'false');
+            picker.classList.remove('form-tag-picker--open');
+            options.forEach((option) => option.classList.remove('form-tag-picker-option--active'));
+            activeIndex = -1;
+        };
+
+        const toggle = (id) => {
+            const index = selected.findIndex((tag) => tagIdentity(tag) === id);
+            if (index >= 0) selected.splice(index, 1);
+            else if (available.has(id)) selected.push(available.get(id));
+            search.value = '';
+            render();
+            filterOptions();
+            search.focus();
+            hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+
+        const onControlClick = (event) => {
+            if (event.target.closest('[data-tag-remove]')) return;
+            open();
+            search.focus();
+        };
+        const onSelectionsClick = (event) => {
+            const remove = event.target.closest('[data-tag-remove]');
+            if (remove && enabled) toggle(remove.dataset.tagRemove);
+        };
+        const onOptionClick = (event) => toggle(event.currentTarget.dataset.tagId);
+        const onSearchInput = () => {
+            open();
+            filterOptions();
+        };
+        const onSearchKeydown = (event) => {
+            const visible = visibleOptions();
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                const wasClosed = menu.hidden;
+                open();
+                if (wasClosed) {
+                    setActiveOption(event.key === 'ArrowDown' ? 0 : visibleOptions().length - 1);
+                } else {
+                    setActiveOption(activeIndex + (event.key === 'ArrowDown' ? 1 : -1));
+                }
+            } else if (event.key === 'Enter' && !menu.hidden && visible[activeIndex]) {
+                event.preventDefault();
+                toggle(visible[activeIndex].dataset.tagId);
+            } else if (event.key === 'Escape') {
+                event.preventDefault();
+                close();
+            } else if (event.key === 'Backspace' && search.value === '' && selected.length > 0) {
+                toggle(tagIdentity(selected[selected.length - 1]));
+            } else if (event.key === 'Tab') {
+                close();
+            }
+        };
+        const onDocumentPointer = (event) => {
+            if (!picker.contains(event.target)) close();
+        };
+
+        control.addEventListener('click', onControlClick);
+        selections.addEventListener('click', onSelectionsClick);
+        search.addEventListener('input', onSearchInput);
+        search.addEventListener('keydown', onSearchKeydown);
+        options.forEach((option) => option.addEventListener('click', onOptionClick));
+        document.addEventListener('pointerdown', onDocumentPointer);
+        cleanups.push(() => {
+            control.removeEventListener('click', onControlClick);
+            selections.removeEventListener('click', onSelectionsClick);
+            search.removeEventListener('input', onSearchInput);
+            search.removeEventListener('keydown', onSearchKeydown);
+            options.forEach((option) => option.removeEventListener('click', onOptionClick));
+            document.removeEventListener('pointerdown', onDocumentPointer);
+        });
+
+        render();
+        return {
+            setEnabled(nextEnabled) {
+                enabled = nextEnabled && picker.dataset.tagPickerReadonly !== 'true';
+                search.disabled = !enabled;
+                selections.querySelectorAll('[data-tag-remove]').forEach((button) => {
+                    button.disabled = !enabled;
+                });
+                if (!enabled) close();
+            },
+        };
+    });
+
+    return {
+        setEnabled(enabled) {
+            controllers.forEach((controller) => controller.setEnabled(enabled));
+        },
+        cleanup() {
+            cleanups.forEach((cleanup) => cleanup());
+        },
+    };
 }

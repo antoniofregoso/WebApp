@@ -11,6 +11,7 @@
 
 import {
     COLOR_CLASS, COLOR_FALLBACK, NUMERIC_TYPES, locale, localizedValue, makeSortable, buildRecordUrl,
+    resolveTags,
 } from '../utils';
 import { icon, faGripVertical, faTrash, faBoxArchive } from '../components/icon.js';
 import { renderViewHeader } from '../components';
@@ -70,6 +71,7 @@ export function renderList(data = {}, lang = 'en') {
     const schema = data?.model?.schema ?? [];
     const records = data?.records ?? [];
     const statusLabels = data?.model?.status ?? [];
+    const tagCatalog = data?.model?.tags ?? [];
     const modelName = data?.model?.name ?? '';
     const title = data?.model?.label?.[lang] ?? '';
     const total = data?.pagination?.total ?? records.length;
@@ -93,7 +95,7 @@ export function renderList(data = {}, lang = 'en') {
                         </tr>
                     </thead>
                     <tbody data-list-rows>
-                        ${getRows(records, columns, statusLabels, modelName, lang)}
+                        ${getRows(records, columns, statusLabels, tagCatalog, modelName, lang)}
                     </tbody>
                 </table>
             </div>` : `
@@ -150,14 +152,14 @@ function getSortValue(field, value) {
     }
 }
 
-function getRows(records, columns, statusLabels, modelName, lang) {
+function getRows(records, columns, statusLabels, tagCatalog, modelName, lang) {
     return records.map((record) => {
         const cells = columns.map((field) => {
             const align = NUMERIC_TYPES.has(field.type) ? 'text-right' : 'text-left';
             const sortAttr = field.list?.order === true
                 ? ` data-sort-value="${escape(String(getSortValue(field, record[field.name])))}"` : '';
             return `<td class="${align} whitespace-nowrap px-4 py-2.5 text-[var(--dash-text)]"${sortAttr}>
-                ${formatCell(field, record[field.name], statusLabels, modelName, record.uuid, lang)}
+                ${formatCell(field, record[field.name], statusLabels, tagCatalog, modelName, record.uuid, lang)}
             </td>`;
         }).join('');
         return `<tr data-uuid="${escape(record.uuid ?? '')}"
@@ -204,7 +206,7 @@ function selectionCell(uuid, lang) {
 
 // ── Cell formatting per field type ──────────────────────────────────────────────
 
-function formatCell(field, value, statusLabels, modelName, recordUuidValue, lang) {
+function formatCell(field, value, statusLabels, tagCatalog, modelName, recordUuidValue, lang) {
     if (value === null || value === undefined || value === '') {
         // image still renders a placeholder; everything else shows a muted dash.
         if (field.type !== 'image') {
@@ -251,7 +253,7 @@ function formatCell(field, value, statusLabels, modelName, recordUuidValue, lang
             return avatarCell(value);
 
         case 'many2many_pills':
-            return pillsCell(value, lang);
+            return pillsCell(resolveTags(value, tagCatalog), lang);
 
         case 'selection':
             return statusCell(value, statusLabels, lang);
