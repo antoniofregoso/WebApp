@@ -44,6 +44,20 @@
 ```
 ## Kanban
 
+Grouping is configured at model level. `groupBy` contains the record field name,
+and the property with that name contains the available groups. If `groupBy` is
+omitted, cards are displayed without grouping even when group values exist.
+
+```json
+{
+    "groupBy": "status",
+    "status": [
+        { "value": "draft", "en": "Draft", "es": "Borrador", "color": "zinc" },
+        { "value": "confirmed", "en": "Confirmed", "es": "Confirmada", "color": "green" }
+    ]
+}
+```
+
 The Kanban view consists of 4 areas:
 ### Header
 It has 3 sections where only one field is allowed:
@@ -112,5 +126,20 @@ Each field must declare only one placement. `required`, `readonly`, `placeholder
 ```
 
 ## Calendar
+
+The three options are assigned to fields in the model schema. An event is
+rendered only when its `startDate` field contains a valid date. If `endDate` is
+empty or invalid, the event lasts 30 minutes. Event text starts with the start
+time followed by the configured title.
+
+```json
+{
+    "calendar":{
+        "startDate":true,
+        "endDate":true,
+        "title":true
+    }
+}
+```
 
 ## Insight

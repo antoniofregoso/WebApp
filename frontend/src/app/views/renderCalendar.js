@@ -7,7 +7,8 @@ import { initCreateModal, renderCreateModal } from './renderCreateModal.js';
 
 /* ════════════════════════════════════════════════════════════════════════════
  * Calendar view.
- *  · Uses records as events anchored on `start_date` and `end_date`.
+ *  · Uses the fields marked with `calendar.startDate`, `calendar.endDate`
+ *    and `calendar.title` in the model schema.
  *  · Opens on today by default.
  *  · Today is marked with a red circle on its day number.
  *  · A green "now" line tracks the current time (week / day views) and moves
@@ -17,6 +18,7 @@ import { initCreateModal, renderCreateModal } from './renderCreateModal.js';
 
 const HOUR_HEIGHT = 48;          // px per hour row in week / day grids
 const MIN_EVENT_MINUTES = 30;
+const DEFAULT_EVENT_MINUTES = 30;
 
 const STATUS_PALETTE = {
     zinc: { bg: '#f4f4f5', border: '#71717a', text: '#3f3f46' },
@@ -133,23 +135,41 @@ function weekdayNames(lang) {
     });
 }
 
-function toCalendarEvents(data = {}, lang = 'en') {
+function getCalendarFields(schema = []) {
+    const findField = (option) => schema.find((field) => field?.calendar?.[option] === true) ?? null;
+    return {
+        startDate: findField('startDate'),
+        endDate: findField('endDate'),
+        title: findField('title'),
+    };
+}
+
+function calendarTitle(value, lang) {
+    if (value == null) return '';
+    if (typeof value !== 'object') return String(value);
+
+    const namedValue = value.name ?? value;
+    if (typeof namedValue !== 'object') return String(namedValue);
+    return String(namedValue[lang] ?? namedValue.en ?? namedValue.es ?? '');
+}
+
+export function toCalendarEvents(data = {}, lang = 'en') {
     const modelName = data?.model?.name ?? '';
     const statuses = data?.model?.status ?? [];
+    const fields = getCalendarFields(data?.model?.schema ?? []);
     return (data?.records ?? [])
         .map((record) => {
-            const startsAt = parseCalendarDate(record.start_date);
+            const startsAt = parseCalendarDate(record[fields.startDate?.name]);
             if (!startsAt || Number.isNaN(startsAt.getTime())) return null;
-            const parsedEnd = parseCalendarDate(record.end_date);
+            const parsedEnd = parseCalendarDate(record[fields.endDate?.name]);
             const endsAt = parsedEnd && parsedEnd > startsAt
                 ? parsedEnd
-                : new Date(startsAt.getTime() + MIN_EVENT_MINUTES * 60_000);
+                : new Date(startsAt.getTime() + DEFAULT_EVENT_MINUTES * 60_000);
             const status = statuses.find((option) => option.value === record.status);
 
             return {
                 id: record.uuid,
-                title: record.name ?? String(record.uuid ?? ''),
-                customer: record.customer?.name ?? '',
+                title: calendarTitle(record[fields.title?.name], lang) || String(record.uuid ?? ''),
                 startsAt,
                 endsAt,
                 status: record.status,
@@ -168,10 +188,6 @@ function eventsForDay(day) {
 
 function formatEventTime(date, lang) {
     return date.toLocaleTimeString(locale(lang), { hour: '2-digit', minute: '2-digit' });
-}
-
-function formatEventRange(event, lang) {
-    return `${formatEventTime(event.startsAt, lang)}-${formatEventTime(event.endsAt, lang)}`;
 }
 
 // ── Title for the toolbar, per view ───────────────────────────────────────────
@@ -261,7 +277,7 @@ function renderMonthEvents(day, lang) {
         return `
         <a href="${event.href}" class="cal-month-event" data-event-id="${escapeAttr(event.id)}"
            style="${styleForStatus(event.color)}"
-           title="${escapeAttr(`${event.title} ${formatEventRange(event, lang)}`)}">
+           title="${escapeAttr(`${formatEventTime(slice.startsAt, lang)} ${event.title} (${formatEventTime(slice.endsAt, lang)})`)}">
             <span class="cal-event-time">${escape(formatEventTime(slice.startsAt, lang))}</span>
             <span class="cal-event-title">${escape(event.title)}</span>
         </a>`;
@@ -290,7 +306,6 @@ function renderTimedEvents(day, lang) {
            style="top:${top}px;height:${height}px;${styleForStatus(event.color)}">
             <span class="cal-time-event-hour">${escape(formatEventTime(slice.startsAt, lang))}</span>
             <span class="cal-time-event-title">${escape(event.title)}</span>
-            ${event.customer ? `<span class="cal-time-event-subtitle">${escape(event.customer)}</span>` : ''}
             ${event.statusLabel ? `<span class="cal-time-event-status">${escape(event.statusLabel)}</span>` : ''}
         </a>`;
     }).join('');

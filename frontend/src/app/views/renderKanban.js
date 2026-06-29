@@ -1,6 +1,8 @@
 /* ════════════════════════════════════════════════════════════════════════════
- * Kanban view — records grouped into columns by their `status` (selection).
- *  · Columns come from model.status; cards are the records in each status.
+ * Kanban view — records optionally grouped into columns.
+ *  · `model.groupBy` names the record field used for grouping.
+ *  · Group definitions come from `model[model.groupBy]`.
+ *  · Without `model.groupBy`, all cards are rendered without columns.
  *  · Cards are drag-sortable within and across columns (SortableJS, shared
  *    group), using the same grip handle + data-uuid pattern as the list view.
  *  · Card layout is driven by the `kanban` key on each schema field:
@@ -11,33 +13,25 @@
  *  · Themed with the dashboard design tokens (--dash-*) and Tailwind utilities.
  *
  * Expected shape (see data/demo.json):
- *   data = { model: { label, status, schema }, records: [...] }
+ *   data = { model: { label, groupBy, [groupBy]: groups, schema }, records: [...] }
  * ══════════════════════════════════════════════════════════════════════════ */
 
 import {
     COLOR_CLASS, COLOR_FALLBACK, buildRecordUrl, locale, localizedValue, makeSortable, formatCurrency, formatDate,
     resolveTags,
 } from '../utils';
-import { icon, faGripVertical } from '../components/icon.js';
+import { icon, faGripVertical, faUser } from '../components/icon.js';
 import { renderViewHeader } from '../components';
 import { initCreateModal, renderCreateModal } from './renderCreateModal.js';
 
 let _records = [];
+let _groupBy = null;
 
 function escape(value) {
     return String(value)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
-}
-
-function initials(name) {
-    return String(name ?? '?')
-        .trim()
-        .split(/\s+/)
-        .slice(0, 2)
-        .map((w) => w[0]?.toUpperCase() ?? '')
-        .join('') || '?';
 }
 
 function avatar(src, name) {
@@ -48,7 +42,7 @@ function avatar(src, name) {
     return `<span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full
                  bg-[var(--dash-surface-hover)] text-[10px] font-semibold
                  text-[var(--dash-text-muted)] ring-1 ring-[var(--dash-border)]">
-        ${initials(name)}
+        ${icon(faUser, 'h-3.5 w-3.5')}
     </span>`;
 }
 
@@ -273,7 +267,7 @@ function renderCard(record, layout, ctx) {
         : '';
 
     return `
-    <article data-uuid="${escape(record.uuid ?? '')}" data-status="${escape(record.status ?? '')}"
+    <article data-uuid="${escape(record.uuid ?? '')}"
              class="group rounded-lg border border-[var(--dash-border)] bg-[var(--dash-bg)]
                     p-3 shadow-sm transition-shadow hover:shadow-md">
         ${headerHtml}
@@ -284,9 +278,9 @@ function renderCard(record, layout, ctx) {
 
 // ── Column ────────────────────────────────────────────────────────────────────
 
-function renderColumn(status, cards, layout, ctx) {
-    const cls = COLOR_CLASS[status.color] ?? COLOR_FALLBACK;
-    const title = escape(status[ctx.lang] ?? status.value);
+function renderColumn(group, cards, layout, ctx) {
+    const cls = COLOR_CLASS[group.color] ?? COLOR_FALLBACK;
+    const title = escape(group[ctx.lang] ?? group.value);
 
     return `
     <section class="flex min-w-64 flex-1 flex-col rounded-xl border border-[var(--dash-border)]
@@ -297,7 +291,7 @@ function renderColumn(status, cards, layout, ctx) {
             </span>
             <span data-kanban-count class="text-xs text-[var(--dash-text-muted)]">${cards.length}</span>
         </header>
-        <div data-kanban-cards data-status="${escape(status.value)}"
+        <div data-kanban-cards data-group-value="${escape(group.value)}"
              class="flex min-h-24 flex-col gap-2 p-2">
             ${cards.map((record) => renderCard(record, layout, ctx)).join('')}
         </div>
@@ -312,7 +306,13 @@ function renderColumn(status, cards, layout, ctx) {
  * @param {string} lang — 'es' | 'en'
  */
 export function renderKanban(data = {}, lang = 'en') {
-    const statuses = data?.model?.status ?? [];
+    const configuredGroupBy = data?.model?.groupBy;
+    const groupBy = typeof configuredGroupBy === 'string' && configuredGroupBy.trim()
+        ? configuredGroupBy.trim()
+        : null;
+    const groups = groupBy && Array.isArray(data?.model?.[groupBy])
+        ? data.model[groupBy]
+        : [];
     const records  = data?.records ?? [];
     const schema   = data?.model?.schema ?? [];
     const modelName = data?.model?.name ?? '';
@@ -321,6 +321,7 @@ export function renderKanban(data = {}, lang = 'en') {
     const total     = data?.pagination?.total ?? records.length;
 
     _records = records;
+    _groupBy = groupBy;
 
     const layout = buildKanbanLayout(schema);
     const ctx = {
@@ -331,16 +332,20 @@ export function renderKanban(data = {}, lang = 'en') {
         tagCatalog: data?.model?.tags ?? [],
     };
 
-    const columns = statuses.map((status) => {
-        const cards = records.filter((r) => r.status === status.value);
-        return renderColumn(status, cards, layout, ctx);
-    }).join('');
+    const board = groupBy
+        ? groups.map((group) => {
+            const cards = records.filter((record) => String(record[groupBy]) === String(group.value));
+            return renderColumn(group, cards, layout, ctx);
+        }).join('')
+        : `<div data-kanban-cards class="grid w-full grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3">
+            ${records.map((record) => renderCard(record, layout, ctx)).join('')}
+        </div>`;
 
     return `
     <main id="dashboard-content" class="dash-content" role="main" aria-label="Kanban Board">
         ${renderViewHeader({ title, count: total, lang })}
         <div class="flex items-start gap-4 overflow-x-auto pb-2">
-            ${columns}
+            ${board}
         </div>
         ${renderCreateModal(data, lang)}
     </main>
@@ -370,12 +375,11 @@ export function initKanban(lang = 'en') {
                 dragClass:     'kanban-drag-item',
             },
             onReorder: (_ids, evt) => {
-                if (evt.from !== evt.to) {
+                if (_groupBy && evt.from !== evt.to) {
                     const cardUuid = evt.item?.dataset.uuid;
-                    const toStatus = evt.to?.dataset.status;
+                    const groupValue = evt.to?.dataset.groupValue;
                     const record = _records.find((r) => String(r.uuid) === cardUuid);
-                    if (record) record.status = toStatus;
-                    if (evt.item && toStatus != null) evt.item.dataset.status = toStatus;
+                    if (record && groupValue != null) record[_groupBy] = groupValue;
                 }
                 refreshColumnCounts();
             },

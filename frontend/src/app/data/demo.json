@@ -5,6 +5,7 @@
             "es": "Orden de Venta",
             "en": "Sale Order"
         },
+        "groupBydd":"status",
         "status": [
             {
                 "value": "draft",
@@ -133,6 +134,9 @@
                 "form": {
                     "header": "subtitle",
                     "required":true
+                },
+                "calendar":{
+                    "title":true
                 }
             },
             {
@@ -164,6 +168,9 @@
                 "form": {
                     "rightColumn":0,
                     "readonly":true
+                },
+                "calendar":{
+                    "startDate":true
                 }
             },
             {
@@ -180,6 +187,9 @@
                         "en":"Probable closing date of sale",
                         "es":"Fecha probable de cierre de venta"
                     }
+                },
+                "calendar":{
+                    "endDate":true
                 }
             },
             {

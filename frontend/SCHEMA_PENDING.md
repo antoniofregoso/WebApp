@@ -18,9 +18,7 @@ Ideas para evolucionar el schema declarativo del frontend:
 - `list.align`: alineacion de columna cuando el tipo no sea suficiente.
 - `form.colspan`: permitir que un campo ocupe varias columnas.
 - `form.section`: agrupar campos del formulario por secciones.
-- `calendar.start` y `calendar.end`: definir que campos alimentan el calendario por modelo.
 - `calendar.color`: definir de donde sale el color del evento, por ejemplo `status`.
-- `kanban.group_by`: definir el campo por el que se agrupa kanban.
 - `kanban.card`: definir que campos aparecen dentro de la tarjeta.
 - `permissions`: permisos por accion (`create`, `read`, `update`, `delete`) para ocultar botones o bloquear campos.
 - `actions`: acciones declarativas por vista o registro.
