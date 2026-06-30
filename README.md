@@ -2,7 +2,7 @@
 
 ## Project objective
 
-Create lightweight and fast web apps made with modern vanilla JavaScript using CJ components and utilities
+Create lightweight and fast web apps made with modern vanilla JavaScript using cj-router, components and utilities
 
 ## General Concepts
 

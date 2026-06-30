@@ -1,6 +1,37 @@
 import { appSignal } from '../appStore';
 
 const INSIGHT_COLLECTIONS = new Set(['kpis', 'gauges', 'graphics']);
+const REFRESH_FIELDS = {
+    kpis: ['value', 'trend'],
+    gauges: ['value'],
+    graphics: ['data', 'series', 'categories', 'labels'],
+};
+
+function indicatorDataPatch(collection, update) {
+    return REFRESH_FIELDS[collection].reduce((patch, field) => {
+        if (Object.hasOwn(update, field)) patch[field] = update[field];
+        return patch;
+    }, {});
+}
+
+function refreshInsightCollection(collection, items, updates) {
+    if (!Array.isArray(updates)) {
+        throw new Error(`Insight refresh must provide an array: ${collection}`);
+    }
+
+    const updatesById = new Map(updates.map((update) => [update?.id, update]));
+    updatesById.forEach((update, id) => {
+        if (!id) throw new Error('An insight id is required');
+        if (!items.some((item) => item.id === id)) {
+            throw new Error(`Insight not found: ${collection}.${id}`);
+        }
+    });
+
+    return items.map((item) => {
+        const update = updatesById.get(item.id);
+        return update ? { ...item, ...indicatorDataPatch(collection, update) } : item;
+    });
+}
 
 function updateInsightCollection(collection, id, patch) {
     if (!INSIGHT_COLLECTIONS.has(collection)) {
@@ -31,6 +62,21 @@ export const dashboardActions = {
 
     setInsights(insights) {
         appSignal.value = { ...appSignal.value, insights };
+    },
+
+    refreshInsights(data = {}) {
+        const state = appSignal.value;
+        const insights = state.insights ?? {};
+        const refreshed = { ...insights };
+
+        INSIGHT_COLLECTIONS.forEach((collection) => {
+            if (!Object.hasOwn(data, collection)) return;
+            const items = Array.isArray(insights[collection]) ? insights[collection] : [];
+            refreshed[collection] = refreshInsightCollection(collection, items, data[collection]);
+        });
+        if (Object.hasOwn(data, 'period')) refreshed.period = data.period;
+
+        appSignal.value = { ...state, insights: refreshed };
     },
 
     setInsightPeriod(period) {

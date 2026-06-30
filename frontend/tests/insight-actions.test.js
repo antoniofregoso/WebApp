@@ -5,9 +5,10 @@ import { patchInsights, renderInsights } from '../src/app/views/renderInsights.j
 
 const initialInsights = {
     period: 'today',
-    kpis: [{ id: 'revenue', value: 10, trend: 'up' }],
-    gauges: [{ id: 'efficiency', value: 70, max: 100 }],
-    graphics: [{ id: 'sales', type: 'line', data: [1, 2] }],
+    layout: { graphics: 3 },
+    kpis: [{ id: 'revenue', name: 'Revenue', value: 10, trend: 'up' }],
+    gauges: [{ id: 'efficiency', name: 'Efficiency', value: 70, max: 100 }],
+    graphics: [{ id: 'sales', title: 'Sales', type: 'line', data: [1, 2] }],
 };
 
 describe('dashboard insight actions', () => {
@@ -21,16 +22,19 @@ describe('dashboard insight actions', () => {
     it('updates one KPI by id without replacing unchanged collections', () => {
         const previousInsights = appSignal.value.insights;
         const previousGauges = previousInsights.gauges;
+        const previousLayout = previousInsights.layout;
 
         dashboardActions.updateKpi('revenue', { value: 25 });
 
         expect(appSignal.value.insights).not.toBe(previousInsights);
         expect(appSignal.value.insights.kpis[0]).toMatchObject({
             id: 'revenue',
+            name: 'Revenue',
             value: 25,
             trend: 'up',
         });
         expect(appSignal.value.insights.gauges).toBe(previousGauges);
+        expect(appSignal.value.insights.layout).toBe(previousLayout);
     });
 
     it('supports updater functions and preserves the id', () => {
@@ -50,11 +54,39 @@ describe('dashboard insight actions', () => {
         expect(appSignal.value.insights.period).toBe('monthly');
     });
 
+    it('refreshes indicator data without replacing dashboard configuration', () => {
+        dashboardActions.refreshInsights({
+            layout: { graphics: 1 },
+            kpis: [{ id: 'revenue', name: 'Changed', value: 42 }],
+            gauges: [{ id: 'efficiency', max: 999, value: 88 }],
+            graphics: [{ id: 'sales', type: 'bar', title: 'Changed', data: [3, 4] }],
+        });
+
+        expect(appSignal.value.insights.layout).toEqual({ graphics: 3 });
+        expect(appSignal.value.insights.kpis[0]).toMatchObject({
+            name: 'Revenue',
+            value: 42,
+        });
+        expect(appSignal.value.insights.gauges[0]).toMatchObject({
+            name: 'Efficiency',
+            max: 100,
+            value: 88,
+        });
+        expect(appSignal.value.insights.graphics[0]).toMatchObject({
+            title: 'Sales',
+            type: 'line',
+            data: [3, 4],
+        });
+    });
+
     it('rejects unknown ids and collections', () => {
         expect(() => dashboardActions.updateKpi('missing', { value: 1 }))
             .toThrow('Insight not found');
         expect(() => dashboardActions.updateInsight('unknown', 'sales', {}))
             .toThrow('Unknown insight collection');
+        expect(() => dashboardActions.refreshInsights({
+            kpis: [{ id: 'missing', value: 1 }],
+        })).toThrow('Insight not found: kpis.missing');
     });
 });
 

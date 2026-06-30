@@ -1,7 +1,7 @@
 {
     "period":"today",
     "layout":{
-        "graphics":4
+        "graphics":3
     },
     "kpis": [
         {

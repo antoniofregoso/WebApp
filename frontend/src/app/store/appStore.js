@@ -8,6 +8,12 @@ const INITIAL_STATE = {
 };
 const STORAGE_KEY = 'dashboard_state';
 
+function persistState(storage, state) {
+    const persistedState = { ...state };
+    delete persistedState.insights;
+    storage?.setItem(STORAGE_KEY, JSON.stringify(persistedState));
+}
+
 function loadInitialState() {
     const storage = globalThis.localStorage;
     const localData = storage?.getItem(STORAGE_KEY);
@@ -16,13 +22,14 @@ function loadInitialState() {
     if (!localData) {
         const newState = JSON.parse(JSON.stringify(INITIAL_STATE));
         newState.meta.start = Date.now();
-        storage?.setItem(STORAGE_KEY, JSON.stringify(newState));
+        persistState(storage, newState);
         return newState;
     }
 
     const savedState = JSON.parse(localData);
-    // States saved before insights became reactive are migrated transparently.
-    savedState.insights ??= JSON.parse(JSON.stringify(initialInsights));
+    // Dashboard configuration and seed data are loaded fresh on every startup.
+    // Runtime refreshes update indicator data in memory through dashboardActions.
+    savedState.insights = JSON.parse(JSON.stringify(initialInsights));
     const sessionStarted = savedState.meta?.start > 0;
 
     // CASE 2: Return after 24 h — reset session but keep preferences
@@ -48,7 +55,7 @@ export const appSignal = signal(loadInitialState());
 
 // ── Auto-persist to localStorage ──────────────────────────────────────────────
 effect(() => {
-    globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(appSignal.value));
+    persistState(globalThis.localStorage, appSignal.value);
 });
 
 // ── Computed selectors ────────────────────────────────────────────────────────

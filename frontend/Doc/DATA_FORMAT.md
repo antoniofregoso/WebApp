@@ -69,6 +69,24 @@ Los datos de insights viven en `appSignal.value.insights` y se modifican por
 medio de `dashboardActions`. Las acciones aceptan un objeto parcial o una
 función que recibe el valor actual:
 
+La carga inicial usa `setInsights` con la configuración completa enviada por el
+backend. Los refrescos posteriores usan `refreshInsights`: el payload contiene
+solo datos por `id`, y conserva la configuración del dashboard (`layout`,
+nombres, tipos, unidades, máximos y umbrales).
+
+```js
+dashboardActions.setInsights(initialDashboardConfig);
+
+dashboardActions.refreshInsights({
+    period: 'monthly',
+    kpis: [{ id: 'profit_margin', value: 28.4, trend: 'up' }],
+    gauges: [{ id: 'operational_efficiency', value: 81 }],
+    graphics: [{ id: 'monthly_sales', data: [12, 18, 25] }],
+});
+```
+
+También se puede refrescar un solo indicador:
+
 ```js
 import { dashboardActions } from '../store/actions';
 

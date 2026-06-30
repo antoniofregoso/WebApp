@@ -197,7 +197,13 @@ EWS_FORMAT.MD?
 
 ### graphics
 
-
+1. [Bar](./BAR.md).
+2. [Line](./LINE.md).
+3. [Donut](./DONUT.md).
+4. [Tree Map](./TREEMAP.md).
+5. [Radar](./RADAR.md).
+6. [Heat Map](./HEATMAP.md).
+7. [Sankey](./SANKEY.md).
 
 The Insight view renders the `kpis`, `gauges`, and `graphics` collections. Each
 element is linked to the DOM or its chart instance using the `id` defined
