@@ -2,10 +2,10 @@
 
 ## 🔴 Urgente — Migración gradual del frontend a Preact
 
-- [ ] Instalar y configurar Preact con Vite y JSX.
-- [ ] Conservar los schemas GraphQL/JSON como fuente para generar las vistas dinámicas.
-- [ ] Migrar primero Home y Login sin interrumpir las rutas actuales.
-- [ ] Migrar Topbar y Sidebar con manejo automático del ciclo de vida.
+- [x] Instalar y configurar Preact con Vite y JSX.
+- [x] Conservar los schemas GraphQL/JSON como fuente para generar las vistas dinámicas.
+- [x] Migrar primero Home y Login sin interrumpir las rutas actuales.
+- [x] Migrar Topbar y Sidebar con manejo automático del ciclo de vida.
 - [ ] Migrar el panel de notas, mensajes y documentos, eliminando inserciones inseguras con `innerHTML`.
 - [ ] Convertir cada tipo de campo del schema en un componente reutilizable.
 - [ ] Migrar gradualmente Kanban, Lista, Formulario y Calendario.

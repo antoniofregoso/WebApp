@@ -11,6 +11,9 @@ const STORAGE_KEY = 'dashboard_state';
 function persistState(storage, state) {
     const persistedState = { ...state };
     delete persistedState.insights;
+    // The declarative model schema is fetched fresh over GraphQL each session
+    // (see dashboard.js), so it should never be read back from a stale cache.
+    delete persistedState.model;
     storage?.setItem(STORAGE_KEY, JSON.stringify(persistedState));
 }
 

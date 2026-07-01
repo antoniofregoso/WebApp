@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { renderTopbar } from '../src/app/components/topbar.js';
+import { mountTopbar } from '../src/app/components/topbar.jsx';
 import { appSignal } from '../src/app/store/appStore.js';
 import { dashboardActions } from '../src/app/store/actions/dashboardActions.js';
 import { normalizePagination, paginateData } from '../src/app/utils/pagination.js';
@@ -40,21 +40,28 @@ describe('dashboard pagination', () => {
     });
 
     it('renders the current state and disables boundary controls', () => {
-        const firstPage = renderTopbar('en', 'light', 'Sales', null, true, {
-            page: 1,
-            per_page: 20,
-            total: 50,
-        });
-        const lastPage = renderTopbar('en', 'light', 'Sales', null, true, {
-            page: 3,
-            per_page: 20,
-            total: 50,
-        });
+        document.body.innerHTML = '<div id="topbar-root"></div>';
+        const container = document.getElementById('topbar-root');
 
-        expect(firstPage).toContain('aria-label="Page 1 of 3">1 / 3</span>');
-        expect(firstPage).toMatch(/data-page-previous[\s\S]*?disabled/);
-        expect(lastPage).toContain('aria-label="Page 3 of 3">3 / 3</span>');
-        expect(lastPage).toMatch(/data-page-next[\s\S]*?disabled/);
+        mountTopbar(container, {
+            lang: 'en', theme: 'light', pageTitle: 'Sales',
+            pagination: { page: 1, per_page: 20, total: 50 },
+        });
+        expect(document.querySelector('.topbar-page-indicator').textContent).toBe('1 / 3');
+        expect(document.querySelector('.topbar-page-indicator').getAttribute('aria-label')).toBe('Page 1 of 3');
+        expect(document.querySelector('[data-page-previous]').disabled).toBe(true);
+        expect(document.querySelector('[data-page-next]').disabled).toBe(false);
+
+        mountTopbar(container, {
+            lang: 'en', theme: 'light', pageTitle: 'Sales',
+            pagination: { page: 3, per_page: 20, total: 50 },
+        });
+        expect(document.querySelector('.topbar-page-indicator').textContent).toBe('3 / 3');
+        expect(document.querySelector('.topbar-page-indicator').getAttribute('aria-label')).toBe('Page 3 of 3');
+        expect(document.querySelector('[data-page-next]').disabled).toBe(true);
+        expect(document.querySelector('[data-page-previous]').disabled).toBe(false);
+
+        document.body.innerHTML = '';
     });
 
     it('moves through pages without exceeding total pages', () => {

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { initTopbar, renderTopbar } from '../src/app/components/topbar.js';
+import { mountTopbar } from '../src/app/components/topbar.jsx';
 import { dashboard } from '../src/app/pages/dashboard.js';
 import {
     clearAuthSession,
@@ -31,8 +31,13 @@ describe('authenticated navigation', () => {
     it('clears the in-memory session and redirects when logging out', () => {
         setAuthSession({ email: 'user@example.com', token: 'access-token' });
         const router = { goTo: vi.fn() };
-        document.body.innerHTML = renderTopbar('es', 'light', 'Dashboard');
-        initTopbar(router);
+        document.body.innerHTML = '<div id="topbar-root"></div>';
+        mountTopbar(document.getElementById('topbar-root'), {
+            lang: 'es',
+            theme: 'light',
+            pageTitle: 'Dashboard',
+            router,
+        });
 
         document.querySelector('[data-logout]').click();
 

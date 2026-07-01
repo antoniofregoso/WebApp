@@ -10,10 +10,14 @@ import {
 afterEach(() => {
     clearAuthSession();
     document.body.innerHTML = '';
+    vi.unstubAllGlobals();
 });
 
 describe('form view pagination', () => {
     it('shows the first record from the active page and reacts to page controls', () => {
+        // dashboard() kicks off a live schema fetch; keep it from hitting the network
+        // and just let it fall back to the bundled demo schema, as it does offline.
+        vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network disabled in tests')));
         setAuthSession({ email: 'user@example.com', token: 'access-token' });
         document.body.innerHTML = '<div id="app"></div>';
         window.history.replaceState({}, '', '/dashboard/area1');

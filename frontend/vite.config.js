@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite'
 import tailwindcss from '@tailwindcss/vite'
+import preact from '@preact/preset-vite'
 
 export default defineConfig({
   appType: 'spa',
-  
+
   server: {
     middlewareMode: false,
     port: 3000, 
@@ -20,6 +21,7 @@ export default defineConfig({
   },
   plugins: [
     tailwindcss(),
+    preact(),
   ],
   // Si en Vitest usas selectores del DOM nativos, esto asegura que corran bien
   test: {

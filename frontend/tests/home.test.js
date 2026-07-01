@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { home } from '../src/app/pages/home.js';
+import { home } from '../src/app/pages/home.jsx';
 
 afterEach(() => {
     document.body.innerHTML = '';

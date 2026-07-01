@@ -1,12 +1,36 @@
+import { render } from 'preact';
 import { effect } from '@preact/signals';
 import { appSignal, isAuthenticated } from '../store';
 import { contextActions, dashboardActions } from '../store/actions';
-import { renderSidebar, initSidebar, updateSidebarExpansion, MENU_ITEMS } from '../components';
-import { renderTopbar, initTopbar } from '../components';
+import { mountSidebar, mountTopbar, MENU_ITEMS } from '../components';
 import { renderCalendar, renderForm, renderInsights, renderKanban, renderList, initCalendar, initForm, initInsights, initList, initKanban, patchInsights } from '../views';
-import { applyTheme, getAreaTitle, normalizePagination, paginateData } from '../utils';
+import { applyTheme, getAreaTitle, mapSystemModelToViewModel, normalizePagination, paginateData, resetAppRoot } from '../utils';
+import { fetchSystemModelByName } from '../api/systemModel.js';
 
 import demoData from '../data/demo.json';
+
+// The declarative view schema (Doc/VIEWS_FORMAT.md) is served live by the
+// backend (see backend/migrations for the seeded "sale.order" model). Until
+// that fetch resolves — or if it fails — the bundled demo schema keeps the
+// dashboard usable, matching demoData.records for now.
+const SCHEMA_MODEL_NAME = 'sale.order';
+let _modelSchemaRequested = false;
+
+function ensureModelSchemaLoaded() {
+    if (_modelSchemaRequested) return;
+    _modelSchemaRequested = true;
+    fetchSystemModelByName(SCHEMA_MODEL_NAME)
+        .then((systemModel) => {
+            dashboardActions.setModelSchema(mapSystemModelToViewModel(systemModel));
+        })
+        .catch((error) => {
+            console.error(`Falling back to the local demo schema for "${SCHEMA_MODEL_NAME}".`, error);
+        });
+}
+
+function getData(state = appSignal.value) {
+    return { ...demoData, model: state.model ?? demoData.model };
+}
 
 // ── Track last rendered values to avoid redundant re-renders ──────────────────
 let _lastLang = null;
@@ -21,6 +45,7 @@ let _lastRecordRoute = false;
 let _lastRecordModel = null;
 let _lastRecordUuid = null;
 let _lastInsights = null;
+let _lastModel = null;
 let _effectCleanup = null;
 let _currentSubarea = null;
 let _currentRecordModel = null;
@@ -62,16 +87,15 @@ function getPagination(state = appSignal.value) {
 }
 
 /** Render the content markup for the currently selected view. */
-function renderView(view, area, lang, pagination) {
+function renderView(view, area, lang, pagination, data = getData()) {
     const renderFn = VIEW_RENDERERS[view] ?? VIEW_RENDERERS[DEFAULT_VIEW];
-    const paginatedData = paginateData(demoData, pagination);
-    // TEMP: feed demo data to the data-driven views for testing.
+    const paginatedData = paginateData(data, pagination);
     if (renderFn === renderList || renderFn === renderKanban || renderFn === renderCalendar) {
         return renderFn(paginatedData, lang);
     }
     if (renderFn === renderForm) {
         const commercialAreas = new Set(['crm', 'sales', 'sale', 'ventas']);
-        return renderFn(hasRecordRoute() ? demoData : paginatedData, lang, {
+        return renderFn(hasRecordRoute() ? data : paginatedData, lang, {
             recordModel: _currentRecordModel,
             recordUuid: _currentRecordUuid,
             showWhatsapp: commercialAreas.has(area),
@@ -106,29 +130,20 @@ function initActiveView(view, lang) {
     if (initFn) _viewCleanup = initFn(lang) || null;
 }
 
-/**
- * Bind the dock view-switch buttons and reflect the active view.
- * Call after the topbar is (re)injected into the DOM.
- */
 function navigateToUrl(url) {
     window.history.pushState({}, '', url);
     window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
-function initViewButtons(currentView) {
-    document.querySelectorAll('.topbar-view-group .topbar-tool-btn[data-view]').forEach((btn) => {
-        const view = btn.dataset.view;
-        btn.classList.toggle('topbar-tool-btn--active', view === currentView);
-        btn.addEventListener('click', () => {
-            if (hasRecordRoute()) {
-                const area = appSignal.value.context.active_area;
-                dashboardActions.setView(view);
-                navigateToUrl(`/dashboard/${area}`);
-            } else {
-                dashboardActions.setView(view);
-            }
-        });
-    });
+/** Dock view-switch callback passed into the topbar. */
+function handleViewChange(view) {
+    if (hasRecordRoute()) {
+        const area = appSignal.value.context.active_area;
+        dashboardActions.setView(view);
+        navigateToUrl(`/dashboard/${area}`);
+    } else {
+        dashboardActions.setView(view);
+    }
 }
 
 function getLabel(item, lang) {
@@ -152,28 +167,67 @@ function shouldShowTopbarTools(area, subarea) {
     return Boolean(area) && subarea !== 'insights';
 }
 
+/** Unmount a nested Preact root (sidebar/topbar) before its container is destroyed. */
+function unmountRegion(id) {
+    const el = document.getElementById(id);
+    if (el) render(null, el);
+}
+
+/**
+ * Sidebar and topbar are self-contained Preact components: mounting them
+ * again with fresh props is enough for Preact to diff the DOM and keep
+ * every listener wired — no separate init/cleanup calls needed here.
+ */
+function syncChrome(lang, theme, expanded, area, subarea, view, pagination) {
+    const pageTitle = area ? getAreaTitle(area, lang, MENU_ITEMS) : '';
+    const breadcrumb = getTopbarBreadcrumb(area, subarea, lang);
+    const showTopbarTools = shouldShowTopbarTools(area, subarea);
+
+    mountSidebar(document.getElementById('dashboard-sidebar-root'), {
+        lang,
+        expanded,
+        activeArea: area,
+    });
+    mountTopbar(document.getElementById('dashboard-topbar-root'), {
+        lang,
+        theme,
+        pageTitle,
+        breadcrumb,
+        showTools: showTopbarTools,
+        pagination,
+        currentView: view,
+        router: _router,
+        onViewChange: handleViewChange,
+    });
+}
 
 /**
  * Full dashboard render (sidebar + topbar + content).
  * Called on first load and whenever signal values change.
  */
 function renderDashboard(lang, theme, expanded, area, subarea, view) {
-    const pageTitle = area ? getAreaTitle(area, lang, MENU_ITEMS) : '';
-    const breadcrumb = getTopbarBreadcrumb(area, subarea, lang);
-    const showTopbarTools = shouldShowTopbarTools(area, subarea);
     const pagination = getPagination();
     const appEl = document.getElementById('app');
     if (!appEl) return;
 
+    // Home/Login render with Preact — unmount any previous Preact tree
+    // before taking over #app with a raw HTML string. Also unmount the
+    // nested sidebar/topbar Preact roots from a prior dashboard visit
+    // before their containers are torn down below.
+    unmountRegion('dashboard-sidebar-root');
+    unmountRegion('dashboard-topbar-root');
+    resetAppRoot(appEl);
     appEl.innerHTML = `
     <div class="dash-layout">
-        ${renderSidebar(lang, expanded, area)}
+        <div id="dashboard-sidebar-root"></div>
         <div class="dash-main">
-            ${renderTopbar(lang, theme, pageTitle, breadcrumb, showTopbarTools, pagination)}
+            <div id="dashboard-topbar-root"></div>
             ${renderContent(area, subarea, view, lang, pagination)}
         </div>
     </div>
     `;
+
+    syncChrome(lang, theme, expanded, area, subarea, view, pagination);
 
     applyTheme(theme);
 
@@ -203,61 +257,28 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
         _currentRecordUuid !== _lastRecordUuid;
     const insights = appSignal.value.insights;
     const insightsChanged = insights !== _lastInsights;
+    const model = appSignal.value.model;
+    const modelChanged = model !== _lastModel;
 
-    if (expandedChanged && !langChanged && !areaChanged) {
-        updateSidebarExpansion(expanded);
+    // Sidebar + topbar just get re-rendered with fresh props — Preact keeps
+    // their DOM and event listeners in sync automatically.
+    if (areaChanged || langChanged || themeChanged || expandedChanged || viewChanged || recordRouteChanged || paginationChanged) {
+        syncChrome(lang, theme, expanded, area, _currentSubarea, view, pagination);
     }
 
-    // Patch sidebar (active area or lang change)
-    if (areaChanged || langChanged) {
-        const sidebarEl = document.getElementById('dashboard-sidebar');
-        if (sidebarEl) {
-            sidebarEl.outerHTML = renderSidebar(lang, expanded, area);
-            // Re-bind sidebar events after DOM replacement
-            initSidebar(_router);
-        }
-    }
-
-    // Patch topbar (theme, lang change)
-    if (themeChanged || langChanged || areaChanged || recordRouteChanged || paginationChanged) {
-        const topbarEl = document.getElementById('dashboard-topbar-shell');
-        const pageTitle = area ? getAreaTitle(area, lang, MENU_ITEMS) : '';
-        const breadcrumb = getTopbarBreadcrumb(area, _currentSubarea, lang);
-        const showTopbarTools = shouldShowTopbarTools(area, _currentSubarea);
-        if (topbarEl) {
-            topbarEl.outerHTML = renderTopbar(
-                lang,
-                theme,
-                pageTitle,
-                breadcrumb,
-                showTopbarTools,
-                pagination,
-            );
-            initTopbar(_router);
-            // Re-bind the dock view-switch buttons after topbar replacement
-            initViewButtons(view);
-        }
-    }
-
-    // Patch content (area, lang, view, or selected record change)
-    if (areaChanged || langChanged || viewChanged || recordRouteChanged || paginationChanged) {
+    // Patch content (area, lang, view, selected record, or live schema change)
+    if (areaChanged || langChanged || viewChanged || recordRouteChanged || paginationChanged || modelChanged) {
         const contentEl = document.getElementById('dashboard-content');
         if (contentEl) {
             contentEl.outerHTML = renderContent(area, _currentSubarea, view, lang, pagination);
             initActiveView(isInsightsContext(area, _currentSubarea) ? 'insights' : view, lang);
-        }
-        // Reflect the active view on the dock buttons (when topbar was not re-rendered)
-        if (viewChanged) {
-            document.querySelectorAll('.topbar-view-group .topbar-tool-btn[data-view]').forEach((btn) => {
-                btn.classList.toggle('topbar-tool-btn--active', btn.dataset.view === view);
-            });
         }
     }
 
     // Insight data changes keep the existing layout and patch only changed ids.
     if (
         insightsChanged &&
-        !areaChanged && !langChanged && !viewChanged && !recordRouteChanged && !paginationChanged &&
+        !areaChanged && !langChanged && !viewChanged && !recordRouteChanged && !paginationChanged && !modelChanged &&
         isInsightsContext(area, _currentSubarea)
     ) {
         const patched = patchInsights(_lastInsights, insights, lang);
@@ -338,9 +359,6 @@ export function dashboard(req, router) {
 
     // ── Initial full render ───────────────────────────────────────────────────
     renderDashboard(lang, theme, expanded, area, _currentSubarea, view);
-    initSidebar();
-    initTopbar(router);
-    initViewButtons(view);
     initActiveView(isInsightsContext(area, _currentSubarea) ? 'insights' : view, lang);
 
     // Track rendered values
@@ -357,6 +375,8 @@ export function dashboard(req, router) {
     _lastRecordModel = _currentRecordModel;
     _lastRecordUuid = _currentRecordUuid;
     _lastInsights = state.insights;
+    _lastModel = state.model;
+    ensureModelSchemaLoaded();
 
     // ── Cleanup previous effect if navigating back to this page ──────────────
     if (_effectCleanup) {
@@ -374,6 +394,7 @@ export function dashboard(req, router) {
         const newView = getEffectiveView(getView(s));
         const newPagination = getPagination(s);
         const newInsights = s.insights;
+        const newModel = s.model;
 
         const changed =
             newLang !== _lastLang ||
@@ -385,6 +406,7 @@ export function dashboard(req, router) {
             newPagination.perPage !== _lastPerPage ||
             newPagination.total !== _lastTotal ||
             newInsights !== _lastInsights ||
+            newModel !== _lastModel ||
             hasRecordRoute() !== _lastRecordRoute ||
             _currentRecordModel !== _lastRecordModel ||
             _currentRecordUuid !== _lastRecordUuid;
@@ -408,5 +430,6 @@ export function dashboard(req, router) {
         _lastRecordModel = _currentRecordModel;
         _lastRecordUuid = _currentRecordUuid;
         _lastInsights = newInsights;
+        _lastModel = newModel;
     });
 }

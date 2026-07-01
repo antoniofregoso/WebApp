@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { login } from '../src/app/pages/login.js';
+import { login } from '../src/app/pages/login.jsx';
 import {
     clearAuthSession,
     getAccessToken,

@@ -7,9 +7,13 @@ export default [
   js.configs.recommended,
 
   {
+    files: ['**/*.js', '**/*.jsx'],
     languageOptions: {
       ecmaVersion: 2026,          // Soporte para el JavaScript de este año
       sourceType: 'module',       // Permite usar import/export de Vite
+      parserOptions: {
+        ecmaFeatures: { jsx: true }, // Permite parsear sintaxis JSX (Preact)
+      },
       globals: {
         ...globals.browser,       // Reconoce objetos del navegador como window, document, fetch
         ...globals.node,          // Reconoce variables de Node si las necesitas

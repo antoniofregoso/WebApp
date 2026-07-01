@@ -64,6 +64,10 @@ export const dashboardActions = {
         appSignal.value = { ...appSignal.value, insights };
     },
 
+    setModelSchema(model) {
+        appSignal.value = { ...appSignal.value, model };
+    },
+
     refreshInsights(data = {}) {
         const state = appSignal.value;
         const insights = state.insights ?? {};
