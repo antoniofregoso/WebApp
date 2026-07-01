@@ -254,6 +254,8 @@ query SystemNotifications {
     title
     message
     read
+    active
+    sequence
     color
     createdAt
     user {
@@ -281,6 +283,8 @@ query SystemNotification($notificationUuid: UUID!) {
     title
     message
     read
+    active
+    sequence
     color
     createdAt
     user {
@@ -303,4 +307,101 @@ Estados de alerta:
 sent
 delivered
 read
+```
+
+## Tareas
+
+Lista las tareas ordenadas primero por `sequence` ascendente y despues por
+`createdAt` descendente.
+
+```graphql
+query SystemTasks {
+  systemTasks {
+    uuid
+    status
+    color
+    sequence
+    title
+    description
+    priority
+    dateAssign
+    dateDue
+    createdAt
+    user {
+      uuid
+      name
+      email
+    }
+  }
+}
+```
+
+Obtiene una tarea por UUID.
+
+```graphql
+query SystemTask($taskUuid: UUID!) {
+  systemTask(taskUuid: $taskUuid) {
+    uuid
+    status
+    color
+    sequence
+    title
+    description
+    priority
+    dateAssign
+    dateDue
+    createdAt
+    user {
+      uuid
+      name
+      email
+    }
+  }
+}
+```
+
+Variables:
+
+```json
+{
+  "taskUuid": "00000000-0000-0000-0000-000000000000"
+}
+```
+
+Estados de tarea:
+
+```text
+pending
+in_progress
+completed
+failed
+```
+
+Prioridades:
+
+```text
+low
+medium
+high
+urgent
+```
+
+Colores disponibles para tareas y alertas:
+
+```text
+zinc
+red
+blue
+purple
+green
+orange
+```
+
+`title` y `description` son objetos JSON traducibles, por ejemplo:
+
+```json
+{
+  "es_MX": "Revisar reporte",
+  "en_US": "Review report"
+}
 ```

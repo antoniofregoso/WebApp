@@ -1,5 +1,6 @@
 
 import { t } from '../../i18n/translations.js';
+import { faEye, faEyeSlash, icon } from './icon.js';
 
 export function renderLogin(lang = 'en') {
     return `
@@ -16,16 +17,28 @@ export function renderLogin(lang = 'en') {
                 <p class="login-subtitle">${t('auth.login.subtitle', lang)}</p>
             </div>
 
-            <form class="login-form" action="#">
+            <form class="login-form" data-login-form>
                 <label class="login-field">
                     <span>${t('auth.email', lang)}</span>
-                    <input type="email" name="email" placeholder="${t('auth.email.placeholder', lang)}" autocomplete="email" />
+                    <input type="email" name="email" placeholder="${t('auth.email.placeholder', lang)}"
+                        autocomplete="email" required />
                 </label>
 
-                <label class="login-field">
-                    <span>${t('auth.password', lang)}</span>
-                    <input type="password" name="password" placeholder="••••••••" autocomplete="current-password" />
-                </label>
+                <div class="login-field">
+                    <label for="login-password">${t('auth.password', lang)}</label>
+                    <div class="login-password-control">
+                        <input id="login-password" type="password" name="password"
+                            placeholder="••••••••" autocomplete="current-password"
+                            required minlength="8" />
+                        <button class="login-password-toggle" type="button"
+                            data-password-toggle aria-controls="login-password"
+                            aria-label="${t('auth.password.show', lang)}"
+                            aria-pressed="false" title="${t('auth.password.show', lang)}">
+                            <span data-password-show-icon>${icon(faEye)}</span>
+                            <span data-password-hide-icon hidden>${icon(faEyeSlash)}</span>
+                        </button>
+                    </div>
+                </div>
 
                 <div class="login-row">
                     <label class="login-check">
@@ -35,7 +48,11 @@ export function renderLogin(lang = 'en') {
                     <a href="/password_reset" class="login-link">${t('auth.forgot_password', lang)}</a>
                 </div>
 
-                <button class="login-submit" type="button">${t('auth.sign_in', lang)}</button>
+                <p class="login-error" data-login-error role="alert" hidden></p>
+
+                <button class="login-submit" type="submit" data-login-submit>
+                    ${t('auth.sign_in', lang)}
+                </button>
             </form>
         </section>
     </main>

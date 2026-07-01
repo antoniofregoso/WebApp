@@ -8,12 +8,15 @@ import uuid
 if TYPE_CHECKING:
     from app.domains.system.models.system_message import SystemMessage
     from app.domains.system.models.system_notification import SystemNotification
+    from app.domains.system.models.system_task import SystemTask
     from app.domains.system.models.system_company import SystemCompany
     from app.domains.system.models.system_lang import SystemLang
     from app.domains.users.models.user_log import UserLog
 
 from app.domains.system.models.system_message_user_rel import SystemMessageUserRel
-from app.domains.system.models.system_notification_user_rel import SystemNotificationUserRel
+from app.domains.system.models.system_notification_user_rel import (
+    SystemNotificationUserRel,
+)
 from app.domains.system.models.system_audit import SystemAudit
 from app.domains.system.models.system_model_followers import SystemModelFollowers
 
@@ -53,7 +56,9 @@ class UserUser(SystemAudit, SQLModel, table=True):
     )
     user_type: UserType = Field(default=UserType.HUMAN)
     active: bool = Field(default=True)
-    company_id: Optional[int] = Field(default=None, foreign_key="system_companies.id", nullable=True)
+    company_id: Optional[int] = Field(
+        default=None, foreign_key="system_companies.id", nullable=True
+    )
     company: Optional["SystemCompany"] = Relationship(
         back_populates="users",
         sa_relationship_kwargs={"foreign_keys": "[UserUser.company_id]"},
@@ -61,9 +66,7 @@ class UserUser(SystemAudit, SQLModel, table=True):
 
     model_followers: List["SystemModelFollowers"] = Relationship(
         back_populates="user",
-        sa_relationship_kwargs={
-            "foreign_keys": "[SystemModelFollowers.user_id]"
-        },
+        sa_relationship_kwargs={"foreign_keys": "[SystemModelFollowers.user_id]"},
     )
 
     # Messages sent by this user
@@ -88,6 +91,11 @@ class UserUser(SystemAudit, SQLModel, table=True):
     group_notifications: List["SystemNotification"] = Relationship(
         back_populates="users",
         link_model=SystemNotificationUserRel,
+    )
+
+    tasks: List["SystemTask"] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"foreign_keys": "[SystemTask.user_id]"},
     )
 
     logs: List["UserLog"] = Relationship(

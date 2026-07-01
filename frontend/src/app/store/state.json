@@ -2,6 +2,7 @@
     "app_id": "dashboard-template",
     "app_name": "Dashboard",
     "context": {
+        "uuid": null,
         "lang": "en",
         "theme": "system",
         "sidebar_expanded": true,

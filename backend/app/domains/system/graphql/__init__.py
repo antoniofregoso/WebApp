@@ -15,6 +15,9 @@ from app.domains.system.graphql.types import (
     SystemNotificationType,
     SystemNotificationUpdateInput,
     SystemPendingCountsType,
+    SystemTaskCreateInput,
+    SystemTaskType,
+    SystemTaskUpdateInput,
     SystemUserRefType,
 )
 
@@ -34,6 +37,9 @@ __all__ = [
     "SystemNotificationType",
     "SystemNotificationUpdateInput",
     "SystemPendingCountsType",
+    "SystemTaskCreateInput",
+    "SystemTaskType",
+    "SystemTaskUpdateInput",
     "SystemQuery",
     "SystemUserRefType",
 ]

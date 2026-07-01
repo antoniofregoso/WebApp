@@ -1,9 +1,8 @@
 import { effect } from '@preact/signals';
-import { appSignal } from '../store';
+import { appSignal, isAuthenticated } from '../store';
 import { contextActions, dashboardActions } from '../store/actions';
 import { renderSidebar, initSidebar, updateSidebarExpansion, MENU_ITEMS } from '../components';
 import { renderTopbar, initTopbar } from '../components';
-import { t } from '../../i18n';
 import { renderCalendar, renderForm, renderInsights, renderKanban, renderList, initCalendar, initForm, initInsights, initList, initKanban, patchInsights } from '../views';
 import { applyTheme, getAreaTitle, normalizePagination, paginateData } from '../utils';
 
@@ -234,7 +233,7 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
                 showTopbarTools,
                 pagination,
             );
-            initTopbar();
+            initTopbar(_router);
             // Re-bind the dock view-switch buttons after topbar replacement
             initViewButtons(view);
         }
@@ -289,6 +288,15 @@ let _router = null;
  * @param {object} router — CJ Router instance
  */
 export function dashboard(req, router) {
+    if (!isAuthenticated.value) {
+        _effectCleanup?.();
+        _effectCleanup = null;
+        _viewCleanup?.();
+        _viewCleanup = null;
+        router.goTo('login');
+        return;
+    }
+
     _router = router;
     const areaFromUrl = req.params?.area;
     const prevSubarea = _currentSubarea;
@@ -331,7 +339,7 @@ export function dashboard(req, router) {
     // ── Initial full render ───────────────────────────────────────────────────
     renderDashboard(lang, theme, expanded, area, _currentSubarea, view);
     initSidebar();
-    initTopbar();
+    initTopbar(router);
     initViewButtons(view);
     initActiveView(isInsightsContext(area, _currentSubarea) ? 'insights' : view, lang);
 

@@ -34,6 +34,8 @@ import {
     faNoteSticky,
     faPaperPlane,
     faCircleQuestion,
+    faEye,
+    faEyeSlash,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -77,6 +79,8 @@ library.add(
     faNoteSticky,
     faPaperPlane,
     faCircleQuestion,
+    faEye,
+    faEyeSlash,
     faBell,
     faCircleUser,
     faEnvelope,
@@ -133,6 +137,8 @@ export {
     faNoteSticky,
     faPaperPlane,
     faCircleQuestion,
+    faEye,
+    faEyeSlash,
     faBell,
     faCircleUser,
     faEnvelope,

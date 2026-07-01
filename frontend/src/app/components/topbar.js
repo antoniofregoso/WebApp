@@ -16,6 +16,7 @@ import {
     faCalendarDays,
 } from './icon.js';
 import { contextActions, dashboardActions } from '../store/actions/index.js';
+import { clearAuthSession } from '../store/authStore.js';
 import { t } from '../../i18n/translations.js';
 import { normalizePagination } from '../utils';
 
@@ -130,7 +131,8 @@ export function renderTopbar(lang, theme, pageTitle, breadcrumb = null, showTool
                     <div class="topbar-menu-links">
                         <a class="topbar-menu-link" href="/dashboard/account" role="menuitem">${t('topbar.account', lang)}</a>
                         <a class="topbar-menu-link" href="/dashboard/settings" role="menuitem">${t('topbar.settings', lang)}</a>
-                        <button class="topbar-menu-link topbar-menu-link--logout" type="button" role="menuitem">${t('topbar.logout', lang)}</button>
+                        <button class="topbar-menu-link topbar-menu-link--logout" type="button"
+                            role="menuitem" data-logout>${t('topbar.logout', lang)}</button>
                     </div>
                 </div>
             </div>
@@ -190,12 +192,13 @@ export function renderTopbar(lang, theme, pageTitle, breadcrumb = null, showTool
 /**
  * Bind topbar event listeners (call after injecting HTML into DOM).
  */
-export function initTopbar() {
+export function initTopbar(router) {
     _topbarCleanup?.();
 
     const userMenuWrap = document.querySelector('.topbar-user-menu-wrap');
     const userBtn = document.getElementById('topbar-user');
     const userMenu = document.getElementById('topbar-user-menu');
+    const logoutButton = document.querySelector('[data-logout]');
 
     function setUserMenuOpen(open) {
         userBtn?.setAttribute('aria-expanded', `${open}`);
@@ -220,12 +223,20 @@ export function initTopbar() {
         }
     };
 
+    const logout = () => {
+        clearAuthSession();
+        setUserMenuOpen(false);
+        router?.goTo('login');
+    };
+
     document.addEventListener('click', closeOnOutsideClick);
     document.addEventListener('keydown', closeOnEscape);
+    logoutButton?.addEventListener('click', logout);
 
     _topbarCleanup = () => {
         document.removeEventListener('click', closeOnOutsideClick);
         document.removeEventListener('keydown', closeOnEscape);
+        logoutButton?.removeEventListener('click', logout);
     };
 
     // Theme buttons

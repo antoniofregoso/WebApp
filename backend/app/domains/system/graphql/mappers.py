@@ -4,6 +4,7 @@ from app.domains.system.graphql.types import (
     SystemModelSchemaType,
     SystemModelType,
     SystemNotificationType,
+    SystemTaskType,
     SystemUserRefType,
 )
 
@@ -65,8 +66,26 @@ def system_notification_to_type(notification):
         title=notification.title,
         message=notification.message,
         read=notification.read,
+        active=notification.active,
+        sequence=notification.sequence,
         color=notification.color,
         user=user_to_type(notification.user),
         users=[user_to_type(user) for user in notification.users],
         created_at=notification.created_at,
+    )
+
+
+def system_task_to_type(task):
+    return SystemTaskType(
+        uuid=task.uuid,
+        status=task.status,
+        color=task.color,
+        sequence=task.sequence,
+        title=task.title,
+        description=task.description,
+        priority=task.priority,
+        date_assign=task.date_assign,
+        date_due=task.date_due,
+        user=user_to_type(task.user),
+        created_at=task.created_at,
     )

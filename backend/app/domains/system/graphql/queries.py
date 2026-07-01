@@ -9,16 +9,21 @@ from app.domains.system.graphql.mappers import (
     system_message_to_type,
     system_model_to_type,
     system_notification_to_type,
+    system_task_to_type,
 )
 from app.domains.system.graphql.types import (
     SystemMessageType,
     SystemModelType,
     SystemNotificationType,
     SystemPendingCountsType,
+    SystemTaskType,
 )
 from app.domains.system.service.system_message_service import SystemMessageService
 from app.domains.system.service.system_model_service import SystemModelService
-from app.domains.system.service.system_notification_service import SystemNotificationService
+from app.domains.system.service.system_notification_service import (
+    SystemNotificationService,
+)
+from app.domains.system.service.system_task_service import SystemTaskService
 from app.domains.users.service.user_service import UserService
 
 
@@ -63,8 +68,7 @@ class SystemQuery:
     async def system_notifications(self) -> list[SystemNotificationType]:
         notifications = await SystemNotificationService.get_all()
         return [
-            system_notification_to_type(notification)
-            for notification in notifications
+            system_notification_to_type(notification) for notification in notifications
         ]
 
     @strawberry.field(permission_classes=[IsAuthenticated])
@@ -73,6 +77,16 @@ class SystemQuery:
     ) -> SystemNotificationType:
         notification = await SystemNotificationService.get_by_uuid(notification_uuid)
         return system_notification_to_type(notification)
+
+    @strawberry.field(permission_classes=[IsAuthenticated])
+    async def system_tasks(self) -> list[SystemTaskType]:
+        tasks = await SystemTaskService.get_all()
+        return [system_task_to_type(task) for task in tasks]
+
+    @strawberry.field(permission_classes=[IsAuthenticated])
+    async def system_task(self, task_uuid: uuid_lib.UUID) -> SystemTaskType:
+        task = await SystemTaskService.get_by_uuid(task_uuid)
+        return system_task_to_type(task)
 
     @strawberry.field(permission_classes=[IsAuthenticated])
     async def system_pending_counts(

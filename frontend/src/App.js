@@ -3,7 +3,7 @@ import { home, login, passwordReset, dashboard } from './app/pages';
 
 export const App = new Router();
 App.on('/', home);
-App.on('/login', login);
+App.on('/login', login).setName("login");
 App.on('/password_reset', passwordReset)
 App.on('/dashboard', dashboard).setName("dash");
 App.on('/dashboard/{area}/{subarea}/{model}/{uuid}', dashboard);

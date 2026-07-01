@@ -10,7 +10,9 @@ from sqlmodel import Field, Relationship, Column, SQLModel
 
 from app.domains.system.models.system_audit import SystemAudit
 from app.domains.system.models.system_colors import SystemColor
-from app.domains.system.models.system_notification_user_rel import SystemNotificationUserRel
+from app.domains.system.models.system_notification_user_rel import (
+    SystemNotificationUserRel,
+)
 
 if TYPE_CHECKING:
     from app.domains.users.models.user_user import UserUser
@@ -53,13 +55,16 @@ class SystemNotification(SystemAudit, SQLModel, table=True):
         sa_column=Column(JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")),
     )
     read: bool = Field(default=True)
+    active: bool = Field(default=False)
+    sequence: Optional[int] = Field(default=10)
     color: SystemColor = Field(
         default=SystemColor.zinc,
         sa_column=sa.Column(sa.String(32), nullable=False),
     )
-
     # Single-user target
-    user_id: Optional[int] = Field(default=None, foreign_key="user_user.id", nullable=True)
+    user_id: Optional[int] = Field(
+        default=None, foreign_key="user_user.id", nullable=True
+    )
     user: Optional["UserUser"] = Relationship(
         back_populates="notifications",
         sa_relationship_kwargs={"foreign_keys": "[SystemNotification.user_id]"},
@@ -72,7 +77,15 @@ class SystemNotification(SystemAudit, SQLModel, table=True):
     )
 
     def get_title(self, lang: str = "es", fallback: str = "en") -> str:
-        return self.title.get(lang) or self.title.get(fallback) or next(iter(self.title.values()), "")
+        return (
+            self.title.get(lang)
+            or self.title.get(fallback)
+            or next(iter(self.title.values()), "")
+        )
 
     def get_message(self, lang: str = "es", fallback: str = "en") -> str:
-        return self.message.get(lang) or self.message.get(fallback) or next(iter(self.message.values()), "")
+        return (
+            self.message.get(lang)
+            or self.message.get(fallback)
+            or next(iter(self.message.values()), "")
+        )

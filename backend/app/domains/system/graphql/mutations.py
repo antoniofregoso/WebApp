@@ -8,6 +8,7 @@ from app.domains.system.graphql.mappers import (
     system_message_to_type,
     system_model_to_type,
     system_notification_to_type,
+    system_task_to_type,
 )
 from app.domains.system.graphql.types import (
     SystemMessageCreateInput,
@@ -19,10 +20,16 @@ from app.domains.system.graphql.types import (
     SystemNotificationCreateInput,
     SystemNotificationType,
     SystemNotificationUpdateInput,
+    SystemTaskCreateInput,
+    SystemTaskType,
+    SystemTaskUpdateInput,
 )
 from app.domains.system.service.system_message_service import SystemMessageService
 from app.domains.system.service.system_model_service import SystemModelService
-from app.domains.system.service.system_notification_service import SystemNotificationService
+from app.domains.system.service.system_notification_service import (
+    SystemNotificationService,
+)
+from app.domains.system.service.system_task_service import SystemTaskService
 
 
 def input_to_dict(value):
@@ -33,9 +40,7 @@ def input_to_dict(value):
 def _remove_none(value):
     if isinstance(value, dict):
         return {
-            key: _remove_none(item)
-            for key, item in value.items()
-            if item is not None
+            key: _remove_none(item) for key, item in value.items() if item is not None
         }
     if isinstance(value, list):
         return [_remove_none(item) for item in value]
@@ -45,7 +50,9 @@ def _remove_none(value):
 @strawberry.type
 class SystemMutation:
     @strawberry.mutation(permission_classes=[IsAuthenticated])
-    async def create_system_model(self, model: SystemModelCreateInput) -> SystemModelType:
+    async def create_system_model(
+        self, model: SystemModelCreateInput
+    ) -> SystemModelType:
         system_model = await SystemModelService.create(input_to_dict(model))
         return system_model_to_type(system_model)
 
@@ -105,3 +112,19 @@ class SystemMutation:
         self, notification_uuid: uuid_lib.UUID
     ) -> bool:
         return await SystemNotificationService.delete(notification_uuid)
+
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def create_system_task(self, task: SystemTaskCreateInput) -> SystemTaskType:
+        system_task = await SystemTaskService.create(input_to_dict(task))
+        return system_task_to_type(system_task)
+
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def update_system_task(
+        self, task_uuid: uuid_lib.UUID, task: SystemTaskUpdateInput
+    ) -> SystemTaskType:
+        system_task = await SystemTaskService.update(task_uuid, input_to_dict(task))
+        return system_task_to_type(system_task)
+
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def delete_system_task(self, task_uuid: uuid_lib.UUID) -> bool:
+        return await SystemTaskService.delete(task_uuid)

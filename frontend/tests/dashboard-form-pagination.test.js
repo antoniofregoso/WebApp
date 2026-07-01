@@ -2,13 +2,19 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { dashboard } from '../src/app/pages/dashboard.js';
 import { appSignal } from '../src/app/store/appStore.js';
+import {
+    clearAuthSession,
+    setAuthSession,
+} from '../src/app/store/authStore.js';
 
 afterEach(() => {
+    clearAuthSession();
     document.body.innerHTML = '';
 });
 
 describe('form view pagination', () => {
     it('shows the first record from the active page and reacts to page controls', () => {
+        setAuthSession({ email: 'user@example.com', token: 'access-token' });
         document.body.innerHTML = '<div id="app"></div>';
         window.history.replaceState({}, '', '/dashboard/area1');
         appSignal.value = {

@@ -47,9 +47,16 @@ const translations = {
     'auth.email':           { en: 'Email', es: 'Correo electrónico' },
     'auth.email.placeholder': { en: 'name@company.com', es: 'nombre@empresa.com' },
     'auth.password':        { en: 'Password', es: 'Contraseña' },
+    'auth.password.show':   { en: 'Show password', es: 'Mostrar contraseña' },
+    'auth.password.hide':   { en: 'Hide password', es: 'Ocultar contraseña' },
     'auth.remember':        { en: 'Remember me', es: 'Recordarme' },
     'auth.forgot_password': { en: 'Forgot password?', es: '¿Olvidaste tu contraseña?' },
     'auth.sign_in':         { en: 'Sign in', es: 'Iniciar sesión' },
+    'auth.signing_in':      { en: 'Signing in…', es: 'Iniciando sesión…' },
+    'auth.login.error':     {
+        en: 'The email or password is incorrect.',
+        es: 'El correo electrónico o la contraseña son incorrectos.'
+    },
     'auth.reset.aria':      { en: 'Password reset', es: 'Restablecimiento de contraseña' },
     'auth.reset.eyebrow':   { en: 'Account recovery', es: 'Recuperación de cuenta' },
     'auth.reset.title':     { en: 'Reset your password', es: 'Restablece tu contraseña' },
@@ -80,6 +87,48 @@ const translations = {
     'content.placeholder':  {
         en: 'This is a template. Replace this content with your own.',
         es: 'Esta es una plantilla. Reemplaza este contenido con el tuyo.'
+    },
+
+    // ── Public home ─────────────────────────────────────────────────────────
+    'home.nav.aria':        { en: 'Main navigation', es: 'Navegación principal' },
+    'home.login':           { en: 'Log in', es: 'Iniciar sesión' },
+    'home.signup':          { en: 'Sign up', es: 'Crear cuenta' },
+    'home.signup.soon':     { en: 'Available soon', es: 'Disponible próximamente' },
+    'home.eyebrow':         { en: 'A better way to work', es: 'Una mejor forma de trabajar' },
+    'home.title':           {
+        en: 'Bring your work, team and ideas together.',
+        es: 'Reúne tu trabajo, equipo e ideas en un solo lugar.'
+    },
+    'home.subtitle':        {
+        en: 'A flexible workspace designed to help modern teams organize their day and move every project forward.',
+        es: 'Un espacio flexible diseñado para organizar el día de equipos modernos e impulsar cada proyecto.'
+    },
+    'home.cta':             { en: 'Enter your workspace', es: 'Entrar al espacio' },
+    'home.learn_more':      { en: 'Explore the experience', es: 'Explorar la experiencia' },
+    'home.trust.aria':      { en: 'Product benefits', es: 'Beneficios del producto' },
+    'home.trust.secure':    { en: 'Secure', es: 'Seguro' },
+    'home.trust.flexible':  { en: 'Flexible', es: 'Flexible' },
+    'home.trust.simple':    { en: 'Easy to use', es: 'Fácil de usar' },
+    'home.features.eyebrow': { en: 'Built for momentum', es: 'Diseñado para avanzar' },
+    'home.features.title':  { en: 'Everything stays within reach', es: 'Todo permanece a tu alcance' },
+    'home.feature.organize.title': { en: 'Organize clearly', es: 'Organiza con claridad' },
+    'home.feature.organize.text': {
+        en: 'Keep projects, tasks and documents in one calm, structured workspace.',
+        es: 'Mantén proyectos, tareas y documentos en un espacio ordenado y tranquilo.'
+    },
+    'home.feature.collaborate.title': { en: 'Work together', es: 'Trabaja en equipo' },
+    'home.feature.collaborate.text': {
+        en: 'Share context and keep conversations close to the work that matters.',
+        es: 'Comparte contexto y mantén las conversaciones cerca del trabajo importante.'
+    },
+    'home.feature.grow.title': { en: 'Adapt as you grow', es: 'Adáptate al crecer' },
+    'home.feature.grow.text': {
+        en: 'Shape workflows around your team today and evolve them tomorrow.',
+        es: 'Configura flujos para tu equipo de hoy y evoluciónalos mañana.'
+    },
+    'home.footer.copy':     {
+        en: 'A modern workspace for focused teams.',
+        es: 'Un espacio moderno para equipos enfocados.'
     },
 };
 

@@ -1,5 +1,17 @@
 # Tareas pendientes
 
+## 🔴 Urgente — Migración gradual del frontend a Preact
+
+- [ ] Instalar y configurar Preact con Vite y JSX.
+- [ ] Conservar los schemas GraphQL/JSON como fuente para generar las vistas dinámicas.
+- [ ] Migrar primero Home y Login sin interrumpir las rutas actuales.
+- [ ] Migrar Topbar y Sidebar con manejo automático del ciclo de vida.
+- [ ] Migrar el panel de notas, mensajes y documentos, eliminando inserciones inseguras con `innerHTML`.
+- [ ] Convertir cada tipo de campo del schema en un componente reutilizable.
+- [ ] Migrar gradualmente Kanban, Lista, Formulario y Calendario.
+- [ ] Cargar Quill y las librerías de gráficas mediante `import()` solo cuando se necesiten.
+- [ ] Mantener pruebas y build funcionales después de cada etapa; evitar una reescritura completa.
+
 ## Renovación de sesión
 
 - [ ] Reducir la duración del access token a 15 minutos.
