@@ -26,7 +26,7 @@
     "vitest": "^4.1.8"
   },
   "dependencies": {
-    "@customerjourney/cj-router": "^1.5.0",
+    "@customerjourney/cj-router": "^1.6.0",
     "@fortawesome/fontawesome-svg-core": "^7.2.0",
     "@fortawesome/free-brands-svg-icons": "^7.3.0",
     "@fortawesome/free-regular-svg-icons": "^7.2.0",
