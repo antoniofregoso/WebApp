@@ -3,7 +3,7 @@ import { t } from '../../i18n';
 import { mountPreactPage } from '../utils';
 
 const BUTTON_BASE = 'inline-flex min-h-11 items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-bold transition hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50';
-const BUTTON_PRIMARY = `${BUTTON_BASE} border-transparent bg-[var(--app-accent)] text-white shadow-[0_12px_30px_rgba(37,99,235,.24)] hover:bg-[var(--app-accent-hover)]`;
+const BUTTON_PRIMARY = `${BUTTON_BASE} border-transparent bg-[var(--app-accent)] text-white shadow-[0_12px_30px_rgba(16,185,129,.24)] hover:bg-[var(--app-accent-hover)]`;
 const SKELETON_LINE = 'block rounded-full bg-slate-200';
 const BAR_HEIGHTS = [45, 68, 52, 82, 63, 92, 74];
 const FEATURES = [
@@ -29,7 +29,7 @@ function Home({ lang, onLogin }) {
                 <nav class="mx-auto flex min-h-14 w-full max-w-[1180px] items-center justify-between gap-8"
                     aria-label={t('home.nav.aria', lang)}>
                     <a class="home-brand inline-flex items-center gap-3 text-[var(--app-text)] no-underline" href="/" aria-label="WebApp">
-                        <img class="home-brand-logo h-9 w-9 rounded-[.65rem] shadow-[0_8px_24px_rgba(37,99,235,.2)]" src="/logo.png" alt="" />
+                        <img class="home-brand-logo h-9 w-9 rounded-[.65rem] shadow-[0_8px_24px_rgba(16,185,129,.2)]" src="/logo.png" alt="" />
                         <span class="hidden text-base font-bold tracking-tight sm:inline">WebApp</span>
                     </a>
                     <div class="flex items-center gap-3">
@@ -69,15 +69,15 @@ function Home({ lang, onLogin }) {
                     </div>
 
                     <div class="home-preview relative mx-auto mt-4 w-full max-w-[620px] [perspective:1200px]" aria-hidden="true">
-                        <div class="absolute inset-[10%] -z-10 rounded-full bg-blue-500/20 blur-[70px]"></div>
+                        <div class="absolute inset-[10%] -z-10 rounded-full bg-emerald-500/20 blur-[70px]"></div>
                         <div class="overflow-hidden rounded-2xl border border-white/80 bg-white/90 shadow-[0_35px_90px_rgba(15,23,42,.2)] backdrop-blur-xl lg:[transform:rotateY(-5deg)_rotateX(2deg)]">
                             <div class="flex h-11 items-center gap-1.5 border-b border-slate-200 px-4">
                                 <span class="h-2 w-2 rounded-full bg-red-300"></span><span class="h-2 w-2 rounded-full bg-amber-300"></span><span class="h-2 w-2 rounded-full bg-green-300"></span>
                             </div>
                             <div class="grid min-h-[330px] grid-cols-[20%_1fr] sm:grid-cols-[25%_1fr]">
                                 <aside class="bg-slate-900 px-3 py-6 sm:px-5">
-                                    <div class="mb-8 h-8 w-8 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600"></div>
-                                    <div class="my-5 h-2 w-full rounded-full bg-blue-400"></div>
+                                    <div class="mb-8 h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600"></div>
+                                    <div class="my-5 h-2 w-full rounded-full bg-emerald-400"></div>
                                     <div class="my-5 h-2 w-4/5 rounded-full bg-slate-700"></div>
                                     <div class="my-5 h-2 w-4/5 rounded-full bg-slate-700"></div>
                                     <div class="my-5 h-2 w-1/2 rounded-full bg-slate-700"></div>
@@ -85,17 +85,17 @@ function Home({ lang, onLogin }) {
                                 <div class="bg-slate-50 p-4 sm:p-6">
                                     <div class="flex items-center justify-between">
                                         <div class="grid gap-2"><small class={`${SKELETON_LINE} h-1.5 w-14`}></small><strong class="block h-3 w-32 rounded-full bg-slate-400"></strong></div>
-                                        <span class="h-7 w-16 rounded-lg bg-blue-600"></span>
+                                        <span class="h-7 w-16 rounded-lg bg-emerald-600"></span>
                                     </div>
                                     <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                                        <PreviewKpi iconColor="bg-blue-100" />
+                                        <PreviewKpi iconColor="bg-emerald-100" />
                                         <PreviewKpi iconColor="bg-emerald-100" />
                                         <div class="hidden sm:block"><PreviewKpi iconColor="bg-amber-100" /></div>
                                     </div>
                                     <div class="mt-4 h-36 rounded-xl border border-slate-200 bg-white p-4">
                                         <div class="flex h-full items-end justify-around gap-2">
                                             {BAR_HEIGHTS.map((height, index) => (
-                                                <i key={index} class="w-[9%] rounded-t bg-gradient-to-b from-blue-400 to-blue-600" style={{ height: `${height}%` }}></i>
+                                                <i key={index} class="w-[9%] rounded-t bg-gradient-to-b from-emerald-400 to-emerald-600" style={{ height: `${height}%` }}></i>
                                             ))}
                                         </div>
                                     </div>

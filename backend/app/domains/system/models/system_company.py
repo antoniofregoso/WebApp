@@ -9,6 +9,7 @@ from app.domains.system.models.system_audit import SystemAudit
 from app.domains.system.models.system_colors import SystemColor
 
 if TYPE_CHECKING:
+    from app.domains.system.models.system_whatsapp import SystemWhatsApp
     from app.domains.users.models.user_user import UserUser
 
 
@@ -50,4 +51,7 @@ class SystemCompany(SystemAudit, SQLModel, table=True):
     users: List["UserUser"] = Relationship(
         back_populates="company",
         sa_relationship_kwargs={"foreign_keys": "[UserUser.company_id]"},
+    )
+    whatsapp_configurations: List["SystemWhatsApp"] = Relationship(
+        back_populates="company"
     )

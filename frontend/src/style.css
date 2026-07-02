@@ -27,19 +27,19 @@ body {
   --app-text: #111827;
   --app-text-muted: #6b7280;
   --app-text-soft: #9ca3af;
-  --app-accent: #2563eb;
-  --app-accent-hover: #1d4ed8;
-  --app-accent-soft: #dbeafe;
+  --app-accent: #10b981;
+  --app-accent-hover: #059669;
+  --app-accent-soft: #ecfdf5;
   --app-border: #d8dee8;
   --app-shadow: 0 24px 70px rgba(15, 23, 42, 0.12);
-  --app-ring: 0 0 0 4px rgba(37, 99, 235, 0.16);
+  --app-ring: 0 0 0 4px rgba(16, 185, 129, 0.16);
 }
 
 .app-shell {
   min-height: 100svh;
   background:
-    radial-gradient(circle at 20% 12%, rgba(37, 99, 235, 0.12), transparent 30%),
-    linear-gradient(135deg, var(--app-bg), #eef2ff 100%);
+    radial-gradient(circle at 20% 12%, rgba(16, 185, 129, 0.12), transparent 30%),
+    linear-gradient(135deg, var(--app-bg), #ecfdf5 100%);
   color: var(--app-text);
   font-family: 'Inter', system-ui, sans-serif;
 }
@@ -238,7 +238,7 @@ body {
 
 .login-submit:hover {
   background: var(--app-accent-hover);
-  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.24);
+  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.24);
   transform: translateY(-1px);
 }
 

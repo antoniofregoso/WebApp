@@ -28,6 +28,12 @@ from app.domains.system.models.system_notification import (
 from app.domains.system.models.system_seed_run import SystemSeedRun
 from app.domains.system.models.system_task import SystemTask, TaskPriority, TaskStatus
 from app.domains.system.models.system_timezone import SystemTimezone
+from app.domains.system.models.system_whatsapp import (
+    SystemWhatsApp,
+    SystemWhatsAppMessage,
+    WhatsAppMessageDirection,
+    WhatsAppMessageStatus,
+)
 
 __all__ = [
     "SystemApp",
@@ -57,4 +63,8 @@ __all__ = [
     "TaskPriority",
     "TaskStatus",
     "SystemTimezone",
+    "SystemWhatsApp",
+    "SystemWhatsAppMessage",
+    "WhatsAppMessageDirection",
+    "WhatsAppMessageStatus",
 ]
