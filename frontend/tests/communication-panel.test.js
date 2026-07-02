@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { render } from 'preact';
 
 import { initForm, renderForm } from '../src/app/views/renderForm.js';
+import { safeRichTextNodes } from '../src/app/components/communicationPanel.jsx';
 
-const styles = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
+const styles = readFileSync('src/style.css', 'utf8');
 
 const data = {
   model: {
@@ -19,11 +21,27 @@ afterEach(() => {
 });
 
 describe('communication panel', () => {
-  it('requires and displays a subject when composing a message', () => {
+  it('discards executable markup from rich text', () => {
+    const host = document.createElement('div');
+    render(safeRichTextNodes(
+      '<p>Contenido seguro</p><script>window.compromised=true</script>'
+      + '<img src="javascript:alert(1)" onerror="window.compromised=true">'
+      + '<a href="javascript:alert(1)" onclick="window.compromised=true">enlace</a>'
+    ), host);
+
+    expect(host.textContent).toContain('Contenido seguro');
+    expect(host.querySelector('script')).toBeNull();
+    expect(host.querySelector('img')).toBeNull();
+    expect(host.querySelector('a').hasAttribute('href')).toBe(false);
+    expect(host.querySelector('[onerror], [onclick]')).toBeNull();
+  });
+
+  it('requires and displays a subject when composing a message', async () => {
     document.body.innerHTML = renderForm(data, 'es');
     const cleanup = initForm('es');
     document.querySelector('[data-form-tab="messages"]').click();
     document.querySelector('[data-form-tab-add="messages"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     const panel = document.querySelector('[data-form-tab-panel="messages"]');
     const subject = panel.querySelector('[data-message-subject]');
@@ -36,12 +54,14 @@ describe('communication panel', () => {
 
     editor.innerHTML = '<p>Detalle del mensaje</p>';
     save.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(subject.getAttribute('aria-invalid')).toBe('true');
     expect(error.classList.contains('hidden')).toBe(false);
 
     subject.value = 'Seguimiento de la propuesta';
     subject.dispatchEvent(new Event('input', { bubbles: true }));
     save.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(panel.querySelector('[data-activity-list]').textContent).toContain(
       'Seguimiento de la propuesta'
@@ -52,7 +72,7 @@ describe('communication panel', () => {
     cleanup();
   });
 
-  it('keeps the WhatsApp action tooltip inside the right edge', () => {
+  it('keeps the WhatsApp action tooltip inside the right edge', async () => {
     document.body.innerHTML = renderForm(data, 'en');
     const cleanup = initForm('en');
     const whatsappTab = document.querySelector('[data-form-tab-panel="whatsapp"]');
@@ -64,6 +84,7 @@ describe('communication panel', () => {
     expect(styles).toMatch(/data-tooltip-align="end"[^}]+right:\s*0;[^}]+left:\s*auto;/s);
 
     document.querySelector('[data-form-tab="whatsapp"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(whatsappTab.hidden).toBe(false);
     cleanup();
   });

@@ -50,10 +50,11 @@ describe('rich text toolbar', () => {
     cleanup();
   });
 
-  it('uses the same controls in activity composers', () => {
+  it('uses the same controls in activity composers', async () => {
     document.body.innerHTML = renderForm(data, 'en');
     const cleanup = initForm('en');
     document.querySelector('[data-form-tab-add="notes"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     const toolbar = document.querySelector('[data-form-tab-panel="notes"] .ql-toolbar');
     expectFamiliarToolbar(toolbar);

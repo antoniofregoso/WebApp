@@ -1775,6 +1775,19 @@ body {
   font-size: 0.875rem;
 }
 
+/* Standalone edit-mode look for the reusable field components in components/fields/,
+   which render a single control instead of the legacy readonly+edit dual markup. */
+.form-control--edit {
+  border-color: var(--dash-border);
+  background: var(--dash-surface);
+  padding: 0.375rem 0.5rem;
+}
+
+.form-control--edit:focus {
+  border-color: var(--dash-accent);
+  box-shadow: 0 0 0 3px var(--dash-accent-soft);
+}
+
 .form-record-header {
   min-height: 113px;
 }

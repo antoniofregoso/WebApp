@@ -6,8 +6,8 @@
 - [x] Conservar los schemas GraphQL/JSON como fuente para generar las vistas dinámicas.
 - [x] Migrar primero Home y Login sin interrumpir las rutas actuales.
 - [x] Migrar Topbar y Sidebar con manejo automático del ciclo de vida.
-- [ ] Migrar el panel de notas, mensajes y documentos, eliminando inserciones inseguras con `innerHTML`.
-- [ ] Convertir cada tipo de campo del schema en un componente reutilizable.
+- [x] Migrar el panel de notas, mensajes y documentos, eliminando inserciones inseguras con `innerHTML`.
+- [x] Convertir cada tipo de campo del schema en un componente reutilizable.
 - [ ] Migrar gradualmente Kanban, Lista, Formulario y Calendario.
 - [ ] Cargar Quill y las librerías de gráficas mediante `import()` solo cuando se necesiten.
 - [ ] Mantener pruebas y build funcionales después de cada etapa; evitar una reescritura completa.
