@@ -80,10 +80,10 @@ function Login({ lang, router }) {
     return (
         <main class="app-shell login-page">
             <section class="login-panel" aria-label={t('auth.login.aria', lang)}>
-                <div class="login-brand">
+                <a class="login-brand" href="/" aria-label="WebApp home">
                     <img class="login-logo" src="/logo.png" alt="WebApp logo" />
                     <span class="login-brand-name">WebApp</span>
-                </div>
+                </a>
 
                 <div class="login-copy">
                     <p class="login-eyebrow">{t('auth.login.eyebrow', lang)}</p>

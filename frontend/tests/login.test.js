@@ -110,4 +110,13 @@ describe('login page', () => {
         expect(toggle.getAttribute('aria-pressed')).toBe('false');
         expect(toggle.getAttribute('aria-label')).toBe('Show password');
     });
+
+    it('links the brand to the home page', () => {
+        login({}, { goTo: vi.fn() });
+
+        const brand = document.querySelector('.login-brand');
+        expect(brand.tagName).toBe('A');
+        expect(brand.getAttribute('href')).toBe('/');
+        expect(brand.getAttribute('aria-label')).toBe('WebApp home');
+    });
 });
