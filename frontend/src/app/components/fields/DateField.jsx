@@ -7,7 +7,7 @@ export function DateField({ field, value, onChange, lang = 'en', readOnly = fals
         return <span class="text-[var(--dash-text)]">{value ? formatDate(value, locale(lang)) : '—'}</span>;
     }
     return (
-        <input type="date" class="form-control form-control--edit form-control--date" value={toDateInputValue(value)}
+        <input type="date" name={field.name} class="form-control form-control--edit form-control--date" value={toDateInputValue(value)}
             aria-label={fieldLabel(field, lang)} required={field?.form?.required === true}
             onInput={(event) => onChange(field.name, event.currentTarget.value)} />
     );

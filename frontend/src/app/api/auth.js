@@ -22,6 +22,13 @@ export class AuthenticationError extends Error {
     }
 }
 
+function isCredentialError(error) {
+    return error.response.errors?.some(({ message = '', extensions = {} }) => (
+        extensions.error_code === 'AUTHENTICATION_ERROR'
+        || /invalid (?:credentials|email or password)/i.test(message)
+    ));
+}
+
 export async function authenticate(email, password, fetchImpl = globalThis.fetch) {
     const client = new GraphQLClient(GRAPHQL_ENDPOINT, {
         credentials: 'same-origin',
@@ -40,8 +47,15 @@ export async function authenticate(email, password, fetchImpl = globalThis.fetch
         return data.login;
     } catch (error) {
         if (error instanceof AuthenticationError) throw error;
-        if (error instanceof ClientError && error.response.errors?.length) {
+        if (error instanceof ClientError && isCredentialError(error)) {
             throw new AuthenticationError('Invalid email or password');
+        }
+        if (error instanceof ClientError) {
+            throw new AuthenticationError(
+                'Authentication service unavailable',
+                'SERVICE_UNAVAILABLE',
+                { cause: error },
+            );
         }
         throw new AuthenticationError(
             'Unable to reach the authentication service',

@@ -21,7 +21,7 @@ export function PercentageField({ field, value, onChange, lang = 'en', readOnly 
 
     return (
         <div class="form-percentage-editor flex">
-            <input type="range" min="0" max="100" step="1" class="form-percentage-slider" value={percentage}
+            <input type="range" name={field.name} min="0" max="100" step="1" class="form-percentage-slider" value={percentage}
                 style={{ '--form-percentage': `${percentage}%` }} aria-label={fieldLabel(field, lang)}
                 aria-valuetext={`${percentage}%`}
                 onInput={(event) => onChange(field.name, Number(event.currentTarget.value))} />

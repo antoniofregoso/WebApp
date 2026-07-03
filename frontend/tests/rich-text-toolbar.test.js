@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { initForm, renderForm } from '../src/app/views/renderForm.js';
 import { RICH_TEXT_TOOLBAR } from '../src/app/views/noteEditor.js';
+import { mountForm } from './helpers/mountView.jsx';
 
 const data = {
   model: {
@@ -40,19 +40,18 @@ describe('rich text toolbar', () => {
     expect(RICH_TEXT_TOOLBAR.flat()).not.toContain('clean');
   });
 
-  it('uses link, image and color controls in HTML form fields', () => {
-    document.body.innerHTML = renderForm(data, 'en');
-    const cleanup = initForm('en');
+  it('uses link, image and color controls in HTML form fields', async () => {
+    const { cleanup } = mountForm(data, 'en');
     document.querySelector('[data-form-edit]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const toolbar = document.querySelector('[data-form-rich-text] .ql-toolbar');
+    const toolbar = document.querySelector('.form-record-tab-panel .ql-toolbar');
     expectFamiliarToolbar(toolbar);
     cleanup();
   });
 
   it('uses the same controls in activity composers', async () => {
-    document.body.innerHTML = renderForm(data, 'en');
-    const cleanup = initForm('en');
+    const { cleanup } = mountForm(data, 'en');
     document.querySelector('[data-form-tab-add="notes"]').click();
     await new Promise((resolve) => setTimeout(resolve, 0));
 

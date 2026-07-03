@@ -91,6 +91,32 @@ describe('login page', () => {
         expect(getAccessToken()).toBeNull();
     });
 
+    it('does not blame credentials when the authentication service fails', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+            new Response(
+                JSON.stringify({ errors: [{ message: 'Database connection failed' }] }),
+                {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' },
+                },
+            ),
+        ));
+        const router = { goTo: vi.fn() };
+
+        login({}, router);
+        const form = fillLoginForm();
+
+        await vi.waitFor(() => {
+            expect(form.querySelector('[data-login-error]').textContent).toContain(
+                'authentication service is unavailable',
+            );
+        });
+        expect(form.querySelector('[data-login-error]').textContent).not.toContain(
+            'email or password is incorrect',
+        );
+        expect(router.goTo).not.toHaveBeenCalled();
+    });
+
     it('shows and hides the password accessibly', () => {
         const router = { goTo: vi.fn() };
         login({}, router);

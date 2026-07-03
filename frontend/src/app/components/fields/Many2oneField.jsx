@@ -17,7 +17,7 @@ export function Many2oneField({ field, value, onChange, lang = 'en', readOnly = 
     }
 
     return (
-        <input type="text" class="form-control form-control--edit" value={name}
+        <input type="text" name={field.name} class="form-control form-control--edit" value={name}
             aria-label={fieldLabel(field, lang)} placeholder={plainText(localizedConfig(field, 'placeholder', lang))}
             onInput={(event) => onChange(field.name, { ...(typeof value === 'object' && value !== null ? value : {}), name: event.currentTarget.value })} />
     );

@@ -1,9 +1,9 @@
-import { render } from 'preact';
+import { h, render } from 'preact';
 import { effect } from '@preact/signals';
 import { appSignal, isAuthenticated } from '../store';
 import { contextActions, dashboardActions } from '../store/actions';
 import { mountSidebar, mountTopbar, MENU_ITEMS } from '../components';
-import { renderCalendar, renderForm, renderInsights, renderKanban, renderList, initCalendar, initForm, initInsights, initList, initKanban, patchInsights } from '../views';
+import { CalendarView, FormView, KanbanView, ListView, renderInsights, initInsights, patchInsights } from '../views';
 import { applyTheme, getAreaTitle, mapSystemModelToViewModel, normalizePagination, paginateData, resetAppRoot } from '../utils';
 import { fetchSystemModelByName } from '../api/systemModel.js';
 
@@ -52,22 +52,16 @@ let _currentRecordModel = null;
 let _currentRecordUuid = null;
 
 // ── View renderers (dock view-switch buttons) ─────────────────────────────────
-const VIEW_RENDERERS = {
-    kanban: renderKanban,
-    list: renderList,
-    form: renderForm,
-    calendar: renderCalendar,
+const VIEW_COMPONENTS = {
+    kanban: KanbanView,
+    list: ListView,
+    form: FormView,
+    calendar: CalendarView,
 };
 const DEFAULT_VIEW = 'kanban';
 
 // Views that need event wiring after their HTML is injected.
-const VIEW_INITIALIZERS = {
-    calendar: initCalendar,
-    insights: initInsights,
-    list: initList,
-    kanban: initKanban,
-    form: initForm,
-};
+const VIEW_INITIALIZERS = { insights: initInsights };
 let _viewCleanup = null;
 
 function getView(state) {
@@ -87,21 +81,15 @@ function getPagination(state = appSignal.value) {
 }
 
 /** Render the content markup for the currently selected view. */
-function renderView(view, area, lang, pagination, data = getData()) {
-    const renderFn = VIEW_RENDERERS[view] ?? VIEW_RENDERERS[DEFAULT_VIEW];
+function getViewProps(view, area, lang, pagination, data = getData()) {
     const paginatedData = paginateData(data, pagination);
-    if (renderFn === renderList || renderFn === renderKanban || renderFn === renderCalendar) {
-        return renderFn(paginatedData, lang);
-    }
-    if (renderFn === renderForm) {
+    if (view === 'form') {
         const commercialAreas = new Set(['crm', 'sales', 'sale', 'ventas']);
-        return renderFn(hasRecordRoute() ? data : paginatedData, lang, {
-            recordModel: _currentRecordModel,
-            recordUuid: _currentRecordUuid,
-            showWhatsapp: commercialAreas.has(area),
-        });
+        return { data: hasRecordRoute() ? data : paginatedData, lang, options: {
+            recordModel: _currentRecordModel, recordUuid: _currentRecordUuid, showWhatsapp: commercialAreas.has(area),
+        } };
     }
-    return renderFn(area, lang);
+    return { data: paginatedData, lang };
 }
 
 /**
@@ -113,11 +101,21 @@ function isInsightsContext(area, subarea) {
 }
 
 /** Pick the content markup for the current page (insights or the dock view). */
-function renderContent(area, subarea, view, lang, pagination = getPagination(), insights = appSignal.value.insights) {
+function mountContent(area, subarea, view, lang, pagination = getPagination(), insights = appSignal.value.insights) {
+    const root = document.getElementById('dashboard-content-root');
+    if (!root) return;
+    if (_viewCleanup) { _viewCleanup(); _viewCleanup = null; }
+    render(null, root);
     if (isInsightsContext(area, subarea)) {
-        return renderInsights(insights, lang);
+        root.innerHTML = renderInsights(insights, lang);
+        _viewCleanup = initInsights(lang) || null;
+        return;
     }
-    return renderView(view, area, lang, pagination);
+    root.replaceChildren();
+    const Component = VIEW_COMPONENTS[view] ?? VIEW_COMPONENTS[DEFAULT_VIEW];
+    const props = getViewProps(view, area, lang, pagination);
+    const recordKey = view === 'form' ? props.options?.recordUuid ?? props.data?.records?.[0]?.uuid ?? '' : '';
+    render(h(Component, { ...props, key: `${view}:${recordKey}` }), root);
 }
 
 /**
@@ -216,18 +214,20 @@ function renderDashboard(lang, theme, expanded, area, subarea, view) {
     // before their containers are torn down below.
     unmountRegion('dashboard-sidebar-root');
     unmountRegion('dashboard-topbar-root');
+    unmountRegion('dashboard-content-root');
     resetAppRoot(appEl);
     appEl.innerHTML = `
     <div class="dash-layout">
         <div id="dashboard-sidebar-root"></div>
         <div class="dash-main">
             <div id="dashboard-topbar-root"></div>
-            ${renderContent(area, subarea, view, lang, pagination)}
+            <div id="dashboard-content-root"></div>
         </div>
     </div>
     `;
 
     syncChrome(lang, theme, expanded, area, subarea, view, pagination);
+    mountContent(area, subarea, view, lang, pagination);
 
     applyTheme(theme);
 
@@ -268,11 +268,7 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
 
     // Patch content (area, lang, view, selected record, or live schema change)
     if (areaChanged || langChanged || viewChanged || recordRouteChanged || paginationChanged || modelChanged) {
-        const contentEl = document.getElementById('dashboard-content');
-        if (contentEl) {
-            contentEl.outerHTML = renderContent(area, _currentSubarea, view, lang, pagination);
-            initActiveView(isInsightsContext(area, _currentSubarea) ? 'insights' : view, lang);
-        }
+        mountContent(area, _currentSubarea, view, lang, pagination);
     }
 
     // Insight data changes keep the existing layout and patch only changed ids.
@@ -283,11 +279,7 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
     ) {
         const patched = patchInsights(_lastInsights, insights, lang);
         if (!patched) {
-            const contentEl = document.getElementById('dashboard-content');
-            if (contentEl) {
-                contentEl.outerHTML = renderInsights(insights, lang);
-                initActiveView('insights', lang);
-            }
+            mountContent(area, _currentSubarea, view, lang, pagination, insights);
         }
     }
 
@@ -359,7 +351,6 @@ export function dashboard(req, router) {
 
     // ── Initial full render ───────────────────────────────────────────────────
     renderDashboard(lang, theme, expanded, area, _currentSubarea, view);
-    initActiveView(isInsightsContext(area, _currentSubarea) ? 'insights' : view, lang);
 
     // Track rendered values
     _lastLang = lang;

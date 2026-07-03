@@ -8,7 +8,7 @@
 - [x] Migrar Topbar y Sidebar con manejo automático del ciclo de vida.
 - [x] Migrar el panel de notas, mensajes y documentos, eliminando inserciones inseguras con `innerHTML`.
 - [x] Convertir cada tipo de campo del schema en un componente reutilizable.
-- [ ] Migrar gradualmente Kanban, Lista, Formulario y Calendario.
+- [x] Migrar gradualmente Kanban, Lista, Formulario y Calendario.
 - [ ] Cargar Quill y las librerías de gráficas mediante `import()` solo cuando se necesiten.
 - [ ] Mantener pruebas y build funcionales después de cada etapa; evitar una reescritura completa.
 

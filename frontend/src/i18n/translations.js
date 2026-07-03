@@ -57,6 +57,10 @@ const translations = {
         en: 'The email or password is incorrect.',
         es: 'El correo electrónico o la contraseña son incorrectos.'
     },
+    'auth.login.unavailable': {
+        en: 'The authentication service is unavailable. Please try again shortly.',
+        es: 'El servicio de autenticación no está disponible. Inténtalo de nuevo en unos momentos.'
+    },
     'auth.reset.aria':      { en: 'Password reset', es: 'Restablecimiento de contraseña' },
     'auth.reset.eyebrow':   { en: 'Account recovery', es: 'Recuperación de cuenta' },
     'auth.reset.title':     { en: 'Reset your password', es: 'Restablece tu contraseña' },

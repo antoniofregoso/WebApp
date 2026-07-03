@@ -104,6 +104,17 @@ describe('image field', () => {
         host.querySelector('button[aria-label="Remove image"]').click();
         expect(onChange).toHaveBeenCalledWith('photo', '');
     });
+
+    it('renders a compact circular avatar in list context', () => {
+        const host = mount(
+            <FieldControl field={{ name: 'photo', type: 'image', label: { en: 'Photo' } }}
+                value="/avatar.jpg" readOnly context={{ view: 'list' }} onChange={() => {}} />,
+        );
+        const image = host.querySelector('img');
+        expect(image.classList.contains('h-7')).toBe(true);
+        expect(image.classList.contains('w-7')).toBe(true);
+        expect(image.classList.contains('rounded-full')).toBe(true);
+    });
 });
 
 describe('many2one / many2one_avatar fields', () => {

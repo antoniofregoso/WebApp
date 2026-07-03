@@ -12,7 +12,7 @@ export function MonetaryField({ field, value, onChange, lang = 'en', readOnly = 
         );
     }
     return (
-        <input type="number" step="0.01" class="form-control form-control--edit" value={value ?? ''}
+        <input type="number" name={field.name} step="0.01" class="form-control form-control--edit" value={value ?? ''}
             aria-label={fieldLabel(field, lang)} required={field?.form?.required === true}
             onInput={(event) => onChange(field.name, event.currentTarget.value)} />
     );

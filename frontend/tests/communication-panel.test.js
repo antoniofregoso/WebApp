@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { render } from 'preact';
 
-import { initForm, renderForm } from '../src/app/views/renderForm.js';
 import { safeRichTextNodes } from '../src/app/components/communicationPanel.jsx';
+import { mountForm } from './helpers/mountView.jsx';
 
 const styles = readFileSync('src/style.css', 'utf8');
 
@@ -37,8 +37,7 @@ describe('communication panel', () => {
   });
 
   it('requires and displays a subject when composing a message', async () => {
-    document.body.innerHTML = renderForm(data, 'es');
-    const cleanup = initForm('es');
+    const { cleanup } = mountForm(data, 'es');
     document.querySelector('[data-form-tab="messages"]').click();
     document.querySelector('[data-form-tab-add="messages"]').click();
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -73,8 +72,7 @@ describe('communication panel', () => {
   });
 
   it('keeps the WhatsApp action tooltip inside the right edge', async () => {
-    document.body.innerHTML = renderForm(data, 'en');
-    const cleanup = initForm('en');
+    const { cleanup } = mountForm(data, 'en');
     const whatsappTab = document.querySelector('[data-form-tab-panel="whatsapp"]');
     const addButton = whatsappTab.querySelector('[data-form-tab-add="whatsapp"]');
 

@@ -68,8 +68,11 @@ function Login({ lang, router }) {
             setAuthSession(session);
             updateRememberedEmail(email, form.elements.remember.checked);
             router.goTo('dash');
-        } catch {
-            showError(t('auth.login.error', lang));
+        } catch (error) {
+            const messageKey = error?.code === 'AUTHENTICATION_FAILED'
+                ? 'auth.login.error'
+                : 'auth.login.unavailable';
+            showError(t(messageKey, lang));
         } finally {
             submitButton.disabled = false;
             submitButton.removeAttribute('aria-busy');

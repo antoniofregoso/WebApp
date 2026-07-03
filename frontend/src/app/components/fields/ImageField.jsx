@@ -12,10 +12,15 @@ function readAsDataUrl(file) {
     });
 }
 
-export function ImageField({ field, value, onChange, lang = 'en', readOnly = false }) {
+export function ImageField({ field, value, onChange, lang = 'en', readOnly = false, context = {} }) {
     const inputRef = useRef(null);
 
     if (isFieldReadOnly(field, readOnly)) {
+        if (context.view === 'list') {
+            return value
+                ? <img src={value} alt={fieldLabel(field, lang)} class="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-[var(--dash-border)]" />
+                : <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--dash-surface-hover)] text-[10px] text-[var(--dash-text-soft)] ring-1 ring-[var(--dash-border)]">—</span>;
+        }
         return value
             ? <img src={value} alt={fieldLabel(field, lang)} class="h-20 w-20 rounded-xl object-cover ring-1 ring-[var(--dash-border)]" />
             : <span class="form-image-placeholder">{fieldLabel(field, lang)}</span>;
@@ -40,7 +45,7 @@ export function ImageField({ field, value, onChange, lang = 'en', readOnly = fal
                     onClick={() => onChange(field.name, '')}
                     dangerouslySetInnerHTML={{ __html: icon(faXmark, 'topbar-action-icon') }} />
             )}
-            <input ref={inputRef} type="file" accept="image/*" class="hidden" onChange={onFileChange} />
+            <input ref={inputRef} type="file" name={field.name} accept="image/*" class="hidden" onChange={onFileChange} />
         </div>
     );
 }
