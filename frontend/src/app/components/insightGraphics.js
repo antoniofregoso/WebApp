@@ -1,4 +1,4 @@
-import ApexCharts from 'apexcharts';
+import { loadApexCharts } from '../utils/loadApexCharts.js';
 
 const graphicInstances = new Map();
 
@@ -142,7 +142,7 @@ function buildLineOptions(graphic, lang) {
     };
 }
 
-function renderHeatmap(el, graphic, lang) {
+async function renderHeatmap(el, graphic, lang) {
     const rawRows = Array.isArray(graphic.data) ? graphic.data : [];
     const dayNames = rawRows.map((row) => getLocalized(row.name, lang));
     const hourLabels = (rawRows[0]?.data ?? []).map((pt) => getLocalized(pt.x, lang));
@@ -182,6 +182,7 @@ function renderHeatmap(el, graphic, lang) {
     const chartEl = el.querySelector('.heatmap-chart-inner');
     const height = el.clientHeight || 420;
 
+    const ApexCharts = await loadApexCharts();
     const chart = new ApexCharts(chartEl, {
         chart: {
             type: 'heatmap',
@@ -281,8 +282,9 @@ function buildDonutOptions(graphic, lang) {
     };
 }
 
-function renderApexChart(el, options) {
+async function renderApexChart(el, options) {
     el.innerHTML = '';
+    const ApexCharts = await loadApexCharts();
     const chart = new ApexCharts(el, options);
     chart.render()?.catch?.((error) => {
         console.error('[insights] Failed to render chart:', error);
@@ -699,37 +701,44 @@ export function initInsightGraphics(graphics = [], lang = 'en') {
     return destroyInsightGraphics;
 }
 
-function destroyGraphicInstance(instance) {
+async function destroyGraphicInstance(instanceOrPromise) {
+    const instance = await instanceOrPromise;
     instance?.destroy?.();
     instance?.graph?.clear?.();
 }
 
 function destroyInsightGraphics() {
-    graphicInstances.forEach(destroyGraphicInstance);
+    const instances = [...graphicInstances.values()];
     graphicInstances.clear();
+    instances.forEach(destroyGraphicInstance);
 }
 
 function createGraphicInstance(el, graphic, lang, id) {
+    const instance = buildGraphicInstance(el, graphic, lang);
+    graphicInstances.set(id, instance);
+    return instance;
+}
+
+async function buildGraphicInstance(el, graphic, lang) {
     try {
         let instance = null;
         if (graphic.type === 'sankey') {
             instance = renderSankey(el, graphic, lang);
         } else if (graphic.type === 'bar') {
-            instance = renderApexChart(el, buildBarOptions(graphic, lang));
+            instance = await renderApexChart(el, buildBarOptions(graphic, lang));
         } else if (graphic.type === 'line') {
-            instance = renderApexChart(el, buildLineOptions(graphic, lang));
+            instance = await renderApexChart(el, buildLineOptions(graphic, lang));
         } else if (graphic.type === 'heatmap') {
-            instance = renderHeatmap(el, graphic, lang);
+            instance = await renderHeatmap(el, graphic, lang);
         } else if (graphic.type === 'radar') {
-            instance = renderApexChart(el, buildRadarOptions(graphic, lang));
+            instance = await renderApexChart(el, buildRadarOptions(graphic, lang));
         } else if (graphic.type === 'treemap') {
-            instance = renderApexChart(el, buildTreemapOptions(graphic, lang));
+            instance = await renderApexChart(el, buildTreemapOptions(graphic, lang));
         } else if (graphic.type === 'donut') {
-            instance = renderApexChart(el, buildDonutOptions(graphic, lang));
+            instance = await renderApexChart(el, buildDonutOptions(graphic, lang));
         } else {
             el.innerHTML = `<div class="insight-empty">${escape(graphic.type ?? 'Unsupported chart')}</div>`;
         }
-        if (instance) graphicInstances.set(id, instance);
         return instance;
     } catch (error) {
         console.error('[insights] Failed to render graphic:', error);
@@ -750,8 +759,8 @@ export function updateInsightGraphic(graphic, lang = 'en') {
     if (!el) return false;
 
     const current = graphicInstances.get(id);
-    destroyGraphicInstance(current);
     graphicInstances.delete(id);
+    if (current) destroyGraphicInstance(current);
 
     const card = el.closest('.insight-graphic-card');
     const title = card?.querySelector('.insight-graphic-title');

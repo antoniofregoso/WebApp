@@ -1,5 +1,5 @@
-import ApexCharts from 'apexcharts';
 import { dashboardActions } from '../store/actions';
+import { loadApexCharts } from '../utils/loadApexCharts.js';
 import {
     initInsightGraphics,
     renderInsightGraphics,
@@ -277,10 +277,31 @@ function buildGaugeOptions(gauge) {
     };
 }
 
+async function createGaugeChart(el, gauge) {
+    try {
+        const ApexCharts = await loadApexCharts();
+        const chart = new ApexCharts(el, buildGaugeOptions(gauge));
+        chart.render()?.catch?.((error) => {
+            console.error('[insights] Failed to render gauge:', error);
+        });
+        return chart;
+    } catch (error) {
+        console.error('[insights] Failed to render gauge:', error);
+        return null;
+    }
+}
+
+function destroyGaugeCharts() {
+    const charts = [..._gaugeCharts.values()];
+    _gaugeCharts = new Map();
+    charts.forEach((chartOrPromise) => {
+        Promise.resolve(chartOrPromise).then((chart) => chart?.destroy?.());
+    });
+}
+
 export function initInsights(lang = 'en') {
     _lang = lang;
-    _gaugeCharts.forEach((chart) => chart.destroy());
-    _gaugeCharts = new Map();
+    destroyGaugeCharts();
     _graphicsCleanup?.();
     _graphicsCleanup = null;
     _graphicsCleanup = initInsightGraphics(_graphics, lang);
@@ -297,23 +318,14 @@ export function initInsights(lang = 'en') {
         const gauge = _gauges.find((item, index) => insightId(item, index, 'gauge') === id);
         if (!gauge) return;
 
-        try {
-            const visual = el.closest('[data-insight-gauge-visual]');
-            if (visual) applyGaugeVisual(visual, gauge);
+        const visual = el.closest('[data-insight-gauge-visual]');
+        if (visual) applyGaugeVisual(visual, gauge);
 
-            const chart = new ApexCharts(el, buildGaugeOptions(gauge));
-            chart.render()?.catch?.((error) => {
-                console.error('[insights] Failed to render gauge:', error);
-            });
-            _gaugeCharts.set(id, chart);
-        } catch (error) {
-            console.error('[insights] Failed to render gauge:', error);
-        }
+        _gaugeCharts.set(id, createGaugeChart(el, gauge));
     });
 
     return () => {
-        _gaugeCharts.forEach((chart) => chart.destroy());
-        _gaugeCharts = new Map();
+        destroyGaugeCharts();
         _graphicsCleanup?.();
         _graphicsCleanup = null;
     };
@@ -332,10 +344,10 @@ export function updateInsightKpi(kpi, lang = _lang) {
     return true;
 }
 
-export function updateInsightGauge(gauge, lang = _lang) {
+export async function updateInsightGauge(gauge, lang = _lang) {
     const id = String(gauge.id);
     const card = findByDataAttribute('data-insight-gauge-id', id);
-    const chart = _gaugeCharts.get(id);
+    const chart = await _gaugeCharts.get(id);
     if (!card || !chart) return false;
 
     card.querySelector('.insight-gauge-name').textContent = getLocalized(gauge.name, lang);

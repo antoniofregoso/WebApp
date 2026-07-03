@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { render } from 'preact';
 
@@ -40,9 +40,10 @@ describe('communication panel', () => {
     const { cleanup } = mountForm(data, 'es');
     document.querySelector('[data-form-tab="messages"]').click();
     document.querySelector('[data-form-tab-add="messages"]').click();
-    await new Promise((resolve) => setTimeout(resolve, 0));
 
     const panel = document.querySelector('[data-form-tab-panel="messages"]');
+    await vi.waitFor(() => expect(panel.querySelector('.ql-editor')).not.toBeNull());
+
     const subject = panel.querySelector('[data-message-subject]');
     const error = panel.querySelector('[data-message-subject-error]');
     const editor = panel.querySelector('.ql-editor');

@@ -1,8 +1,7 @@
 import { useLayoutEffect, useRef } from 'preact/hooks';
-import Quill from 'quill';
-import 'quill/dist/quill.snow.css';
 
 import { RICH_TEXT_TOOLBAR } from '../../views/noteEditor.js';
+import { loadQuill } from '../../utils/loadQuill.js';
 import { safeRichTextNodes } from '../communicationPanel.jsx';
 import { isFieldReadOnly, localizedConfig, plainText } from './fieldHelpers.js';
 
@@ -14,20 +13,29 @@ export function HtmlField({ field, value, onChange, lang = 'en', readOnly = fals
 
     useLayoutEffect(() => {
         if (disabled || !editorRef.current) return undefined;
-        const quill = new Quill(editorRef.current, {
-            theme: 'snow',
-            placeholder,
-            modules: { toolbar: RICH_TEXT_TOOLBAR },
+        let cancelled = false;
+        let quill;
+        let onTextChange;
+
+        loadQuill().then((Quill) => {
+            if (cancelled || !editorRef.current) return;
+            quill = new Quill(editorRef.current, {
+                theme: 'snow',
+                placeholder,
+                modules: { toolbar: RICH_TEXT_TOOLBAR },
+            });
+            quill.root.innerHTML = value ?? '';
+            quillRef.current = quill;
+            onTextChange = () => {
+                const html = quill.root.innerHTML;
+                onChange(field.name, html === '<p><br></p>' ? '' : html);
+            };
+            quill.on('text-change', onTextChange);
         });
-        quill.root.innerHTML = value ?? '';
-        quillRef.current = quill;
-        const onTextChange = () => {
-            const html = quill.root.innerHTML;
-            onChange(field.name, html === '<p><br></p>' ? '' : html);
-        };
-        quill.on('text-change', onTextChange);
+
         return () => {
-            quill.off('text-change', onTextChange);
+            cancelled = true;
+            quill?.off('text-change', onTextChange);
             quillRef.current = null;
         };
         // Quill owns the editor's content after mount; re-created only when leaving readonly mode.

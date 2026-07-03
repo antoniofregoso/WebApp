@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { RICH_TEXT_TOOLBAR } from '../src/app/views/noteEditor.js';
 import { mountForm } from './helpers/mountView.jsx';
@@ -43,9 +43,12 @@ describe('rich text toolbar', () => {
   it('uses link, image and color controls in HTML form fields', async () => {
     const { cleanup } = mountForm(data, 'en');
     document.querySelector('[data-form-edit]').click();
-    await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const toolbar = document.querySelector('.form-record-tab-panel .ql-toolbar');
+    const toolbar = await vi.waitFor(() => {
+      const el = document.querySelector('.form-record-tab-panel .ql-toolbar');
+      expect(el).not.toBeNull();
+      return el;
+    });
     expectFamiliarToolbar(toolbar);
     cleanup();
   });
@@ -53,9 +56,12 @@ describe('rich text toolbar', () => {
   it('uses the same controls in activity composers', async () => {
     const { cleanup } = mountForm(data, 'en');
     document.querySelector('[data-form-tab-add="notes"]').click();
-    await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const toolbar = document.querySelector('[data-form-tab-panel="notes"] .ql-toolbar');
+    const toolbar = await vi.waitFor(() => {
+      const el = document.querySelector('[data-form-tab-panel="notes"] .ql-toolbar');
+      expect(el).not.toBeNull();
+      return el;
+    });
     expectFamiliarToolbar(toolbar);
     cleanup();
   });

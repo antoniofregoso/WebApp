@@ -373,6 +373,18 @@ body {
   color: var(--dash-text);
 }
 
+/* The Preact mount wrapper is the direct dashboard flex item. Keep the
+   sidebar inside stretched to the full viewport height. */
+#dashboard-sidebar-root {
+  display: flex;
+  align-self: stretch;
+  min-height: 0;
+}
+
+#dashboard-sidebar-root > .sidebar {
+  height: 100%;
+}
+
 .dash-main {
   position: relative;
   flex: 1;
@@ -382,8 +394,20 @@ body {
   min-width: 0;
 }
 
+/* Content is mounted through this nested Preact/legacy bridge. It must remain
+   the constrained flex item so the view inside can own vertical scrolling. */
+#dashboard-content-root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .dash-content {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   background: var(--dash-bg);
   padding: 2rem;

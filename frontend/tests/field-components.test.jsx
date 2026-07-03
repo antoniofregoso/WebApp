@@ -214,7 +214,7 @@ describe('many2many_pills field', () => {
 });
 
 describe('html field', () => {
-    it('renders sanitized rich text when readonly and a Quill editor when editable', () => {
+    it('renders sanitized rich text when readonly and a Quill editor when editable', async () => {
         const readHost = mount(
             <FieldControl field={{ name: 'body', type: 'html' }} value="<p>Hola</p><script>window.x=1</script>" readOnly onChange={() => {}} />,
         );
@@ -222,7 +222,7 @@ describe('html field', () => {
         expect(readHost.querySelector('script')).toBeNull();
 
         const editHost = mount(<FieldControl field={{ name: 'body', type: 'html' }} value="<p>Hola</p>" onChange={() => {}} />);
-        expect(editHost.querySelector('.ql-editor')).not.toBeNull();
+        await vi.waitFor(() => expect(editHost.querySelector('.ql-editor')).not.toBeNull());
     });
 });
 

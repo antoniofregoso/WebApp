@@ -1,13 +1,12 @@
 import { h, render } from 'preact';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
-import Quill from 'quill';
-import 'quill/dist/quill.snow.css';
 
 import {
     faEnvelope, faFileLines, faFloppyDisk, faNoteSticky, faPaperPlane, faPlus,
     faWhatsapp, faXmark,
 } from './icon.js';
 import { RICH_TEXT_TOOLBAR } from '../views/noteEditor.js';
+import { loadQuill } from '../utils/loadQuill.js';
 
 const COPY = {
     notes: {
@@ -124,14 +123,23 @@ function RichComposer({ tab, lang, onClose, onSave }) {
     const [subjectInvalid, setSubjectInvalid] = useState(false);
 
     useLayoutEffect(() => {
-        quillRef.current = new Quill(editorRef.current, {
-            theme: 'snow',
-            placeholder: copy(tab, 'placeholder', lang),
-            modules: { toolbar: RICH_TEXT_TOOLBAR },
+        let cancelled = false;
+
+        loadQuill().then((Quill) => {
+            if (cancelled || !editorRef.current) return;
+            quillRef.current = new Quill(editorRef.current, {
+                theme: 'snow',
+                placeholder: copy(tab, 'placeholder', lang),
+                modules: { toolbar: RICH_TEXT_TOOLBAR },
+            });
+            if (tab === 'messages') subjectRef.current?.focus();
+            else quillRef.current.focus();
         });
-        if (tab === 'messages') subjectRef.current?.focus();
-        else quillRef.current.focus();
-        return () => { quillRef.current = null; };
+
+        return () => {
+            cancelled = true;
+            quillRef.current = null;
+        };
     }, [lang, tab]);
 
     const save = () => {
