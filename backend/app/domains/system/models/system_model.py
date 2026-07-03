@@ -46,6 +46,15 @@ class SystemModel(SystemAudit, SQLModel, table=True):
         index=True,
     )
     name: str
+    label: dict = Field(
+        default_factory=dict,
+        sa_column=Column(JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")),
+    )
+    group_by: Optional[str] = Field(default=None)
+    group_by_values: list[dict] = Field(
+        default_factory=list,
+        sa_column=Column(JSONB, nullable=False, server_default=sa.text("'[]'::jsonb")),
+    )
     fields: list["SystemModelField"] = Relationship(
         back_populates="model",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
@@ -57,6 +66,13 @@ class SystemModel(SystemAudit, SQLModel, table=True):
     model_followers: list["SystemModelFollowers"] = Relationship(
         back_populates="model"
     )
+
+    def get_label(self, lang: str = "es", fallback: str = "en") -> str:
+        return (
+            self.label.get(lang)
+            or self.label.get(fallback)
+            or next(iter(self.label.values()), "")
+        )
 
 
 class SystemModelField(SystemAudit, SQLModel, table=True):

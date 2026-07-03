@@ -1,1 +1,137 @@
-{}
+[
+    {
+        "name":"default",
+        "use":"view",
+        "view":[
+            {
+                "name": "uuid",
+                "type": "string",
+                "label": {
+                    "es": "uuid",
+                    "en": "uuid"
+                }
+            }
+        ],
+        "model":"system.app"
+    },
+    {
+        "name":"default",
+        "use":"view",
+        "view":[
+            {
+                "name": "uuid",
+                "type": "string",
+                "label": {
+                    "es": "uuid",
+                    "en": "uuid"
+                }
+            }
+        ],
+        "model":"system.app.settings"
+    },
+    {
+        "name":"default",
+        "use":"view",
+        "view":[
+            {
+                "name": "uuid",
+                "type": "string",
+                "label": {
+                    "es": "uuid",
+                    "en": "uuid"
+                }
+            }
+        ],
+        "model":"system.company"
+    },
+    {
+        "name":"default",
+        "use":"view",
+        "view":[
+            {
+                "name": "uuid",
+                "type": "string",
+                "label": {
+                    "es": "uuid",
+                    "en": "uuid"
+                }
+            }
+        ],
+        "model":"system.message"
+    },
+    {
+        "name":"default",
+        "use":"view",
+        "view":[
+            {
+                "name": "uuid",
+                "type": "string",
+                "label": {
+                    "es": "uuid",
+                    "en": "uuid"
+                }
+            }
+        ],
+        "model":"system.notification"
+    },
+    {
+        "name":"default",
+        "use":"view",
+        "view":[
+            {
+                "name": "uuid",
+                "type": "string",
+                "label": {
+                    "es": "uuid",
+                    "en": "uuid"
+                }
+            }
+        ],
+        "model":"system.task"
+    },
+    {
+        "name":"default",
+        "use":"view",
+        "view":[
+            {
+                "name": "uuid",
+                "type": "string",
+                "label": {
+                    "es": "uuid",
+                    "en": "uuid"
+                }
+            }
+        ],
+        "model":"system.whatsapp"
+    },
+    {
+        "name":"default",
+        "use":"view",
+        "view":[
+            {
+                "name": "uuid",
+                "type": "string",
+                "label": {
+                    "es": "uuid",
+                    "en": "uuid"
+                }
+            }
+        ],
+        "model":"user.user"
+    },
+    {
+        "name":"default",
+        "use":"view",
+        "view":[
+            {
+                "name": "uuid",
+                "type": "string",
+                "label": {
+                    "es": "uuid",
+                    "en": "uuid"
+                }
+            }
+        ],
+        "model":"user.user.log"
+    }
+]

@@ -15,6 +15,7 @@
         },
         "groupBy":"field",
         "field":[],
+        "tags": [],
         "schema":[]
     },
     "records":[]

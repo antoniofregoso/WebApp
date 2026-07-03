@@ -1,1 +1,1142 @@
-{}
+[
+    {
+        "name": "system.model",
+        "label": {
+            "es": "Modelos",
+            "en": "Models"
+        },
+        "group_by": false,
+        "group_by_values": [],
+        "tags": [],
+        "fields": [
+            {
+                "name": "name",
+                "sequence": 10,
+                "type": "string",
+                "required": true,
+                "readonly": true,
+                "placeholder": { "es": "Ej. system.task", "en": "E.g. system.task" },
+                "help": { "es": "Identificador técnico único del modelo", "en": "Unique technical identifier of the model" }
+            },
+            {
+                "name": "label",
+                "sequence": 20,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Ej. Tareas", "en": "E.g. Tasks" },
+                "help": { "es": "Nombre visible del modelo", "en": "Display name of the model" }
+            },
+            {
+                "name": "group_by",
+                "sequence": 30,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Ej. status", "en": "E.g. status" },
+                "help": { "es": "Campo usado para agrupar registros en la vista kanban", "en": "Field used to group records in the kanban view" }
+            }
+        ]
+    },
+    {
+        "name": "system.app",
+        "label": {
+            "es": "Aplicación",
+            "en": "App"
+        },
+        "group_by": false,
+        "group_by_values":[],
+        "tags":[],
+        "fields": [
+            {
+                "name": "name",
+                "sequence": 10,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Nombre de la aplicación", "en": "App name" },
+                "help": { "es": "Nombre visible de la aplicación", "en": "Display name of the app" }
+            },
+            {
+                "name": "description",
+                "sequence": 20,
+                "type": "text",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Descripción de la aplicación", "en": "App description" },
+                "help": { "es": "Descripción breve de la aplicación", "en": "Short description of the app" }
+            },
+            {
+                "name": "active",
+                "sequence": 30,
+                "type": "boolean",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Activo", "en": "Active" },
+                "help": { "es": "Indica si la aplicación está activa", "en": "Whether the app is active" }
+            },
+            {
+                "name": "public",
+                "sequence": 40,
+                "type": "boolean",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Pública", "en": "Public" },
+                "help": { "es": "Indica si la aplicación es de acceso público", "en": "Whether the app is publicly accessible" }
+            }
+        ]
+    },
+    {
+        "name":"system.company",
+        "label": {
+            "es": "Empresas",
+            "en": "Companies"
+        },
+        "group_by": false,
+        "group_by_values": [],
+        "tags": [],
+        "fields": [
+            {
+                "name": "name",
+                "sequence": 10,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Nombre de la empresa", "en": "Company name" },
+                "help": { "es": "Razón social o nombre comercial", "en": "Legal or trade name" }
+            },
+            {
+                "name": "active",
+                "sequence": 20,
+                "type": "boolean",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Activa", "en": "Active" },
+                "help": { "es": "Indica si la empresa está activa", "en": "Whether the company is active" }
+            },
+            {
+                "name": "color",
+                "sequence": 30,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Color", "en": "Color" },
+                "help": { "es": "Color usado para identificar la empresa en las vistas", "en": "Color used to identify the company across views" }
+            },
+            {
+                "name": "logo_url",
+                "sequence": 40,
+                "type": "image",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Logotipo", "en": "Logo" },
+                "help": { "es": "Logotipo de la empresa", "en": "Company logo" }
+            },
+            {
+                "name": "currency_id",
+                "sequence": 50,
+                "type": "many2one",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Selecciona una moneda", "en": "Select a currency" },
+                "help": { "es": "Moneda predeterminada de la empresa", "en": "Company's default currency" }
+            },
+            {
+                "name": "country_id",
+                "sequence": 60,
+                "type": "many2one",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Selecciona un país", "en": "Select a country" },
+                "help": { "es": "País de la empresa", "en": "Company's country" }
+            },
+            {
+                "name": "lang_id",
+                "sequence": 70,
+                "type": "many2one",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Selecciona un idioma", "en": "Select a language" },
+                "help": { "es": "Idioma predeterminado de la empresa", "en": "Company's default language" }
+            },
+            {
+                "name": "street",
+                "sequence": 80,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Calle", "en": "Street" },
+                "help": { "es": "Dirección, línea 1", "en": "Address, line 1" }
+            },
+            {
+                "name": "street2",
+                "sequence": 90,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Calle 2", "en": "Street 2" },
+                "help": { "es": "Dirección, línea 2", "en": "Address, line 2" }
+            },
+            {
+                "name": "city",
+                "sequence": 100,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Ciudad", "en": "City" },
+                "help": { "es": "Ciudad de la empresa", "en": "Company's city" }
+            },
+            {
+                "name": "zip",
+                "sequence": 110,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Código postal", "en": "ZIP code" },
+                "help": { "es": "Código postal", "en": "ZIP / postal code" }
+            },
+            {
+                "name": "phone",
+                "sequence": 120,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Teléfono", "en": "Phone" },
+                "help": { "es": "Teléfono de contacto", "en": "Contact phone number" }
+            },
+            {
+                "name": "email",
+                "sequence": 130,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Correo electrónico", "en": "Email" },
+                "help": { "es": "Correo de contacto", "en": "Contact email" }
+            },
+            {
+                "name": "website",
+                "sequence": 140,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Sitio web", "en": "Website" },
+                "help": { "es": "Sitio web de la empresa", "en": "Company website" }
+            },
+            {
+                "name": "vat",
+                "sequence": 150,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "RFC / VAT", "en": "Tax ID / VAT" },
+                "help": { "es": "Identificador fiscal de la empresa", "en": "Company's tax identifier" }
+            }
+        ]
+    },
+    {
+        "name":"system.country",
+        "label": {
+            "es": "Países",
+            "en": "Countries"
+        },
+        "group_by": false,
+        "group_by_values": [],
+        "tags": [],
+        "fields": [
+            {
+                "name": "code",
+                "sequence": 10,
+                "type": "string",
+                "required": true,
+                "readonly": true,
+                "placeholder": { "es": "Ej. MX", "en": "E.g. MX" },
+                "help": { "es": "Código ISO del país", "en": "Country ISO code" }
+            },
+            {
+                "name": "name",
+                "sequence": 20,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Nombre del país", "en": "Country name" },
+                "help": { "es": "Nombre del país", "en": "Country name" }
+            },
+            {
+                "name": "phone_code",
+                "sequence": 30,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Ej. +52", "en": "E.g. +52" },
+                "help": { "es": "Código telefónico del país", "en": "Country phone code" }
+            },
+            {
+                "name": "currency_id",
+                "sequence": 40,
+                "type": "many2one",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Selecciona una moneda", "en": "Select a currency" },
+                "help": { "es": "Moneda predeterminada del país", "en": "Country's default currency" }
+            },
+            {
+                "name": "timezones",
+                "sequence": 50,
+                "type": "many2many",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Zonas horarias", "en": "Timezones" },
+                "help": { "es": "Zonas horarias asociadas al país", "en": "Timezones associated with the country" }
+            }
+        ]
+    },
+    {
+        "name":"system.currency",
+        "label": {
+            "es": "Monedas",
+            "en": "Currencies"
+        },
+        "group_by": false,
+        "group_by_values": [],
+        "tags": [],
+        "fields": [
+            {
+                "name": "name",
+                "sequence": 10,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Nombre de la moneda", "en": "Currency name" },
+                "help": { "es": "Nombre de la moneda", "en": "Currency name" }
+            },
+            {
+                "name": "code",
+                "sequence": 20,
+                "type": "string",
+                "required": true,
+                "readonly": true,
+                "placeholder": { "es": "Ej. MXN", "en": "E.g. MXN" },
+                "help": { "es": "Código ISO de la moneda", "en": "Currency ISO code" }
+            },
+            {
+                "name": "iso_numeric",
+                "sequence": 30,
+                "type": "integer",
+                "required": true,
+                "readonly": true,
+                "placeholder": { "es": "Código numérico ISO", "en": "ISO numeric code" },
+                "help": { "es": "Código numérico ISO de la moneda", "en": "Currency's ISO numeric code" }
+            },
+            {
+                "name": "symbol",
+                "sequence": 40,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Ej. $", "en": "E.g. $" },
+                "help": { "es": "Símbolo de la moneda", "en": "Currency symbol" }
+            },
+            {
+                "name": "currency_unit_label",
+                "sequence": 50,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Ej. Peso", "en": "E.g. Peso" },
+                "help": { "es": "Nombre de la unidad principal", "en": "Name of the main currency unit" }
+            },
+            {
+                "name": "currency_subunit_label",
+                "sequence": 60,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Ej. Centavo", "en": "E.g. Cent" },
+                "help": { "es": "Nombre de la subunidad", "en": "Name of the currency subunit" }
+            },
+            {
+                "name": "rounding",
+                "sequence": 70,
+                "type": "decimal",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Redondeo", "en": "Rounding" },
+                "help": { "es": "Precisión de redondeo de la moneda", "en": "Currency rounding precision" }
+            },
+            {
+                "name": "position",
+                "sequence": 80,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Posición del símbolo", "en": "Symbol position" },
+                "help": { "es": "Posición del símbolo respecto al monto (antes/después)", "en": "Symbol position relative to the amount (before/after)" }
+            },
+            {
+                "name": "active",
+                "sequence": 90,
+                "type": "boolean",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Activa", "en": "Active" },
+                "help": { "es": "Indica si la moneda está activa", "en": "Whether the currency is active" }
+            }
+        ]
+    },
+    {
+        "name":"system.lan",
+        "label": {
+            "es": "Idiomas",
+            "en": "Languages"
+        },
+        "group_by": false,
+        "group_by_values": [],
+        "tags": [],
+        "fields": [
+            {
+                "name": "name",
+                "sequence": 10,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Nombre del idioma", "en": "Language name" },
+                "help": { "es": "Nombre del idioma", "en": "Language name" }
+            },
+            {
+                "name": "code",
+                "sequence": 20,
+                "type": "string",
+                "required": true,
+                "readonly": true,
+                "placeholder": { "es": "Ej. es_MX", "en": "E.g. es_MX" },
+                "help": { "es": "Código del idioma", "en": "Language code" }
+            },
+            {
+                "name": "iso_code",
+                "sequence": 30,
+                "type": "string",
+                "required": true,
+                "readonly": true,
+                "placeholder": { "es": "Ej. es", "en": "E.g. es" },
+                "help": { "es": "Código ISO del idioma", "en": "Language ISO code" }
+            },
+            {
+                "name": "url_code",
+                "sequence": 40,
+                "type": "string",
+                "required": true,
+                "readonly": true,
+                "placeholder": { "es": "Ej. es", "en": "E.g. es" },
+                "help": { "es": "Código usado en las URLs", "en": "Code used in URLs" }
+            },
+            {
+                "name": "date_format",
+                "sequence": 50,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Ej. dd/MM/yyyy", "en": "E.g. MM/dd/yyyy" },
+                "help": { "es": "Formato de fecha del idioma", "en": "Language's date format" }
+            },
+            {
+                "name": "time_format",
+                "sequence": 60,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Ej. HH:mm", "en": "E.g. hh:mm a" },
+                "help": { "es": "Formato de hora del idioma", "en": "Language's time format" }
+            },
+            {
+                "name": "week_start",
+                "sequence": 70,
+                "type": "integer",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Día de inicio de semana", "en": "Week start day" },
+                "help": { "es": "Día en que inicia la semana (0=domingo)", "en": "Day the week starts on (0=Sunday)" }
+            },
+            {
+                "name": "flag",
+                "sequence": 80,
+                "type": "image",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Bandera", "en": "Flag" },
+                "help": { "es": "Bandera representativa del idioma", "en": "Flag representing the language" }
+            },
+            {
+                "name": "active",
+                "sequence": 90,
+                "type": "boolean",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Activo", "en": "Active" },
+                "help": { "es": "Indica si el idioma está activo", "en": "Whether the language is active" }
+            }
+        ]
+    },
+    {
+        "name":"system.timezone",
+        "label": {
+            "es": "Zonas horarias",
+            "en": "Timezones"
+        },
+        "group_by": false,
+        "group_by_values": [],
+        "tags": [],
+        "fields": [
+            {
+                "name": "name",
+                "sequence": 10,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Nombre de la zona horaria", "en": "Timezone name" },
+                "help": { "es": "Nombre de la zona horaria", "en": "Timezone name" }
+            },
+            {
+                "name": "code",
+                "sequence": 20,
+                "type": "string",
+                "required": true,
+                "readonly": true,
+                "placeholder": { "es": "Ej. America/Mexico_City", "en": "E.g. America/Mexico_City" },
+                "help": { "es": "Código IANA de la zona horaria", "en": "IANA timezone code" }
+            },
+            {
+                "name": "offset",
+                "sequence": 30,
+                "type": "integer",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Desfase UTC", "en": "UTC offset" },
+                "help": { "es": "Desfase respecto a UTC en minutos", "en": "Offset from UTC in minutes" }
+            },
+            {
+                "name": "countries",
+                "sequence": 40,
+                "type": "many2many",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Países", "en": "Countries" },
+                "help": { "es": "Países que usan esta zona horaria", "en": "Countries that use this timezone" }
+            }
+        ]
+    },
+    {
+        "name":"system.message",
+        "label": {
+            "es": "Mensajes",
+            "en": "Messages"
+        },
+        "group_by": "status",
+        "group_by_values": [
+            {
+                "value": "sent",
+                "color": "blue",
+                "es": "Enviado",
+                "en": "Sent"
+            },
+            {
+                "value": "delivered",
+                "color": "green",
+                "es": "Entregado",
+                "en": "Delivered"
+            },
+            {
+                "value": "received",
+                "color": "purple",
+                "es": "Recibido",
+                "en": "Received"
+            },
+            {
+                "value": "read",
+                "color": "zinc",
+                "es": "Leído",
+                "en": "Read"
+            },
+            {
+                "value": "replied",
+                "color": "orange",
+                "es": "Respondido",
+                "en": "Replied"
+            },
+            {
+                "value": "forwarded",
+                "color": "blue",
+                "es": "Reenviado",
+                "en": "Forwarded"
+            },
+            {
+                "value": "archived",
+                "color": "zinc",
+                "es": "Archivado",
+                "en": "Archived"
+            },
+            {
+                "value": "deleted",
+                "color": "red",
+                "es": "Eliminado",
+                "en": "Deleted"
+            },
+            {
+                "value": "failed",
+                "color": "red",
+                "es": "Fallido",
+                "en": "Failed"
+            },
+            {
+                "value": "draft",
+                "color": "orange",
+                "es": "Borrador",
+                "en": "Draft"
+            }
+        ],
+        "tags": [],
+        "fields": [
+            {
+                "name": "subject",
+                "sequence": 10,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Asunto", "en": "Subject" },
+                "help": { "es": "Asunto del mensaje", "en": "Message subject" }
+            },
+            {
+                "name": "message",
+                "sequence": 20,
+                "type": "html",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Escribe el mensaje...", "en": "Write the message..." },
+                "help": { "es": "Contenido del mensaje", "en": "Message content" }
+            },
+            {
+                "name": "status",
+                "sequence": 30,
+                "type": "string",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Estado", "en": "Status" },
+                "help": { "es": "Estado actual del mensaje", "en": "Current status of the message" }
+            },
+            {
+                "name": "date",
+                "sequence": 40,
+                "type": "datetime",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Fecha", "en": "Date" },
+                "help": { "es": "Fecha en que se envió el mensaje", "en": "Date the message was sent" }
+            },
+            {
+                "name": "from_user_id",
+                "sequence": 50,
+                "type": "many2one_avatar",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Remitente", "en": "Sender" },
+                "help": { "es": "Usuario que envía el mensaje", "en": "User who sent the message" }
+            },
+            {
+                "name": "to_users",
+                "sequence": 60,
+                "type": "many2many_pills",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Destinatarios", "en": "Recipients" },
+                "help": { "es": "Usuarios que reciben el mensaje", "en": "Users receiving the message" }
+            }
+        ]
+    },
+    {
+        "name": "system.notification",
+        "label": {
+            "es": "Notificaciones",
+            "en": "Notifications"
+        },
+        "group_by": "status",
+        "group_by_values":[
+            {
+                "value": "sent",
+                "color": "purple",
+                "es": "Enviado",
+                "en": "Sent"
+            },
+            {
+                "value": "delivered",
+                "color": "green",
+                "es": "Entregado",
+                "en": "Delivered"
+            },
+            {
+                "value": "read",
+                "color": "zinc",
+                "es": "Leído",
+                "en": "Read"
+            }
+        ],
+        "tags": [],
+        "fields": [
+            {
+                "name": "title",
+                "sequence": 10,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Título", "en": "Title" },
+                "help": { "es": "Título de la notificación", "en": "Notification title" }
+            },
+            {
+                "name": "message",
+                "sequence": 20,
+                "type": "text",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Mensaje", "en": "Message" },
+                "help": { "es": "Contenido de la notificación", "en": "Notification content" }
+            },
+            {
+                "name": "status",
+                "sequence": 30,
+                "type": "string",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Estado", "en": "Status" },
+                "help": { "es": "Estado actual de la notificación", "en": "Current status of the notification" }
+            },
+            {
+                "name": "date",
+                "sequence": 40,
+                "type": "datetime",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Fecha", "en": "Date" },
+                "help": { "es": "Fecha en que se generó la notificación", "en": "Date the notification was generated" }
+            },
+            {
+                "name": "read",
+                "sequence": 50,
+                "type": "boolean",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Leída", "en": "Read" },
+                "help": { "es": "Indica si la notificación ya fue leída", "en": "Whether the notification has been read" }
+            },
+            {
+                "name": "active",
+                "sequence": 60,
+                "type": "boolean",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Activa", "en": "Active" },
+                "help": { "es": "Indica si la notificación está activa", "en": "Whether the notification is active" }
+            },
+            {
+                "name": "color",
+                "sequence": 70,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Color", "en": "Color" },
+                "help": { "es": "Color usado para identificar la notificación", "en": "Color used to identify the notification" }
+            },
+            {
+                "name": "user_id",
+                "sequence": 80,
+                "type": "many2one_avatar",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Usuario destinatario", "en": "Target user" },
+                "help": { "es": "Usuario individual al que se dirige la notificación", "en": "Single user this notification is targeted to" }
+            },
+            {
+                "name": "users",
+                "sequence": 90,
+                "type": "many2many_pills",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Usuarios destinatarios", "en": "Target users" },
+                "help": { "es": "Grupo de usuarios a los que se dirige la notificación", "en": "Group of users this notification is targeted to" }
+            }
+        ]
+    },
+    {
+        "name":"system.task",
+        "label": {
+            "es": "Tareas",
+            "en": "Tasks"
+        },
+        "group_by": "status",
+        "group_by_values":[
+            {
+                "value": "Pending",
+                "color": "purple",
+                "es": "Pendiente",
+                "en": "Pending"
+            },
+
+            {
+                "value": "In Progress",
+                "color": "green",
+                "es": "En progreso",
+                "en": "In Progress"
+            },
+            {
+                "value": "Completed",
+                "color": "zinc",
+                "es": "Completado",
+                "en": "Completed"
+            },
+            {
+                "value": "Failed",
+                "color": "red",
+                "es": "Fallido",
+                "en": "Failed"
+            }
+        ],
+        "tags": [],
+        "fields": [
+            {
+                "name": "title",
+                "sequence": 10,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Título", "en": "Title" },
+                "help": { "es": "Título de la tarea", "en": "Task title" }
+            },
+            {
+                "name": "description",
+                "sequence": 20,
+                "type": "text",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Descripción", "en": "Description" },
+                "help": { "es": "Descripción detallada de la tarea", "en": "Detailed description of the task" }
+            },
+            {
+                "name": "status",
+                "sequence": 30,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Estado", "en": "Status" },
+                "help": { "es": "Estado actual de la tarea", "en": "Current status of the task" }
+            },
+            {
+                "name": "priority",
+                "sequence": 40,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Prioridad", "en": "Priority" },
+                "help": { "es": "Prioridad de la tarea", "en": "Task priority" }
+            },
+            {
+                "name": "color",
+                "sequence": 50,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Color", "en": "Color" },
+                "help": { "es": "Color usado para identificar la tarea", "en": "Color used to identify the task" }
+            },
+            {
+                "name": "date_assign",
+                "sequence": 60,
+                "type": "datetime",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Fecha de asignación", "en": "Assigned date" },
+                "help": { "es": "Fecha en que se asignó la tarea", "en": "Date the task was assigned" }
+            },
+            {
+                "name": "date_due",
+                "sequence": 70,
+                "type": "datetime",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Fecha límite", "en": "Due date" },
+                "help": { "es": "Fecha límite para completar la tarea", "en": "Deadline to complete the task" }
+            },
+            {
+                "name": "user_id",
+                "sequence": 80,
+                "type": "many2one_avatar",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Asignado a", "en": "Assigned to" },
+                "help": { "es": "Usuario responsable de la tarea", "en": "User responsible for the task" }
+            }
+        ]
+    },
+    {
+        "name":"system.whatsapp",
+        "label": {
+            "es": "WhatsApp",
+            "en": "WhatsApp"
+        },
+        "group_by": false,
+        "group_by_values": [],
+        "tags": [],
+        "fields": [
+            {
+                "name": "company_id",
+                "sequence": 10,
+                "type": "many2one",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Selecciona una empresa", "en": "Select a company" },
+                "help": { "es": "Empresa dueña de esta configuración", "en": "Company that owns this configuration" }
+            },
+            {
+                "name": "name",
+                "sequence": 20,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Nombre de la configuración", "en": "Configuration name" },
+                "help": { "es": "Nombre de la configuración de WhatsApp", "en": "Name of the WhatsApp configuration" }
+            },
+            {
+                "name": "active",
+                "sequence": 30,
+                "type": "boolean",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Activa", "en": "Active" },
+                "help": { "es": "Indica si la configuración está activa", "en": "Whether the configuration is active" }
+            },
+            {
+                "name": "phone_number",
+                "sequence": 40,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Número de teléfono", "en": "Phone number" },
+                "help": { "es": "Número de teléfono de WhatsApp Business", "en": "WhatsApp Business phone number" }
+            },
+            {
+                "name": "phone_number_id",
+                "sequence": 50,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "ID del número de teléfono", "en": "Phone number ID" },
+                "help": { "es": "Identificador del número en la API de Meta", "en": "Phone number identifier in the Meta API" }
+            },
+            {
+                "name": "business_account_id",
+                "sequence": 60,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "ID de la cuenta de negocio", "en": "Business account ID" },
+                "help": { "es": "Identificador de la cuenta de WhatsApp Business", "en": "WhatsApp Business account identifier" }
+            },
+            {
+                "name": "api_version",
+                "sequence": 70,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Ej. v20.0", "en": "E.g. v20.0" },
+                "help": { "es": "Versión de la API de Meta utilizada", "en": "Meta API version used" }
+            },
+            {
+                "name": "webhook_url",
+                "sequence": 80,
+                "type": "string",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "URL del webhook", "en": "Webhook URL" },
+                "help": { "es": "URL usada para recibir eventos de WhatsApp", "en": "URL used to receive WhatsApp events" }
+            }
+        ]
+    },
+    {
+        "name": "user.user",
+        "label": {
+            "es": "Usuarios",
+            "en": "Users"
+        },
+        "group_by": "user_type",
+        "group_by_values": [
+            {
+                "value": "HUMAN",
+                "color": "blue",
+                "es": "Humano",
+                "en": "Human"
+            },
+            {
+                "value": "SYSTEM",
+                "color": "zinc",
+                "es": "Sistema",
+                "en": "System"
+            },
+            {
+                "value": "AIAGENT",
+                "color": "purple",
+                "es": "Agente IA",
+                "en": "AI Agent"
+            }
+        ],
+        "tags": [],
+        "fields": [
+            {
+                "name": "avatar_url",
+                "sequence": 10,
+                "type": "image",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Foto de perfil", "en": "Profile picture" },
+                "help": { "es": "Imagen de perfil del usuario", "en": "User's profile picture" }
+            },
+            {
+                "name": "name",
+                "sequence": 20,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Nombre completo", "en": "Full name" },
+                "help": { "es": "Nombre completo del usuario", "en": "User's full name" }
+            },
+            {
+                "name": "email",
+                "sequence": 30,
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Correo electrónico", "en": "Email" },
+                "help": { "es": "Correo electrónico usado para iniciar sesión", "en": "Email used to sign in" }
+            },
+            {
+                "name": "user_type",
+                "sequence": 40,
+                "type": "string",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Tipo de usuario", "en": "User type" },
+                "help": { "es": "Tipo de cuenta del usuario", "en": "User's account type" }
+            },
+            {
+                "name": "company_id",
+                "sequence": 50,
+                "type": "many2one",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Selecciona una empresa", "en": "Select a company" },
+                "help": { "es": "Empresa a la que pertenece el usuario", "en": "Company the user belongs to" }
+            },
+            {
+                "name": "lang_id",
+                "sequence": 60,
+                "type": "many2one",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Selecciona un idioma", "en": "Select a language" },
+                "help": { "es": "Idioma preferido del usuario", "en": "User's preferred language" }
+            },
+            {
+                "name": "theme",
+                "sequence": 70,
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Tema", "en": "Theme" },
+                "help": { "es": "Tema de apariencia preferido (claro, oscuro, sistema)", "en": "Preferred appearance theme (light, dark, system)" }
+            },
+            {
+                "name": "active",
+                "sequence": 80,
+                "type": "boolean",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Activo", "en": "Active" },
+                "help": { "es": "Indica si el usuario está activo", "en": "Whether the user is active" }
+            }
+        ]
+    },
+    {
+        "name": "user.log",
+        "label": {
+            "es": "Registros de sesión",
+            "en": "User Logs"
+        },
+        "group_by": "status",
+        "group_by_values": [
+            {
+                "value": "Online",
+                "color": "green",
+                "es": "En línea",
+                "en": "Online"
+            },
+            {
+                "value": "Offline",
+                "color": "zinc",
+                "es": "Desconectado",
+                "en": "Offline"
+            }
+        ],
+        "tags": [],
+        "fields": [
+            {
+                "name": "user_id",
+                "sequence": 10,
+                "type": "many2one_avatar",
+                "required": true,
+                "readonly": true,
+                "placeholder": { "es": "Usuario", "en": "User" },
+                "help": { "es": "Usuario dueño de la sesión", "en": "User this session belongs to" }
+            },
+            {
+                "name": "status",
+                "sequence": 20,
+                "type": "string",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Estado", "en": "Status" },
+                "help": { "es": "Estado actual de la sesión", "en": "Current status of the session" }
+            },
+            {
+                "name": "start_date",
+                "sequence": 30,
+                "type": "datetime",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Inicio de sesión", "en": "Session start" },
+                "help": { "es": "Fecha y hora en que inició la sesión", "en": "Date and time the session started" }
+            },
+            {
+                "name": "last_seen_at",
+                "sequence": 40,
+                "type": "datetime",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Última actividad", "en": "Last seen" },
+                "help": { "es": "Última vez que el usuario tuvo actividad", "en": "Last time the user had activity" }
+            },
+            {
+                "name": "end_date",
+                "sequence": 50,
+                "type": "datetime",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Fin de sesión", "en": "Session end" },
+                "help": { "es": "Fecha y hora en que terminó la sesión", "en": "Date and time the session ended" }
+            },
+            {
+                "name": "duration",
+                "sequence": 60,
+                "type": "integer",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Duración", "en": "Duration" },
+                "help": { "es": "Duración de la sesión en milisegundos", "en": "Session duration in milliseconds" }
+            }
+        ]
+    }
+]
