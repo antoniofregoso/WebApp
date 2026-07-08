@@ -52,8 +52,12 @@ not changed.
 
 ## Load Order
 
-The setup starts with `user.user` by creating the `App Bot` record from
+The setup starts with `user.user` by creating the internal `App Bot` record from
 `user_users.json`.
+
+`App Bot` is only used for system audit fields. It is created as inactive, uses
+an internal placeholder email, and receives a random Argon2-hashed password that
+is never printed or stored in plain text, so it cannot be used to sign in.
 
 After `App Bot` exists, the script loads:
 
@@ -66,6 +70,10 @@ After `App Bot` exists, the script loads:
 
 `system_model_fields.json` is currently empty because fields are embedded in
 `system_models.json`.
+
+Human/system users loaded after `App Bot` use passwords from `user_users.json`.
+Those passwords are hashed with the same Argon2 helper used by the backend
+authentication flow (`AuthService.hash_password`) before they are inserted.
 
 ## Audit Fields
 

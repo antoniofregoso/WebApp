@@ -23,3 +23,13 @@ def test_color_is_exposed_as_a_graphql_selection():
     assert "enum SystemColor" in schema
     assert "color: SystemColor!" in schema
     assert "color: SystemColor! = zinc" in schema
+
+
+def test_system_model_view_query_is_exposed():
+    schema = strawberry.Schema(query=Query, mutation=Mutation).as_str()
+
+    assert "systemModelView(" in schema
+    assert "model: String!" in schema
+    assert "use: SystemModelSchemaUse!" in schema
+    assert "name: String!" in schema
+    assert "type SystemModelViewType" in schema

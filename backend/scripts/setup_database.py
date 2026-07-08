@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import secrets
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -33,6 +34,7 @@ from app.domains.system.models import (  # noqa: F401
     SystemModelField,
     SystemModelSchema,
 )
+from app.domains.users.service.auth_service import AuthService
 from app.domains.users.models import UserType, UserUser  # noqa: F401
 
 DATA_DIR = BACKEND_DIR / "app" / "domains" / "system" / "data"
@@ -153,6 +155,14 @@ def _int_or_none(value: Any) -> int | None:
     return int(value)
 
 
+def _hash_password(password: str | None) -> str:
+    return AuthService.hash_password(password or "ChangeMe123!")
+
+
+def _hash_internal_password() -> str:
+    return AuthService.hash_password(secrets.token_urlsafe(64))
+
+
 def _currency_payload(
     record: dict[str, Any], bot_id: int, now: datetime
 ) -> dict[str, Any]:
@@ -180,10 +190,10 @@ async def _load_bot(session: AsyncSession, now: datetime) -> UserUser:
 
     bot = UserUser(
         name=bot_record["name"],
-        email=bot_record.get("email") or "app.bot@app.local",
-        password=bot_record.get("password") or "ChangeMe123!",
+        email=bot_record.get("email") or "app.bot@internal.local",
+        password=_hash_internal_password(),
         user_type=UserType(bot_record.get("type") or UserType.SYSTEM.value),
-        active=_bool_or_default(bot_record.get("active"), True),
+        active=False,
         created_at=now,
         updated_at=now,
     )
@@ -236,7 +246,7 @@ async def _load_remaining_users(
                 name=record["name"],
                 email=record.get("email")
                 or f"{record['name'].lower().replace(' ', '.')}@app.local",
-                password=record.get("password") or "ChangeMe123!",
+                password=_hash_password(record.get("password")),
                 user_type=UserType(record.get("type") or UserType.HUMAN.value),
                 active=_bool_or_default(record.get("active"), True),
                 lang_id=lang.id if lang else None,

@@ -174,6 +174,48 @@ query SystemModelByName($name: String!) {
 }
 ```
 
+Obtiene la definición completa de vista de un modelo y los registros necesarios
+para renderizarla. Une `system.model`, `system.model.schema` y los registros del
+objeto solicitado.
+
+```graphql
+query SystemModelView($model: String!, $use: SystemModelSchemaUse!, $name: String!) {
+  systemModelView(model: $model, use: $use, name: $name) {
+    model
+    records
+  }
+}
+```
+
+Ejemplo de variables:
+
+```json
+{
+  "model": "user.user",
+  "use": "view",
+  "name": "default"
+}
+```
+
+La respuesta tiene esta forma:
+
+```json
+{
+  "model": {
+    "name": "user.user",
+    "label": {
+      "es": "Usuarios",
+      "en": "Users"
+    },
+    "groupBy": "user_type",
+    "user_type": [],
+    "tags": [],
+    "schema": []
+  },
+  "records": []
+}
+```
+
 ## Mensajes
 
 Lista mensajes ordenados por `date` descendente.

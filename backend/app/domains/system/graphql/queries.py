@@ -16,7 +16,9 @@ from app.domains.system.graphql.mappers import (
 )
 from app.domains.system.graphql.types import (
     SystemMessageType,
+    SystemModelSchemaUseType,
     SystemModelType,
+    SystemModelViewType,
     SystemNotificationType,
     SystemPendingCountsType,
     SystemTaskType,
@@ -73,6 +75,16 @@ class SystemQuery:
     async def system_model_by_name(self, name: str) -> SystemModelType:
         model = await SystemModelService.get_by_name(name)
         return system_model_to_type(model)
+
+    @strawberry.field(permission_classes=[IsAuthenticated])
+    async def system_model_view(
+        self,
+        model: str,
+        use: SystemModelSchemaUseType,
+        name: str,
+    ) -> SystemModelViewType:
+        view = await SystemModelService.get_view(model, use, name)
+        return SystemModelViewType(model=view["model"], records=view["records"])
 
     @strawberry.field(permission_classes=[IsAuthenticated])
     async def system_messages(self) -> list[SystemMessageType]:
@@ -163,9 +175,7 @@ class SystemQuery:
         user = await get_current_user(info)
         whatsapp = await SystemWhatsAppService.get_by_uuid(whatsapp_uuid)
         _ensure_whatsapp_belongs_to_company(whatsapp, user.company_id)
-        messages = await SystemWhatsAppMessageService.get_all_by_whatsapp(
-            whatsapp_uuid
-        )
+        messages = await SystemWhatsAppMessageService.get_all_by_whatsapp(whatsapp_uuid)
         return [system_whatsapp_message_to_type(message) for message in messages]
 
     @strawberry.field(permission_classes=[IsAuthenticated])

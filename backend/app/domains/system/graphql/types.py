@@ -67,6 +67,12 @@ class SystemModelType:
 
 
 @strawberry.type
+class SystemModelViewType:
+    model: JSON
+    records: list[JSON]
+
+
+@strawberry.type
 class SystemMessageType:
     uuid: uuid_lib.UUID
     status: SystemMessageStatus
