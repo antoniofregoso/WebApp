@@ -72,7 +72,7 @@ export function FormView({ data = {}, lang = 'en', options = {} }) {
     const isMainModel = !options.recordModel || options.recordModel === data?.model?.name;
     const schema = isMainModel ? (data?.model?.schema ?? []) : inferSchema(record);
     const layout = getFormLayout(schema);
-    const context = { tags: data?.model?.tags ?? [] };
+    const context = { tags: data?.model?.tags ?? [], status: data?.model?.status ?? [] };
     const title = isMainModel ? (data?.model?.label?.[lang] ?? data?.model?.name ?? '') : (options.recordModel ?? record.model ?? '');
     const setValue = (name, value) => setRecord((current) => ({ ...current, [name]: value }));
     const labels = lang === 'es'

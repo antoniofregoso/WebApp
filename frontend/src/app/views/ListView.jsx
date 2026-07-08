@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 
 import { FieldControl } from '../components/fields/index.js';
 import { faBoxArchive, faGripVertical, faTrash } from '../components/icon.js';
-import { COLOR_CLASS, COLOR_FALLBACK, NUMERIC_TYPES, buildRecordUrl } from '../utils/index.js';
+import { NUMERIC_TYPES, buildRecordUrl } from '../utils/index.js';
 import { makeSortable } from '../utils/sortable.js';
 import { CreateModal, Icon, ViewHeader } from './ViewPrimitives.jsx';
 
@@ -28,12 +28,8 @@ function sortValue(field, value) {
 function Cell({ field, record, data, lang }) {
     const value = record[field.name];
     if (field.name === 'name' && value) return <a href={buildRecordUrl(data?.model?.name, record.uuid)} class="font-medium text-[var(--dash-accent)] hover:underline">{value}</a>;
-    if (field.type === 'selection') {
-        const option = (data?.model?.status ?? []).find((item) => item.value === value);
-        return value ? <span class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${COLOR_CLASS[option?.color] ?? COLOR_FALLBACK}`}>{option?.[lang] ?? value}</span> : <span class="text-[var(--dash-text-soft)]">—</span>;
-    }
     return <FieldControl field={field} value={value} onChange={() => {}} lang={lang} readOnly
-        context={{ tags: data?.model?.tags ?? [], view: 'list' }} />;
+        context={{ tags: data?.model?.tags ?? [], status: data?.model?.status ?? [], view: 'list' }} />;
 }
 
 function SortIcon({ direction }) {

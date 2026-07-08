@@ -10,7 +10,7 @@ from app.domains.system.storage.local import LocalFilestore
 def get_attachment_storage() -> LocalFilestore:
     namespace = (
         settings.FILESTORE_NAMESPACE
-        or make_url(settings.DB_CONFIG).database
+        or make_url(settings.DATABASE_URL).database
         or "default"
     )
     return LocalFilestore(

@@ -11,30 +11,51 @@
         "fields": [
             {
                 "name": "name",
-                "sequence": 10,
                 "type": "string",
                 "required": true,
                 "readonly": true,
-                "placeholder": { "es": "Ej. system.task", "en": "E.g. system.task" },
+                "placeholder": { "es": "Ej. system.company", "en": "E.g. system.company" },
                 "help": { "es": "Identificador técnico único del modelo", "en": "Unique technical identifier of the model" }
             },
             {
                 "name": "label",
-                "sequence": 20,
                 "type": "string",
                 "required": true,
                 "readonly": false,
-                "placeholder": { "es": "Ej. Tareas", "en": "E.g. Tasks" },
-                "help": { "es": "Nombre visible del modelo", "en": "Display name of the model" }
+                "placeholder": { "es": "Nombre visible", "en": "Display name" },
+                "help": { "es": "Nombre del modelo mostrado en las vistas", "en": "Model name shown across views" }
             },
             {
                 "name": "group_by",
-                "sequence": 30,
                 "type": "string",
                 "required": false,
                 "readonly": false,
-                "placeholder": { "es": "Ej. status", "en": "E.g. status" },
-                "help": { "es": "Campo usado para agrupar registros en la vista kanban", "en": "Field used to group records in the kanban view" }
+                "placeholder": { "es": "Campo de agrupación", "en": "Group-by field" },
+                "help": { "es": "Nombre del campo usado para agrupar registros en la vista Kanban", "en": "Name of the field used to group records in the Kanban view" }
+            },
+            {
+                "name": "group_by_values",
+                "type": "json",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Valores de agrupación", "en": "Group-by values" },
+                "help": { "es": "Valores, colores y etiquetas de las columnas de agrupación", "en": "Values, colors and labels for the grouping columns" }
+            },
+            {
+                "name": "fields",
+                "type": "one2many_list",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Campos", "en": "Fields" },
+                "help": { "es": "Campos que componen el modelo", "en": "Fields that make up the model" }
+            },
+            {
+                "name": "schemas",
+                "type": "one2many_list",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Vistas", "en": "Views" },
+                "help": { "es": "Definiciones de vista (lista, kanban, formulario, calendario) del modelo", "en": "View definitions (list, kanban, form, calendar) of the model" }
             }
         ]
     },
@@ -50,7 +71,6 @@
         "fields": [
             {
                 "name": "name",
-                "sequence": 10,
                 "type": "string",
                 "required": true,
                 "readonly": false,
@@ -59,8 +79,7 @@
             },
             {
                 "name": "description",
-                "sequence": 20,
-                "type": "text",
+                "type": "html",
                 "required": false,
                 "readonly": false,
                 "placeholder": { "es": "Descripción de la aplicación", "en": "App description" },
@@ -68,7 +87,6 @@
             },
             {
                 "name": "active",
-                "sequence": 30,
                 "type": "boolean",
                 "required": false,
                 "readonly": false,
@@ -77,12 +95,51 @@
             },
             {
                 "name": "public",
-                "sequence": 40,
                 "type": "boolean",
                 "required": false,
                 "readonly": false,
                 "placeholder": { "es": "Pública", "en": "Public" },
                 "help": { "es": "Indica si la aplicación es de acceso público", "en": "Whether the app is publicly accessible" }
+            },
+            {
+                "name":"schema_org",
+                "type":"json",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Schema.org", "en": "Schema.org" },
+                "help": { "es": "Datos estructurados en formato Schema.org para buscadores web", "en": "Structured data in Schema.org format for web search engines" }
+            },
+            {
+                "name":"settings_ids",
+                "type":"one2many_list",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Configuraciones", "en": "Settings" },
+                "help": { "es": "Configuraciones de la aplicación", "en": "App settings" }
+            }
+        ]
+    },
+    {
+        "name":"system.app.settings",
+        "label": {
+            "es": "Configuraciones de la aplicación",
+            "en": "App settings"
+        },
+        "group_by": false,
+        "group_by_values":[],
+        "tags":[],
+        "fields":[
+            {
+                "name":"key",
+                "type":"string",
+                "required": true,
+                "readonly": false
+            },
+            {
+                "name":"value",
+                "type":"string",
+                "required": true,
+                "readonly": false
             }
         ]
     },
@@ -98,7 +155,6 @@
         "fields": [
             {
                 "name": "name",
-                "sequence": 10,
                 "type": "string",
                 "required": true,
                 "readonly": false,
@@ -107,7 +163,6 @@
             },
             {
                 "name": "active",
-                "sequence": 20,
                 "type": "boolean",
                 "required": false,
                 "readonly": false,
@@ -117,7 +172,7 @@
             {
                 "name": "color",
                 "sequence": 30,
-                "type": "string",
+                "type": "color",
                 "required": false,
                 "readonly": false,
                 "placeholder": { "es": "Color", "en": "Color" },
@@ -125,7 +180,6 @@
             },
             {
                 "name": "logo_url",
-                "sequence": 40,
                 "type": "image",
                 "required": false,
                 "readonly": false,
@@ -134,7 +188,6 @@
             },
             {
                 "name": "currency_id",
-                "sequence": 50,
                 "type": "many2one",
                 "required": false,
                 "readonly": false,
@@ -143,16 +196,22 @@
             },
             {
                 "name": "country_id",
-                "sequence": 60,
                 "type": "many2one",
-                "required": false,
+                "required": true,
                 "readonly": false,
                 "placeholder": { "es": "Selecciona un país", "en": "Select a country" },
                 "help": { "es": "País de la empresa", "en": "Company's country" }
             },
             {
+                "name":"state_id",
+                "type": "many2one",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Selecciona un estado", "en": "Select a state" },
+                "help": { "es": "Estado de la empresa", "en": "Company's state" }
+            },
+            {
                 "name": "lang_id",
-                "sequence": 70,
                 "type": "many2one",
                 "required": false,
                 "readonly": false,
@@ -161,7 +220,6 @@
             },
             {
                 "name": "street",
-                "sequence": 80,
                 "type": "string",
                 "required": false,
                 "readonly": false,
@@ -170,7 +228,6 @@
             },
             {
                 "name": "street2",
-                "sequence": 90,
                 "type": "string",
                 "required": false,
                 "readonly": false,
@@ -179,7 +236,6 @@
             },
             {
                 "name": "city",
-                "sequence": 100,
                 "type": "string",
                 "required": false,
                 "readonly": false,
@@ -188,7 +244,6 @@
             },
             {
                 "name": "zip",
-                "sequence": 110,
                 "type": "string",
                 "required": false,
                 "readonly": false,
@@ -197,7 +252,6 @@
             },
             {
                 "name": "phone",
-                "sequence": 120,
                 "type": "string",
                 "required": false,
                 "readonly": false,
@@ -206,7 +260,6 @@
             },
             {
                 "name": "email",
-                "sequence": 130,
                 "type": "string",
                 "required": false,
                 "readonly": false,
@@ -215,7 +268,6 @@
             },
             {
                 "name": "website",
-                "sequence": 140,
                 "type": "string",
                 "required": false,
                 "readonly": false,
@@ -224,12 +276,19 @@
             },
             {
                 "name": "vat",
-                "sequence": 150,
                 "type": "string",
                 "required": false,
                 "readonly": false,
                 "placeholder": { "es": "RFC / VAT", "en": "Tax ID / VAT" },
                 "help": { "es": "Identificador fiscal de la empresa", "en": "Company's tax identifier" }
+            },
+            {
+                "name":"users",
+                "type": "many2many_pills",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Usuarios", "en": "Users" },
+                "help": { "es": "Usuarios asociados", "en": "Associated users" }
             }
         ]
     },
@@ -245,7 +304,6 @@
         "fields": [
             {
                 "name": "code",
-                "sequence": 10,
                 "type": "string",
                 "required": true,
                 "readonly": true,
@@ -254,7 +312,6 @@
             },
             {
                 "name": "name",
-                "sequence": 20,
                 "type": "string",
                 "required": true,
                 "readonly": false,
@@ -263,7 +320,6 @@
             },
             {
                 "name": "phone_code",
-                "sequence": 30,
                 "type": "string",
                 "required": false,
                 "readonly": false,
@@ -272,7 +328,6 @@
             },
             {
                 "name": "currency_id",
-                "sequence": 40,
                 "type": "many2one",
                 "required": false,
                 "readonly": false,
@@ -281,12 +336,55 @@
             },
             {
                 "name": "timezones",
-                "sequence": 50,
                 "type": "many2many",
                 "required": false,
                 "readonly": false,
                 "placeholder": { "es": "Zonas horarias", "en": "Timezones" },
                 "help": { "es": "Zonas horarias asociadas al país", "en": "Timezones associated with the country" }
+            },
+            {
+                "name":"states",
+                "type": "one2many_list",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Estados", "en": "States" },
+                "help": { "es": "Estados o provincias del país", "en": "States or provinces of the country" }
+            }
+        ]
+    },
+    {
+        "name":"system.country.state",
+        "label": {
+            "es": "Estados",
+            "en": "States"
+        },
+        "group_by": false,
+        "group_by_values": [],
+        "tags": [],
+        "fields": [
+            {
+                "name": "name",
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Nombre del estado", "en": "State name" },
+                "help": { "es": "Nombre del estado", "en": "State name" }
+            },
+            {
+                "name": "code",
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Código del estado", "en": "State code" },
+                "help": { "es": "Código del estado", "en": "State code" }
+            },
+            {
+                "name": "country_id",
+                "type": "many2one",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Selecciona un país", "en": "Select a country" },
+                "help": { "es": "País al que pertenece el estado", "en": "Country this state belongs to" }
             }
         ]
     },
@@ -302,7 +400,6 @@
         "fields": [
             {
                 "name": "name",
-                "sequence": 10,
                 "type": "string",
                 "required": true,
                 "readonly": false,
@@ -311,7 +408,6 @@
             },
             {
                 "name": "code",
-                "sequence": 20,
                 "type": "string",
                 "required": true,
                 "readonly": true,
@@ -320,7 +416,6 @@
             },
             {
                 "name": "iso_numeric",
-                "sequence": 30,
                 "type": "integer",
                 "required": true,
                 "readonly": true,
@@ -329,7 +424,6 @@
             },
             {
                 "name": "symbol",
-                "sequence": 40,
                 "type": "string",
                 "required": true,
                 "readonly": false,
@@ -338,7 +432,6 @@
             },
             {
                 "name": "currency_unit_label",
-                "sequence": 50,
                 "type": "string",
                 "required": false,
                 "readonly": false,
@@ -347,7 +440,6 @@
             },
             {
                 "name": "currency_subunit_label",
-                "sequence": 60,
                 "type": "string",
                 "required": false,
                 "readonly": false,
@@ -356,7 +448,6 @@
             },
             {
                 "name": "rounding",
-                "sequence": 70,
                 "type": "decimal",
                 "required": false,
                 "readonly": false,
@@ -365,8 +456,11 @@
             },
             {
                 "name": "position",
-                "sequence": 80,
-                "type": "string",
+                "type": "selection",
+                "selection_values": [
+                    { "value": "BEFORE", "es": "Antes del monto", "en": "Before the amount" },
+                    { "value": "AFTER", "es": "Después del monto", "en": "After the amount" }
+                ],
                 "required": false,
                 "readonly": false,
                 "placeholder": { "es": "Posición del símbolo", "en": "Symbol position" },
@@ -374,7 +468,6 @@
             },
             {
                 "name": "active",
-                "sequence": 90,
                 "type": "boolean",
                 "required": false,
                 "readonly": false,
@@ -395,7 +488,6 @@
         "fields": [
             {
                 "name": "name",
-                "sequence": 10,
                 "type": "string",
                 "required": true,
                 "readonly": false,
@@ -404,7 +496,6 @@
             },
             {
                 "name": "code",
-                "sequence": 20,
                 "type": "string",
                 "required": true,
                 "readonly": true,
@@ -413,7 +504,6 @@
             },
             {
                 "name": "iso_code",
-                "sequence": 30,
                 "type": "string",
                 "required": true,
                 "readonly": true,
@@ -422,7 +512,6 @@
             },
             {
                 "name": "url_code",
-                "sequence": 40,
                 "type": "string",
                 "required": true,
                 "readonly": true,
@@ -431,7 +520,6 @@
             },
             {
                 "name": "date_format",
-                "sequence": 50,
                 "type": "string",
                 "required": false,
                 "readonly": false,
@@ -440,7 +528,6 @@
             },
             {
                 "name": "time_format",
-                "sequence": 60,
                 "type": "string",
                 "required": false,
                 "readonly": false,
@@ -449,7 +536,6 @@
             },
             {
                 "name": "week_start",
-                "sequence": 70,
                 "type": "integer",
                 "required": false,
                 "readonly": false,
@@ -458,8 +544,7 @@
             },
             {
                 "name": "flag",
-                "sequence": 80,
-                "type": "image",
+                "type": "string",
                 "required": false,
                 "readonly": false,
                 "placeholder": { "es": "Bandera", "en": "Flag" },
@@ -467,7 +552,6 @@
             },
             {
                 "name": "active",
-                "sequence": 90,
                 "type": "boolean",
                 "required": false,
                 "readonly": false,
@@ -488,7 +572,6 @@
         "fields": [
             {
                 "name": "name",
-                "sequence": 10,
                 "type": "string",
                 "required": true,
                 "readonly": false,
@@ -497,7 +580,6 @@
             },
             {
                 "name": "code",
-                "sequence": 20,
                 "type": "string",
                 "required": true,
                 "readonly": true,
@@ -506,7 +588,6 @@
             },
             {
                 "name": "offset",
-                "sequence": 30,
                 "type": "integer",
                 "required": false,
                 "readonly": false,
@@ -515,7 +596,6 @@
             },
             {
                 "name": "countries",
-                "sequence": 40,
                 "type": "many2many",
                 "required": false,
                 "readonly": false,
@@ -530,7 +610,7 @@
             "es": "Mensajes",
             "en": "Messages"
         },
-        "group_by": "status",
+        "group_by": "status", 
         "group_by_values": [
             {
                 "value": "sent",
@@ -597,7 +677,6 @@
         "fields": [
             {
                 "name": "subject",
-                "sequence": 10,
                 "type": "string",
                 "required": true,
                 "readonly": false,
@@ -606,7 +685,6 @@
             },
             {
                 "name": "message",
-                "sequence": 20,
                 "type": "html",
                 "required": true,
                 "readonly": false,
@@ -615,16 +693,14 @@
             },
             {
                 "name": "status",
-                "sequence": 30,
-                "type": "string",
-                "required": false,
+                "type": "status_badge",
+                "required": true,
                 "readonly": true,
                 "placeholder": { "es": "Estado", "en": "Status" },
                 "help": { "es": "Estado actual del mensaje", "en": "Current status of the message" }
             },
             {
                 "name": "date",
-                "sequence": 40,
                 "type": "datetime",
                 "required": false,
                 "readonly": true,
@@ -633,9 +709,8 @@
             },
             {
                 "name": "from_user_id",
-                "sequence": 50,
-                "type": "many2one_avatar",
-                "required": false,
+                "type": "many2one",
+                "required": true,
                 "readonly": true,
                 "placeholder": { "es": "Remitente", "en": "Sender" },
                 "help": { "es": "Usuario que envía el mensaje", "en": "User who sent the message" }
@@ -682,7 +757,6 @@
         "fields": [
             {
                 "name": "title",
-                "sequence": 10,
                 "type": "string",
                 "required": true,
                 "readonly": false,
@@ -691,8 +765,7 @@
             },
             {
                 "name": "message",
-                "sequence": 20,
-                "type": "text",
+                "type": "html",
                 "required": true,
                 "readonly": false,
                 "placeholder": { "es": "Mensaje", "en": "Message" },
@@ -700,8 +773,7 @@
             },
             {
                 "name": "status",
-                "sequence": 30,
-                "type": "string",
+                "type": "status_badge",
                 "required": false,
                 "readonly": true,
                 "placeholder": { "es": "Estado", "en": "Status" },
@@ -718,7 +790,6 @@
             },
             {
                 "name": "read",
-                "sequence": 50,
                 "type": "boolean",
                 "required": false,
                 "readonly": false,
@@ -727,7 +798,6 @@
             },
             {
                 "name": "active",
-                "sequence": 60,
                 "type": "boolean",
                 "required": false,
                 "readonly": false,
@@ -736,8 +806,7 @@
             },
             {
                 "name": "color",
-                "sequence": 70,
-                "type": "string",
+                "type": "color",
                 "required": false,
                 "readonly": false,
                 "placeholder": { "es": "Color", "en": "Color" },
@@ -745,7 +814,6 @@
             },
             {
                 "name": "user_id",
-                "sequence": 80,
                 "type": "many2one_avatar",
                 "required": false,
                 "readonly": false,
@@ -754,7 +822,6 @@
             },
             {
                 "name": "users",
-                "sequence": 90,
                 "type": "many2many_pills",
                 "required": false,
                 "readonly": false,
@@ -801,7 +868,6 @@
         "fields": [
             {
                 "name": "title",
-                "sequence": 10,
                 "type": "string",
                 "required": true,
                 "readonly": false,
@@ -810,17 +876,15 @@
             },
             {
                 "name": "description",
-                "sequence": 20,
-                "type": "text",
-                "required": false,
+                "type": "html",
+                "required": true,
                 "readonly": false,
                 "placeholder": { "es": "Descripción", "en": "Description" },
                 "help": { "es": "Descripción detallada de la tarea", "en": "Detailed description of the task" }
             },
             {
                 "name": "status",
-                "sequence": 30,
-                "type": "string",
+                "type": "status_badge",
                 "required": false,
                 "readonly": false,
                 "placeholder": { "es": "Estado", "en": "Status" },
@@ -828,7 +892,6 @@
             },
             {
                 "name": "priority",
-                "sequence": 40,
                 "type": "string",
                 "required": false,
                 "readonly": false,
@@ -837,7 +900,6 @@
             },
             {
                 "name": "color",
-                "sequence": 50,
                 "type": "string",
                 "required": false,
                 "readonly": false,
@@ -846,7 +908,6 @@
             },
             {
                 "name": "date_assign",
-                "sequence": 60,
                 "type": "datetime",
                 "required": false,
                 "readonly": false,
@@ -855,7 +916,6 @@
             },
             {
                 "name": "date_due",
-                "sequence": 70,
                 "type": "datetime",
                 "required": false,
                 "readonly": false,
@@ -864,7 +924,6 @@
             },
             {
                 "name": "user_id",
-                "sequence": 80,
                 "type": "many2one_avatar",
                 "required": false,
                 "readonly": false,
@@ -885,7 +944,6 @@
         "fields": [
             {
                 "name": "company_id",
-                "sequence": 10,
                 "type": "many2one",
                 "required": true,
                 "readonly": false,
@@ -894,7 +952,6 @@
             },
             {
                 "name": "name",
-                "sequence": 20,
                 "type": "string",
                 "required": true,
                 "readonly": false,
@@ -903,7 +960,6 @@
             },
             {
                 "name": "active",
-                "sequence": 30,
                 "type": "boolean",
                 "required": false,
                 "readonly": false,
@@ -912,7 +968,6 @@
             },
             {
                 "name": "phone_number",
-                "sequence": 40,
                 "type": "string",
                 "required": true,
                 "readonly": false,
@@ -921,7 +976,6 @@
             },
             {
                 "name": "phone_number_id",
-                "sequence": 50,
                 "type": "string",
                 "required": true,
                 "readonly": false,
@@ -930,7 +984,6 @@
             },
             {
                 "name": "business_account_id",
-                "sequence": 60,
                 "type": "string",
                 "required": true,
                 "readonly": false,
@@ -939,7 +992,6 @@
             },
             {
                 "name": "api_version",
-                "sequence": 70,
                 "type": "string",
                 "required": false,
                 "readonly": false,
@@ -948,12 +1000,325 @@
             },
             {
                 "name": "webhook_url",
-                "sequence": 80,
                 "type": "string",
                 "required": false,
                 "readonly": true,
                 "placeholder": { "es": "URL del webhook", "en": "Webhook URL" },
                 "help": { "es": "URL usada para recibir eventos de WhatsApp", "en": "URL used to receive WhatsApp events" }
+            },
+            {
+                "name": "access_token",
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Token de acceso", "en": "Access token" },
+                "help": { "es": "Token de acceso permanente de la API de Meta (credencial sensible, no se muestra una vez guardada)", "en": "Permanent access token for the Meta API (sensitive credential, not shown once saved)" }
+            },
+            {
+                "name": "verify_token",
+                "type": "string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Token de verificación", "en": "Verify token" },
+                "help": { "es": "Token que Meta usa para verificar la suscripción del webhook", "en": "Token Meta uses to verify the webhook subscription" }
+            },
+            {
+                "name": "app_secret",
+                "type": "password",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Secreto de la aplicación", "en": "App secret" },
+                "help": { "es": "Secreto de la app de Meta usado para validar la firma de los webhooks (credencial sensible, no se muestra una vez guardada)", "en": "Meta app secret used to validate webhook signatures (sensitive credential, not shown once saved)" }
+            }
+        ]
+    },
+    {
+        "name":"system.whatsapp.template",
+        "label": {
+            "es": "Plantilla de WhatsApp",
+            "en": "WhatsApp Template"
+        },
+        "group_by": "status",
+        "group_by_values": [
+
+
+            {
+                "value": "approved",
+                "color": "green",
+                "es": "Aprobada",
+                "en": "Approved"
+            },
+            {
+                "value": "pending",
+                "color": "purple",
+                "es": "Pendiente",
+                "en": "Pending"
+            },
+            {
+                "value": "rejected",
+                "color": "red",
+                "es": "Rechazada",
+                "en": "Rejected"
+            },
+            {
+                "value": "disabled",
+                "color": "zinc",
+                "es": "Desactivada",
+                "en": "Disabled"
+            },
+            {
+                "value": "paused",
+                "color": "yellow",
+                "es": "Pausada",
+                "en": "Paused"
+            }
+        ],
+        "tags": [],
+        "fields": [
+            {
+                "name": "whatsapp_id",
+                "type": "many2one",
+                "required": true,
+                "readonly": true,
+                "placeholder": { "es": "Selecciona una configuración de WhatsApp", "en": "Select a WhatsApp configuration" },
+                "help": { "es": "Configuración de WhatsApp dueña de esta plantilla", "en": "WhatsApp configuration this template belongs to" }
+            },
+            {
+                "name": "name",
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Nombre de la plantilla", "en": "Template name" },
+                "help": { "es": "Nombre de la plantilla registrado en Meta", "en": "Template name as registered in Meta" }
+            },
+            {
+                "name": "language",
+                "type": "string",
+                "required": true,
+                "readonly": false,
+                "placeholder": { "es": "Ej. es_MX", "en": "E.g. es_MX" },
+                "help": { "es": "Código de idioma/localización de la plantilla", "en": "Template's language/locale code" }
+            },
+            {
+                "name": "category",
+                "type": "selection",
+                "selection_values": [
+                    { "value": "marketing", "es": "Marketing", "en": "Marketing" },
+                    { "value": "utility", "es": "Utilidad", "en": "Utility" },
+                    { "value": "authentication", "es": "Autenticación", "en": "Authentication" }
+                ],
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Categoría", "en": "Category" },
+                "help": { "es": "Categoría de la plantilla definida por Meta", "en": "Template category as defined by Meta" }
+            },
+            {
+                "name": "status",
+                "type": "status_badge",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Estado", "en": "Status" },
+                "help": { "es": "Estado de revisión de la plantilla en Meta", "en": "Template's review status in Meta" }
+            },
+            {
+                "name": "external_template_id",
+                "type": "string",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "ID de la plantilla en Meta", "en": "Meta template ID" },
+                "help": { "es": "Identificador de la plantilla asignado por Meta", "en": "Template identifier assigned by Meta" }
+            },
+            {
+                "name": "namespace",
+                "type": "string",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Namespace", "en": "Namespace" },
+                "help": { "es": "Namespace de la cuenta de WhatsApp Business usado al enviar la plantilla", "en": "WhatsApp Business account namespace used when sending the template" }
+            },
+            {
+                "name": "components",
+                "type": "json",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Componentes", "en": "Components" },
+                "help": { "es": "Encabezado, cuerpo, pie y botones de la plantilla, con sus variables", "en": "Template header, body, footer and buttons, with their variables" }
+            },
+            {
+                "name": "rejected_reason",
+                "type": "string",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Motivo de rechazo", "en": "Rejection reason" },
+                "help": { "es": "Motivo indicado por Meta cuando la plantilla es rechazada", "en": "Reason Meta gives when the template is rejected" }
+            },
+            {
+                "name": "active",
+                "type": "boolean",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es": "Activa", "en": "Active" },
+                "help": { "es": "Indica si la plantilla está disponible para iniciar conversaciones", "en": "Whether the template is available to start conversations" }
+            }
+        ]
+    },
+    {
+        "name":"system.whatsapp.message",
+        "label": {
+            "es": "Mensaje de WhatsApp",
+            "en": "WhatsApp Message"
+        },
+        "group_by": "status",
+        "group_by_values": [
+
+            {
+                "value": "queued",
+                "color": "purple",
+                "es": "En cola",
+                "en": "Queued"
+            },
+            {
+                "value": "sent",
+                "color": "green",
+                "es": "Enviado",
+                "en": "Sent"
+            },
+            {
+                "value": "delivered",
+                "color": "zinc",
+                "es": "Entregado",
+                "en": "Delivered"
+            },
+            {
+                "value": "read",
+                "color": "blue",
+                "es": "Leído",
+                "en": "Read"
+            },
+            {
+                "value": "failed",
+                "color": "red",
+                "es": "Fallido",
+                "en": "Failed"
+            }
+        ],
+        "tags": [],
+        "fields": [
+            {
+                "name": "whatsapp_id",
+                "type": "many2one",
+                "required": true,
+                "readonly": true,
+                "placeholder": { "es": "Selecciona una configuración de WhatsApp", "en": "Select a WhatsApp configuration" },
+                "help": { "es": "Configuración de WhatsApp por la que se envió o recibió el mensaje", "en": "WhatsApp configuration the message was sent or received through" }
+            },
+            {
+                "name": "direction",
+                "type": "selection",
+                "selection_values": [
+                    { "value": "inbound", "es": "Entrante", "en": "Inbound" },
+                    { "value": "outbound", "es": "Saliente", "en": "Outbound" }
+                ],
+                "required": true,
+                "readonly": true,
+                "placeholder": { "es": "Dirección", "en": "Direction" },
+                "help": { "es": "Indica si el mensaje fue enviado o recibido", "en": "Whether the message was sent or received" }
+            },
+            {
+                "name": "status",
+                "type": "status_badge",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Estado", "en": "Status" },
+                "help": { "es": "Estado actual del mensaje reportado por Meta", "en": "Current message status reported by Meta" }
+            },
+            {
+                "name": "from_number",
+                "type": "string",
+                "required": true,
+                "readonly": true,
+                "placeholder": { "es": "Número remitente", "en": "From number" },
+                "help": { "es": "Número de teléfono que envía el mensaje", "en": "Phone number that sent the message" }
+            },
+            {
+                "name": "to_number",
+                "type": "string",
+                "required": true,
+                "readonly": true,
+                "placeholder": { "es": "Número destinatario", "en": "To number" },
+                "help": { "es": "Número de teléfono que recibe el mensaje", "en": "Phone number that received the message" }
+            },
+            {
+                "name": "message_type",
+                "type": "string",
+                "required": true,
+                "readonly": true,
+                "placeholder": { "es": "Tipo de mensaje", "en": "Message type" },
+                "help": { "es": "Tipo de contenido del mensaje (texto, plantilla, imagen, etc.)", "en": "Message content type (text, template, image, etc.)" }
+            },
+            {
+                "name": "body",
+                "type": "text",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Contenido del mensaje", "en": "Message body" },
+                "help": { "es": "Texto del mensaje", "en": "Message text content" }
+            },
+            {
+                "name": "template_id",
+                "type": "many2one",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Plantilla usada", "en": "Template used" },
+                "help": { "es": "Plantilla aprobada usada para iniciar la conversación", "en": "Approved template used to start the conversation" }
+            },
+            {
+                "name": "model_id",
+                "type": "many2one",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Modelo relacionado", "en": "Related model" },
+                "help": { "es": "Modelo del registro relacionado con este mensaje", "en": "Model of the record related to this message" }
+            },
+            {
+                "name": "record_uuid",
+                "type": "string",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Registro relacionado", "en": "Related record" },
+                "help": { "es": "Identificador del registro relacionado con este mensaje", "en": "Identifier of the record related to this message" }
+            },
+            {
+                "name": "external_message_id",
+                "type": "string",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "ID del mensaje en Meta", "en": "Meta message ID" },
+                "help": { "es": "Identificador del mensaje asignado por la API de Meta", "en": "Message identifier assigned by the Meta API" }
+            },
+            {
+                "name": "payload",
+                "type": "json",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Payload", "en": "Payload" },
+                "help": { "es": "Payload completo enviado o recibido de la API de Meta", "en": "Full payload sent to or received from the Meta API" }
+            },
+            {
+                "name": "date",
+                "type": "datetime",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Fecha", "en": "Date" },
+                "help": { "es": "Fecha en que se envió o recibió el mensaje", "en": "Date the message was sent or received" }
+            },
+            {
+                "name": "error_message",
+                "type": "string",
+                "required": false,
+                "readonly": true,
+                "placeholder": { "es": "Error", "en": "Error" },
+                "help": { "es": "Detalle del error reportado por Meta, si el envío falló", "en": "Error detail reported by Meta, if the send failed" }
             }
         ]
     },
@@ -979,7 +1344,7 @@
             },
             {
                 "value": "AIAGENT",
-                "color": "purple",
+                "color": "indigo",
                 "es": "Agente IA",
                 "en": "AI Agent"
             }
@@ -988,7 +1353,6 @@
         "fields": [
             {
                 "name": "avatar_url",
-                "sequence": 10,
                 "type": "image",
                 "required": false,
                 "readonly": false,
@@ -997,7 +1361,6 @@
             },
             {
                 "name": "name",
-                "sequence": 20,
                 "type": "string",
                 "required": true,
                 "readonly": false,
@@ -1006,7 +1369,6 @@
             },
             {
                 "name": "email",
-                "sequence": 30,
                 "type": "string",
                 "required": true,
                 "readonly": false,
@@ -1015,8 +1377,12 @@
             },
             {
                 "name": "user_type",
-                "sequence": 40,
-                "type": "string",
+                "type": "selection",
+                "selection_values": [
+                    { "value": "HUMAN", "es": "Humano", "en": "Human" },
+                    { "value": "SYSTEM", "es": "Sistema", "en": "System" },
+                    { "value": "AIAGENT", "es": "Agente IA", "en": "AI Agent" }
+                ],
                 "required": false,
                 "readonly": true,
                 "placeholder": { "es": "Tipo de usuario", "en": "User type" },
@@ -1024,7 +1390,6 @@
             },
             {
                 "name": "company_id",
-                "sequence": 50,
                 "type": "many2one",
                 "required": false,
                 "readonly": false,
@@ -1033,7 +1398,6 @@
             },
             {
                 "name": "lang_id",
-                "sequence": 60,
                 "type": "many2one",
                 "required": false,
                 "readonly": false,
@@ -1042,8 +1406,12 @@
             },
             {
                 "name": "theme",
-                "sequence": 70,
-                "type": "string",
+                "type": "selection",
+                "selection_values": [
+                    { "value": "light", "es": "Claro", "en": "Light" },
+                    { "value": "dark", "es": "Oscuro", "en": "Dark" },
+                    { "value": "system", "es": "Sistema", "en": "System" }
+                ],
                 "required": false,
                 "readonly": false,
                 "placeholder": { "es": "Tema", "en": "Theme" },
@@ -1051,7 +1419,6 @@
             },
             {
                 "name": "active",
-                "sequence": 80,
                 "type": "boolean",
                 "required": false,
                 "readonly": false,
@@ -1085,7 +1452,6 @@
         "fields": [
             {
                 "name": "user_id",
-                "sequence": 10,
                 "type": "many2one_avatar",
                 "required": true,
                 "readonly": true,
@@ -1094,8 +1460,7 @@
             },
             {
                 "name": "status",
-                "sequence": 20,
-                "type": "string",
+                "type": "status_badge",
                 "required": false,
                 "readonly": true,
                 "placeholder": { "es": "Estado", "en": "Status" },
@@ -1103,7 +1468,6 @@
             },
             {
                 "name": "start_date",
-                "sequence": 30,
                 "type": "datetime",
                 "required": false,
                 "readonly": true,
@@ -1112,7 +1476,6 @@
             },
             {
                 "name": "last_seen_at",
-                "sequence": 40,
                 "type": "datetime",
                 "required": false,
                 "readonly": true,
@@ -1121,7 +1484,6 @@
             },
             {
                 "name": "end_date",
-                "sequence": 50,
                 "type": "datetime",
                 "required": false,
                 "readonly": true,
@@ -1130,7 +1492,6 @@
             },
             {
                 "name": "duration",
-                "sequence": 60,
                 "type": "integer",
                 "required": false,
                 "readonly": true,

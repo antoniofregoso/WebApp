@@ -10,41 +10,53 @@
 - date
 - datetime
 - boolean
+- color
 - image
 - text
+- password
+- selection
+- status_badge
 - html
+- json
 - many2one
 - many2one_avatar
 - one2many
+- oney2many_kanban
+- one2many_list
+- one2many_followers
 - many2many
 - many2many_pills
-- many2many_kanban
-- many2many_list
-- model_followers
 
 
 ## Schema
+
+The schema defines the visualization of each field in its kanban, list, form, and calendar formats.
+
 ```json
 {
     "schema":[
         {
-        "name":"field_name",
-        "type":"Data visualization type",
-        "label":{
-            "en":"Description",
-            "es":"Descripción"
-        },
-        "groupBy":"field",
-        "field": [],
-        "kanban":{},
-        "list":{},
-        "form":{},
-        "calendar":{}
+            "name": "", 
+            "type": "",
+            "label": {
+                "es": "",
+                "en": ""
+            },
+            "kanban":{}, 
+            "list":{},
+            "form":{},
+            "calendar":{}
         }
     ]
 }
 ```
 
+### name
+The name of the field that will be used in the views.
+### type
+The type of display is taken from the field definition in system.model.field
+### label
+The name that will appear as a reference to that field in the views
 ## Kanban
 
 Grouping is configured at model level. `groupBy` contains the record field name,
@@ -64,7 +76,7 @@ omitted, cards are displayed without grouping even when group values exist.
 The Kanban view consists of 4 areas:
 ### Header
 It has 3 sections where only one field is allowed:
-1. image: For avatar or logo, located on the left.
+1. image: For avatar or logo, located on the left.If the schema does not mention an image, it is not rendered.
 
 2. title: For the card title.
 
@@ -94,8 +106,8 @@ Fields are ordered in descending order across the width of the Kanban card.
 ```json
 {
     "list": {
-                    "column":7
-                },
+            "column":7
+        },
 }
 ```
 ![Render List](./images/list.png)

@@ -33,3 +33,17 @@ class SystemCurrency(SystemAudit, SQLModel, table=True):
         ),
     )
     active: bool = Field(default=False)
+
+    def get_currency_unit_label(self, lang: str = "es", fallback: str = "en") -> str:
+        return (
+            self.currency_unit_label.get(lang)
+            or self.currency_unit_label.get(fallback)
+            or next(iter(self.currency_unit_label.values()), "")
+        )
+    
+    def get_currency_subunit_label(self, lang: str = "es", fallback: str = "en") -> str:
+        return (
+            self.currency_subunit_label.get(lang)
+            or self.currency_subunit_label.get(fallback)
+            or next(iter(self.currency_subunit_label.values()), "")
+        )

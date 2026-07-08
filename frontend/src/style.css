@@ -2162,6 +2162,9 @@ body {
 .form-tag-color--purple { background: #a855f7; }
 .form-tag-color--green { background: #10b981; }
 .form-tag-color--orange { background: #f97316; }
+.form-tag-color--yellow { background: #eab308; }
+.form-tag-color--cyan { background: #06b6d4; }
+.form-tag-color--indigo { background: #6366f1; }
 
 .form-tag-picker-option-check {
   position: relative;

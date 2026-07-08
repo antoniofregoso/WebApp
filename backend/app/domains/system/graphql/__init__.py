@@ -9,6 +9,7 @@ from app.domains.system.graphql.types import (
     SystemModelFieldType,
     SystemModelSchemaInput,
     SystemModelSchemaType,
+    SystemModelSchemaUseType,
     SystemModelType,
     SystemModelUpdateInput,
     SystemNotificationCreateInput,
@@ -19,6 +20,14 @@ from app.domains.system.graphql.types import (
     SystemTaskType,
     SystemTaskUpdateInput,
     SystemUserRefType,
+    SystemWhatsAppCreateInput,
+    SystemWhatsAppMessageCreateInput,
+    SystemWhatsAppMessageType,
+    SystemWhatsAppTemplateCreateInput,
+    SystemWhatsAppTemplateType,
+    SystemWhatsAppTemplateUpdateInput,
+    SystemWhatsAppType,
+    SystemWhatsAppUpdateInput,
 )
 
 __all__ = [
@@ -30,6 +39,7 @@ __all__ = [
     "SystemModelFieldType",
     "SystemModelSchemaInput",
     "SystemModelSchemaType",
+    "SystemModelSchemaUseType",
     "SystemModelType",
     "SystemModelUpdateInput",
     "SystemMutation",
@@ -42,4 +52,12 @@ __all__ = [
     "SystemTaskUpdateInput",
     "SystemQuery",
     "SystemUserRefType",
+    "SystemWhatsAppCreateInput",
+    "SystemWhatsAppMessageCreateInput",
+    "SystemWhatsAppMessageType",
+    "SystemWhatsAppTemplateCreateInput",
+    "SystemWhatsAppTemplateType",
+    "SystemWhatsAppTemplateUpdateInput",
+    "SystemWhatsAppType",
+    "SystemWhatsAppUpdateInput",
 ]

@@ -1,0 +1,13 @@
+[
+    {
+        "name": "App Bot",
+        "type": "SYSTEM"
+    },
+    {
+        "name": "App Admin",
+        "type": "HUMAN",
+        "email": "admin@app.com",
+        "password":"changeMe123",
+        "lang":"es_MX"
+    }
+]

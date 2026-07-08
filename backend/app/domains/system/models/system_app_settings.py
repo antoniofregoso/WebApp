@@ -20,7 +20,7 @@ class SystemAppSettings(SystemAudit, SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True, nullable=False)
     app_id: int = Field(foreign_key="system_apps.id")
-    key: str = Field(index=True)
+    key: str
     value: Any = Field(default=None, sa_type=JSONB)
     app: "SystemApp" = Relationship(back_populates="settings_ids")
 

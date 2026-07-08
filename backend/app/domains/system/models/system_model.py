@@ -21,17 +21,28 @@ class FieldType(str, enum.Enum):
     date = "date"
     datetime = "datetime"
     boolean = "boolean"
+    color = "color"
     image = "image"
     text = "text"
+    password = "password"
+    selection = "selection"
+    status_badge = "status_badge"
     html = "html"
+    json = "json"
     many2one = "many2one"
     many2one_avatar = "many2one_avatar"
+    one2many = "one2many"
+    one2many_kanban = "one2many_kanban"
+    one2many_list = "one2many_list"
+    one2many_followers = "one2many_followers"
     many2many = "many2many"
     many2many_pills = "many2many_pills"
-    one2many = "one2many"
-    many2many_kanban = "many2many_kanban"
-    many2many_list = "many2many_list"
-    model_followers = "model_followers"
+
+
+class SystemModelSchemaUse(str, enum.Enum):
+    view = "view"
+    insight = "insight"
+
 
 class SystemModel(SystemAudit, SQLModel, table=True):
     __tablename__ = "system_models"
@@ -52,6 +63,10 @@ class SystemModel(SystemAudit, SQLModel, table=True):
     )
     group_by: Optional[str] = Field(default=None)
     group_by_values: list[dict] = Field(
+        default_factory=list,
+        sa_column=Column(JSONB, nullable=False, server_default=sa.text("'[]'::jsonb")),
+    )
+    tags: list[dict] = Field(
         default_factory=list,
         sa_column=Column(JSONB, nullable=False, server_default=sa.text("'[]'::jsonb")),
     )
@@ -125,7 +140,15 @@ class SystemModelSchema(SystemAudit, SQLModel, table=True):
         index=True,
     )
     name: str
-    use: str
+    use: SystemModelSchemaUse = Field(
+        default=SystemModelSchemaUse.view,
+        sa_type=sa.Enum(
+            SystemModelSchemaUse,
+            name="system_model_schema_use",
+            values_callable=lambda enum_cls: [item.value for item in enum_cls],
+            validate_strings=True,
+        ),
+    )
     view: dict = Field(
         default_factory=dict,
         sa_column=Column(JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")),

@@ -18,7 +18,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # URL dinámica desde settings (.env)
-config.set_main_option("sqlalchemy.url", settings.DB_CONFIG)
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 target_metadata = SQLModel.metadata
 

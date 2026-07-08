@@ -32,3 +32,15 @@ def test_model_followers_is_linked_to_system_model():
     assert follower_model.back_populates == "model_followers"
     assert model_followers.mapper.class_ is SystemModelFollowers
     assert model_followers.back_populates == "model"
+
+
+def test_system_model_has_metadata_columns():
+    table = SystemModel.__table__
+
+    assert {
+        "name",
+        "label",
+        "group_by",
+        "group_by_values",
+        "tags",
+    }.issubset(table.columns.keys())

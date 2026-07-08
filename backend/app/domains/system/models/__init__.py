@@ -14,6 +14,7 @@ from app.domains.system.models.system_model import (
     SystemModel,
     SystemModelField,
     SystemModelSchema,
+    SystemModelSchemaUse,
     FieldType,
 )
 from app.domains.system.models.system_model_followers import SystemModelFollowers
@@ -31,8 +32,11 @@ from app.domains.system.models.system_timezone import SystemTimezone
 from app.domains.system.models.system_whatsapp import (
     SystemWhatsApp,
     SystemWhatsAppMessage,
+    SystemWhatsAppTemplate,
     WhatsAppMessageDirection,
     WhatsAppMessageStatus,
+    WhatsAppTemplateCategory,
+    WhatsAppTemplateStatus,
 )
 
 __all__ = [
@@ -51,6 +55,7 @@ __all__ = [
     "SystemModel",
     "SystemModelField",
     "SystemModelSchema",
+    "SystemModelSchemaUse",
     "SystemModelFollowers",
     "SystemNotificationUserRel",
     "FieldType",
@@ -65,6 +70,9 @@ __all__ = [
     "SystemTimezone",
     "SystemWhatsApp",
     "SystemWhatsAppMessage",
+    "SystemWhatsAppTemplate",
     "WhatsAppMessageDirection",
     "WhatsAppMessageStatus",
+    "WhatsAppTemplateCategory",
+    "WhatsAppTemplateStatus",
 ]

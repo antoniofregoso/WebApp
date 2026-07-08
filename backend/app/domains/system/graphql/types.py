@@ -7,16 +7,27 @@ from strawberry.scalars import JSON
 
 from app.domains.system.models.system_colors import SystemColor
 from app.domains.system.models.system_message import MessageStatus
-from app.domains.system.models.system_model import FieldType
+from app.domains.system.models.system_model import FieldType, SystemModelSchemaUse
 from app.domains.system.models.system_notification import NotificationStatus
 from app.domains.system.models.system_task import TaskPriority, TaskStatus
+from app.domains.system.models.system_whatsapp import (
+    WhatsAppMessageDirection,
+    WhatsAppMessageStatus,
+    WhatsAppTemplateCategory,
+    WhatsAppTemplateStatus,
+)
 
 SystemFieldType = strawberry.enum(FieldType)
+SystemModelSchemaUseType = strawberry.enum(SystemModelSchemaUse)
 SystemMessageStatus = strawberry.enum(MessageStatus)
 SystemColorType = strawberry.enum(SystemColor)
 SystemNotificationStatus = strawberry.enum(NotificationStatus)
 SystemTaskPriority = strawberry.enum(TaskPriority)
 SystemTaskStatus = strawberry.enum(TaskStatus)
+SystemWhatsAppMessageDirection = strawberry.enum(WhatsAppMessageDirection)
+SystemWhatsAppMessageStatus = strawberry.enum(WhatsAppMessageStatus)
+SystemWhatsAppTemplateCategory = strawberry.enum(WhatsAppTemplateCategory)
+SystemWhatsAppTemplateStatus = strawberry.enum(WhatsAppTemplateStatus)
 
 
 @strawberry.type
@@ -42,7 +53,7 @@ class SystemModelFieldType:
 class SystemModelSchemaType:
     uuid: uuid_lib.UUID
     name: str
-    use: str
+    use: SystemModelSchemaUseType
     view: JSON
 
 
@@ -104,6 +115,50 @@ class SystemTaskType:
     created_at: datetime
 
 
+@strawberry.type
+class SystemWhatsAppType:
+    uuid: uuid_lib.UUID
+    name: str
+    active: bool
+    phone_number: str
+    phone_number_id: str
+    business_account_id: str
+    api_version: Optional[str]
+    webhook_url: Optional[str]
+    created_at: datetime
+
+
+@strawberry.type
+class SystemWhatsAppTemplateType:
+    uuid: uuid_lib.UUID
+    name: str
+    language: str
+    category: SystemWhatsAppTemplateCategory
+    status: SystemWhatsAppTemplateStatus
+    external_template_id: Optional[str]
+    namespace: Optional[str]
+    components: JSON
+    rejected_reason: Optional[str]
+    active: bool
+    created_at: datetime
+
+
+@strawberry.type
+class SystemWhatsAppMessageType:
+    uuid: uuid_lib.UUID
+    direction: SystemWhatsAppMessageDirection
+    status: SystemWhatsAppMessageStatus
+    message_type: str
+    from_number: str
+    to_number: str
+    body: Optional[str]
+    payload: JSON
+    date: datetime
+    error_message: Optional[str]
+    template_uuid: Optional[uuid_lib.UUID]
+    created_at: datetime
+
+
 @strawberry.input
 class SystemModelFieldInput:
     name: str
@@ -118,7 +173,7 @@ class SystemModelFieldInput:
 @strawberry.input
 class SystemModelSchemaInput:
     name: str
-    use: str
+    use: SystemModelSchemaUseType = SystemModelSchemaUse.view
     view: Optional[JSON] = None
 
 
@@ -208,3 +263,73 @@ class SystemTaskUpdateInput:
     date_assign: Optional[datetime] = None
     date_due: Optional[datetime] = None
     user_uuid: Optional[uuid_lib.UUID] = None
+
+
+@strawberry.input
+class SystemWhatsAppCreateInput:
+    name: str
+    phone_number: str
+    phone_number_id: str
+    business_account_id: str
+    active: bool = True
+    api_version: Optional[str] = None
+    access_token: Optional[str] = None
+    verify_token: Optional[str] = None
+    app_secret: Optional[str] = None
+    webhook_url: Optional[str] = None
+
+
+@strawberry.input
+class SystemWhatsAppUpdateInput:
+    name: Optional[str] = None
+    phone_number: Optional[str] = None
+    phone_number_id: Optional[str] = None
+    business_account_id: Optional[str] = None
+    active: Optional[bool] = None
+    api_version: Optional[str] = None
+    access_token: Optional[str] = None
+    verify_token: Optional[str] = None
+    app_secret: Optional[str] = None
+    webhook_url: Optional[str] = None
+
+
+@strawberry.input
+class SystemWhatsAppTemplateCreateInput:
+    whatsapp_uuid: uuid_lib.UUID
+    name: str
+    language: str
+    category: SystemWhatsAppTemplateCategory = WhatsAppTemplateCategory.utility
+    status: SystemWhatsAppTemplateStatus = WhatsAppTemplateStatus.pending
+    external_template_id: Optional[str] = None
+    namespace: Optional[str] = None
+    components: Optional[JSON] = None
+    active: bool = True
+
+
+@strawberry.input
+class SystemWhatsAppTemplateUpdateInput:
+    name: Optional[str] = None
+    language: Optional[str] = None
+    category: Optional[SystemWhatsAppTemplateCategory] = None
+    status: Optional[SystemWhatsAppTemplateStatus] = None
+    external_template_id: Optional[str] = None
+    namespace: Optional[str] = None
+    components: Optional[JSON] = None
+    rejected_reason: Optional[str] = None
+    active: Optional[bool] = None
+
+
+@strawberry.input
+class SystemWhatsAppMessageCreateInput:
+    whatsapp_uuid: uuid_lib.UUID
+    from_number: str
+    to_number: str
+    direction: SystemWhatsAppMessageDirection = WhatsAppMessageDirection.outbound
+    status: SystemWhatsAppMessageStatus = WhatsAppMessageStatus.queued
+    message_type: str = "text"
+    body: Optional[str] = None
+    payload: Optional[JSON] = None
+    date: Optional[datetime] = None
+    template_uuid: Optional[uuid_lib.UUID] = None
+    model_uuid: Optional[uuid_lib.UUID] = None
+    record_uuid: Optional[uuid_lib.UUID] = None

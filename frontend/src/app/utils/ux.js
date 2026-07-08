@@ -22,6 +22,9 @@ export const COLOR_CLASS = {
     purple: 'bg-purple-100 text-purple-700',
     green:  'bg-emerald-100 text-emerald-700',
     orange: 'bg-orange-100 text-orange-700',
+    yellow: 'bg-yellow-100 text-yellow-700',
+    cyan:   'bg-cyan-100 text-cyan-700',
+    indigo: 'bg-indigo-100 text-indigo-700',
 };
 export const COLOR_FALLBACK = 'bg-zinc-100 text-zinc-700';
 

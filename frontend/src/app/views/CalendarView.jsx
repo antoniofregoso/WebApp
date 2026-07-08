@@ -11,6 +11,8 @@ const PALETTE = {
     zinc: { bg: '#f4f4f5', border: '#71717a', text: '#3f3f46' }, red: { bg: '#fee2e2', border: '#dc2626', text: '#991b1b' },
     blue: { bg: '#dbeafe', border: '#2563eb', text: '#1d4ed8' }, purple: { bg: '#f3e8ff', border: '#9333ea', text: '#6b21a8' },
     green: { bg: '#d1fae5', border: '#059669', text: '#047857' }, orange: { bg: '#ffedd5', border: '#ea580c', text: '#c2410c' },
+    yellow: { bg: '#fef9c3', border: '#ca8a04', text: '#854d0e' }, cyan: { bg: '#cffafe', border: '#0891b2', text: '#0e7490' },
+    indigo: { bg: '#e0e7ff', border: '#4f46e5', text: '#4338ca' },
 };
 const locale = (lang) => lang === 'es' ? 'es-ES' : 'en-US';
 const startOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());

@@ -6,6 +6,9 @@ from app.domains.system.graphql.types import (
     SystemNotificationType,
     SystemTaskType,
     SystemUserRefType,
+    SystemWhatsAppMessageType,
+    SystemWhatsAppTemplateType,
+    SystemWhatsAppType,
 )
 
 
@@ -88,4 +91,51 @@ def system_task_to_type(task):
         date_due=task.date_due,
         user=user_to_type(task.user),
         created_at=task.created_at,
+    )
+
+
+def system_whatsapp_to_type(whatsapp):
+    return SystemWhatsAppType(
+        uuid=whatsapp.uuid,
+        name=whatsapp.name,
+        active=whatsapp.active,
+        phone_number=whatsapp.phone_number,
+        phone_number_id=whatsapp.phone_number_id,
+        business_account_id=whatsapp.business_account_id,
+        api_version=whatsapp.api_version,
+        webhook_url=whatsapp.webhook_url,
+        created_at=whatsapp.created_at,
+    )
+
+
+def system_whatsapp_template_to_type(template):
+    return SystemWhatsAppTemplateType(
+        uuid=template.uuid,
+        name=template.name,
+        language=template.language,
+        category=template.category,
+        status=template.status,
+        external_template_id=template.external_template_id,
+        namespace=template.namespace,
+        components=template.components,
+        rejected_reason=template.rejected_reason,
+        active=template.active,
+        created_at=template.created_at,
+    )
+
+
+def system_whatsapp_message_to_type(message):
+    return SystemWhatsAppMessageType(
+        uuid=message.uuid,
+        direction=message.direction,
+        status=message.status,
+        message_type=message.message_type,
+        from_number=message.from_number,
+        to_number=message.to_number,
+        body=message.body,
+        payload=message.payload,
+        date=message.date,
+        error_message=message.error_message,
+        template_uuid=message.template.uuid if message.template else None,
+        created_at=message.created_at,
     )

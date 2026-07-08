@@ -13,6 +13,7 @@ export { BooleanField } from './BooleanField.jsx';
 export { ImageField } from './ImageField.jsx';
 export { TextField } from './TextField.jsx';
 export { HtmlField } from './HtmlField.jsx';
+export { SelectionField } from './SelectionField.jsx';
 export { Many2oneField } from './Many2oneField.jsx';
 export { Many2oneAvatarField } from './Many2oneAvatarField.jsx';
 export { One2manyField } from './One2manyField.jsx';

@@ -7,3 +7,6 @@ class SystemColor(str, enum.Enum):
     purple = "Purple"
     green = "Green"
     orange = "Orange"
+    yellow = "Yellow"
+    cyan = "Cyan"
+    indigo = "Indigo"

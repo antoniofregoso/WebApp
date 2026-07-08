@@ -1,34 +1,6 @@
-# Data Format
-
-
-## Views
-
-### Business objects
-
-```json
-{
-    "model":{
-        "name":"",
-        "label":{
-            "es":"",
-            "en":""
-        },
-        "groupBy":"field",
-        "field":[],
-        "tags": [],
-        "schema":[]
-    },
-    "records":[]
-}
-```
-
-
 ## Insights
 
-Cada KPI, gauge y gráfica debe tener un `id` único y estable dentro del
-dashboard. El `id` permite actualizar un elemento sin volver a renderizar los
-demás; no debe cambiar cuando cambien el idioma, el periodo, el valor o la
-posición visual.
+Each KPI, gauge, and chart must have a unique and stable `id` within the dashboard. The `id` allows updating an element without re-rendering the others; it should not change when the language, period, value, or visual position changes.
 
 ```json
 {
@@ -66,14 +38,9 @@ posición visual.
 
 ### Actualizaciones reactivas
 
-Los datos de insights viven en `appSignal.value.insights` y se modifican por
-medio de `dashboardActions`. Las acciones aceptan un objeto parcial o una
-función que recibe el valor actual:
+Insights data resides in `appSignal.value.insights` and is modified via `dashboardActions`. Actions accept either a partial object or a function that receives the current value.
 
-La carga inicial usa `setInsights` con la configuración completa enviada por el
-backend. Los refrescos posteriores usan `refreshInsights`: el payload contiene
-solo datos por `id`, y conserva la configuración del dashboard (`layout`,
-nombres, tipos, unidades, máximos y umbrales).
+The initial load uses `setInsights` with the full configuration sent by the backend. Subsequent refreshes use `refreshInsights`: the payload contains only data by `id` and retains the dashboard configuration (layout, names, types, units, maximums, and thresholds).
 
 ```js
 dashboardActions.setInsights(initialDashboardConfig);
@@ -86,7 +53,7 @@ dashboardActions.refreshInsights({
 });
 ```
 
-También se puede refrescar un solo indicador:
+You can also refresh a single indicator:
 
 ```js
 import { dashboardActions } from '../store/actions';
@@ -115,15 +82,16 @@ dashboardActions.updateInsight('graphics', 'monthly_sales', {
 });
 ```
 
-El parche es superficial: propiedades anidadas como `title`, `categories`,
-`thresholds` y `data` deben enviarse completas cuando se modifican. Si los IDs
-y su orden se mantienen, solo se actualizan los elementos modificados. Agregar,
-eliminar o reordenar elementos dispara un render completo de Insights.
+The patch is superficial: nested properties like `title`, `categories`,
+`thresholds`, and `data` must be sent in full when modified. If the IDs
+and their order are maintained, only the modified items are updated. Adding,
+removing, or reordering items triggers a full Insights render.
 
-#### Actualizar estados financieros (Sankey)
+#### Update Financial Statements (Sankey)
 
-Para actualizar un estado financiero se reemplaza la propiedad `data` completa,
-incluyendo `nodes`, `edges` y `options`:
+To update a financial statement, the entire `data` property is replaced,
+
+including `nodes`, `edges`, and `options`:
 
 ```js
 dashboardActions.updateGraphic('income_statement_sankey', {
@@ -137,9 +105,7 @@ dashboardActions.updateGraphic('income_statement_sankey', {
 });
 ```
 
-Cuando solamente cambian los importes de las relaciones, se puede usar una
-función de actualización para conservar los nodos y opciones existentes y
-reemplazar únicamente `edges`:
+When only the amounts in the relationships change, an update function can be used to preserve existing nodes and options and replace only the `edges`.
 
 ```js
 dashboardActions.updateGraphic('income_statement_sankey', (graphic) => ({
@@ -150,7 +116,7 @@ dashboardActions.updateGraphic('income_statement_sankey', (graphic) => ({
 }));
 ```
 
-Cada elemento de `updatedEdges` debe conservar el formato del Sankey:
+Each element of `updatedEdges` must retain the Sankey format:
 
 ```js
 const updatedEdges = [
@@ -161,6 +127,4 @@ const updatedEdges = [
     },
 ];
 ```
-
-La actualización vuelve a crear únicamente la gráfica cuyo `id` fue indicado;
-los demás KPIs, gauges y gráficas permanecen intactos.
+The update recreates only the chart whose `id` was specified; all other KPIs, gauges, and charts remain unchanged.

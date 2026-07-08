@@ -84,7 +84,7 @@
                 }
             },
             {
-                "name": "name",
+                "name": "name", 
                 "type": "string",
                 "label": {
                     "es": "Orden",
@@ -300,7 +300,7 @@
             },
             {
                 "name": "status",
-                "type": "selection",
+                "type": "status_badge",
                 "label": {
                     "es": "Estado",
                     "en": "Status"

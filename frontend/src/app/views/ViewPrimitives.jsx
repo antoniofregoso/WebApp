@@ -77,7 +77,7 @@ export function SchemaFormLayout({ schema, record, setValue, lang, context, read
 
 export function CreateModal({ data = {}, lang = 'en', open, onClose }) {
     const schema = data?.model?.schema ?? [];
-    const context = { tags: data?.model?.tags ?? [] };
+    const context = { tags: data?.model?.tags ?? [], status: data?.model?.status ?? [] };
     const [record, setRecord] = useState(() => createEmptyRecord(schema));
     useEffect(() => { if (open) setRecord(createEmptyRecord(schema)); }, [open, schema]);
     useEffect(() => {

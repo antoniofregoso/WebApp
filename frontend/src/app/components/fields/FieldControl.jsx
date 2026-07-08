@@ -9,6 +9,7 @@ import { BooleanField } from './BooleanField.jsx';
 import { ImageField } from './ImageField.jsx';
 import { TextField } from './TextField.jsx';
 import { HtmlField } from './HtmlField.jsx';
+import { SelectionField } from './SelectionField.jsx';
 import { Many2oneField } from './Many2oneField.jsx';
 import { Many2oneAvatarField } from './Many2oneAvatarField.jsx';
 import { One2manyField } from './One2manyField.jsx';
@@ -27,6 +28,8 @@ const FIELD_COMPONENTS = {
     image: ImageField,
     text: TextField,
     html: HtmlField,
+    selection: SelectionField,
+    status_badge: SelectionField,
     many2one: Many2oneField,
     many2one_avatar: Many2oneAvatarField,
     one2many: One2manyField,

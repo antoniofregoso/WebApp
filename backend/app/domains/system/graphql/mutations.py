@@ -3,12 +3,20 @@ import uuid as uuid_lib
 
 import strawberry
 
+from app.core.exceptions import ValidationException
 from app.core.security.jwt_bearer import IsAuthenticated
 from app.domains.system.graphql.mappers import (
     system_message_to_type,
     system_model_to_type,
     system_notification_to_type,
     system_task_to_type,
+    system_whatsapp_message_to_type,
+    system_whatsapp_template_to_type,
+    system_whatsapp_to_type,
+)
+from app.domains.system.graphql.queries import (
+    _ensure_whatsapp_belongs_to_company,
+    get_current_user,
 )
 from app.domains.system.graphql.types import (
     SystemMessageCreateInput,
@@ -23,6 +31,14 @@ from app.domains.system.graphql.types import (
     SystemTaskCreateInput,
     SystemTaskType,
     SystemTaskUpdateInput,
+    SystemWhatsAppCreateInput,
+    SystemWhatsAppMessageCreateInput,
+    SystemWhatsAppMessageType,
+    SystemWhatsAppTemplateCreateInput,
+    SystemWhatsAppTemplateType,
+    SystemWhatsAppTemplateUpdateInput,
+    SystemWhatsAppType,
+    SystemWhatsAppUpdateInput,
 )
 from app.domains.system.service.system_message_service import SystemMessageService
 from app.domains.system.service.system_model_service import SystemModelService
@@ -30,6 +46,13 @@ from app.domains.system.service.system_notification_service import (
     SystemNotificationService,
 )
 from app.domains.system.service.system_task_service import SystemTaskService
+from app.domains.system.service.system_whatsapp_message_service import (
+    SystemWhatsAppMessageService,
+)
+from app.domains.system.service.system_whatsapp_service import SystemWhatsAppService
+from app.domains.system.service.system_whatsapp_template_service import (
+    SystemWhatsAppTemplateService,
+)
 
 
 def input_to_dict(value):
@@ -128,3 +151,93 @@ class SystemMutation:
     @strawberry.mutation(permission_classes=[IsAuthenticated])
     async def delete_system_task(self, task_uuid: uuid_lib.UUID) -> bool:
         return await SystemTaskService.delete(task_uuid)
+
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def create_system_whatsapp(
+        self, whatsapp: SystemWhatsAppCreateInput, info: strawberry.types.Info
+    ) -> SystemWhatsAppType:
+        user = await get_current_user(info)
+        if user.company_id is None:
+            raise ValidationException(
+                "User must belong to a company to configure WhatsApp"
+            )
+        data = input_to_dict(whatsapp)
+        data["company_id"] = user.company_id
+        system_whatsapp = await SystemWhatsAppService.create(data)
+        return system_whatsapp_to_type(system_whatsapp)
+
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def update_system_whatsapp(
+        self,
+        whatsapp_uuid: uuid_lib.UUID,
+        whatsapp: SystemWhatsAppUpdateInput,
+        info: strawberry.types.Info,
+    ) -> SystemWhatsAppType:
+        user = await get_current_user(info)
+        existing = await SystemWhatsAppService.get_by_uuid(whatsapp_uuid)
+        _ensure_whatsapp_belongs_to_company(existing, user.company_id)
+        system_whatsapp = await SystemWhatsAppService.update(
+            whatsapp_uuid, input_to_dict(whatsapp)
+        )
+        return system_whatsapp_to_type(system_whatsapp)
+
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def delete_system_whatsapp(
+        self, whatsapp_uuid: uuid_lib.UUID, info: strawberry.types.Info
+    ) -> bool:
+        user = await get_current_user(info)
+        existing = await SystemWhatsAppService.get_by_uuid(whatsapp_uuid)
+        _ensure_whatsapp_belongs_to_company(existing, user.company_id)
+        return await SystemWhatsAppService.delete(whatsapp_uuid)
+
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def create_system_whatsapp_template(
+        self,
+        template: SystemWhatsAppTemplateCreateInput,
+        info: strawberry.types.Info,
+    ) -> SystemWhatsAppTemplateType:
+        user = await get_current_user(info)
+        data = input_to_dict(template)
+        whatsapp = await SystemWhatsAppService.get_by_uuid(data["whatsapp_uuid"])
+        _ensure_whatsapp_belongs_to_company(whatsapp, user.company_id)
+        system_template = await SystemWhatsAppTemplateService.create(data)
+        return system_whatsapp_template_to_type(system_template)
+
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def update_system_whatsapp_template(
+        self,
+        template_uuid: uuid_lib.UUID,
+        template: SystemWhatsAppTemplateUpdateInput,
+        info: strawberry.types.Info,
+    ) -> SystemWhatsAppTemplateType:
+        user = await get_current_user(info)
+        existing = await SystemWhatsAppTemplateService.get_by_uuid(template_uuid)
+        whatsapp = await SystemWhatsAppService.get_by_id(existing.whatsapp_id)
+        _ensure_whatsapp_belongs_to_company(whatsapp, user.company_id)
+        system_template = await SystemWhatsAppTemplateService.update(
+            template_uuid, input_to_dict(template)
+        )
+        return system_whatsapp_template_to_type(system_template)
+
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def delete_system_whatsapp_template(
+        self, template_uuid: uuid_lib.UUID, info: strawberry.types.Info
+    ) -> bool:
+        user = await get_current_user(info)
+        existing = await SystemWhatsAppTemplateService.get_by_uuid(template_uuid)
+        whatsapp = await SystemWhatsAppService.get_by_id(existing.whatsapp_id)
+        _ensure_whatsapp_belongs_to_company(whatsapp, user.company_id)
+        return await SystemWhatsAppTemplateService.delete(template_uuid)
+
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def create_system_whatsapp_message(
+        self,
+        message: SystemWhatsAppMessageCreateInput,
+        info: strawberry.types.Info,
+    ) -> SystemWhatsAppMessageType:
+        user = await get_current_user(info)
+        data = input_to_dict(message)
+        whatsapp = await SystemWhatsAppService.get_by_uuid(data["whatsapp_uuid"])
+        _ensure_whatsapp_belongs_to_company(whatsapp, user.company_id)
+        system_message = await SystemWhatsAppMessageService.create(data)
+        return system_whatsapp_message_to_type(system_message)

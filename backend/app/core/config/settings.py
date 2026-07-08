@@ -6,14 +6,17 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    model_config = SettingsConfigDict(
+        env_file=Path(__file__).resolve().parents[3] / ".env",
+        case_sensitive=True,
+    )
 
     # App Config
     APP_NAME: str = "API"
     APP_VERSION: str = "0.0.1"
 
     # Database Config
-    DB_CONFIG: str
+    DATABASE_URL: str
     DB_ECHO: bool = False
 
     # Logging
