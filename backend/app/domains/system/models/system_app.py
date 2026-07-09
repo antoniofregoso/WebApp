@@ -10,6 +10,7 @@ from app.domains.system.models.system_audit import SystemAudit
 
 if TYPE_CHECKING:
     from app.domains.system.models.system_app_settings import SystemAppSettings
+    from app.domains.system.models.system_company import SystemCompany
 
 
 class SystemApp(SystemAudit, SQLModel, table=True):
@@ -32,6 +33,8 @@ class SystemApp(SystemAudit, SQLModel, table=True):
     keys: Optional[dict] = Field(default=None, sa_type=JSONB)
     active: bool = Field(default=True)
     public: bool = Field(default=True)
+    company_id: Optional[int] = Field(default=None, foreign_key="system_companies.id")
+    company: Optional["SystemCompany"] = Relationship(back_populates="apps")
     schema_org: Optional[dict] = Field(default=None, sa_type=JSONB)
     settings_ids: list["SystemAppSettings"] = Relationship(back_populates="app")
 

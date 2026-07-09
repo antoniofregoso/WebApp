@@ -7,6 +7,7 @@ import { PercentageField } from './PercentageField.jsx';
 import { DateField } from './DateField.jsx';
 import { DateTimeField } from './DateTimeField.jsx';
 import { BooleanField } from './BooleanField.jsx';
+import { ColorField } from './ColorField.jsx';
 import { ImageField } from './ImageField.jsx';
 import { TextField } from './TextField.jsx';
 import { HtmlField } from './HtmlField.jsx';
@@ -15,6 +16,7 @@ import { SelectionField } from './SelectionField.jsx';
 import { Many2oneField } from './Many2oneField.jsx';
 import { Many2oneAvatarField } from './Many2oneAvatarField.jsx';
 import { One2manyField } from './One2manyField.jsx';
+import { One2manyFollowersField } from './One2manyFollowersField.jsx';
 import { Many2manyField } from './Many2manyField.jsx';
 import { Many2manyPillsField } from './Many2manyPillsField.jsx';
 
@@ -28,6 +30,7 @@ const FIELD_COMPONENTS = {
     date: DateField,
     datetime: DateTimeField,
     boolean: BooleanField,
+    color: ColorField,
     image: ImageField,
     text: TextField,
     html: HtmlField,
@@ -37,6 +40,7 @@ const FIELD_COMPONENTS = {
     many2one: Many2oneField,
     many2one_avatar: Many2oneAvatarField,
     one2many: One2manyField,
+    one2many_followers: One2manyFollowersField,
     many2many: Many2manyField,
     many2many_pills: Many2manyPillsField,
 };

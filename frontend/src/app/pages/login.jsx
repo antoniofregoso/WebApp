@@ -1,6 +1,7 @@
 import { useRef } from 'preact/hooks';
 import { authenticate } from '../api/auth.js';
-import { currentLang, setAuthSession } from '../store';
+import { fetchCurrentUser } from '../api/user.js';
+import { currentLang, setAuthSession, setCurrentUser } from '../store';
 import { t } from '../../i18n/translations.js';
 import { faEye, faEyeSlash, icon } from '../components/icon.js';
 import { mountPreactPage } from '../utils';
@@ -66,6 +67,11 @@ function Login({ lang, router }) {
         try {
             const session = await authenticate(email, form.elements.password.value);
             setAuthSession(session);
+            try {
+                setCurrentUser(await fetchCurrentUser());
+            } catch {
+                // Non-critical: the topbar just won't show the user's name.
+            }
             updateRememberedEmail(email, form.elements.remember.checked);
             router.goTo('dash');
         } catch (error) {

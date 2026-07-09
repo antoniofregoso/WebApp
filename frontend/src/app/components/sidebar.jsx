@@ -160,7 +160,7 @@ export function Sidebar({ lang, expanded, activeArea }) {
 
             <nav class="sidebar-nav" aria-label="Main navigation">
                 <ul class="sidebar-menu" role="list">
-                    {MENU_ITEMS.map((item) => {
+                    {MENU_ITEMS.filter((item) => !item.hidden).map((item) => {
                         const label = getLabel(item, lang);
                         const isActive = item.key === activeArea;
                         const hasSubmenu = Boolean(item.items?.length);

@@ -44,7 +44,7 @@ const VIEW_BUTTONS = [
  * (`router`) stay owned by the dashboard page, since both carry routing
  * side effects beyond this component's concern.
  */
-export function Topbar({ lang, theme, pageTitle, breadcrumb = null, showTools = true, pagination = {}, currentView, router, onViewChange }) {
+export function Topbar({ lang, theme, pageTitle, breadcrumb = null, showTools = true, pagination = {}, currentView, router, onViewChange, user = null }) {
     const { page, totalPages } = normalizePagination(pagination);
     const pageStatus = lang === 'es' ? `Página ${page} de ${totalPages}` : `Page ${page} of ${totalPages}`;
     const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -96,16 +96,17 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = null, showTools = 
                 </div>
 
                 <div class="topbar-controls" role="toolbar" aria-label="Toolbar controls">
-                    <button
+                    <a
+                        href="/dashboard/user/system.task"
                         class="topbar-action-btn"
                         aria-label={t('topbar.tasks', lang)}
                         data-tooltip={t('topbar.tasks', lang)}
                         dangerouslySetInnerHTML={{ __html: icon(faListCheck, 'topbar-action-icon') }}
                     />
-                    <button class="topbar-action-btn" aria-label={t('topbar.messages', lang)} data-tooltip={t('topbar.messages', lang)}>
+                    <a href="/dashboard/user/system.message" class="topbar-action-btn" aria-label={t('topbar.messages', lang)} data-tooltip={t('topbar.messages', lang)}>
                         <span dangerouslySetInnerHTML={{ __html: icon(faEnvelope, 'topbar-action-icon') }} />
                         <span class="topbar-action-badge" aria-hidden="true">22</span>
-                    </button>
+                    </a>
                     <button class="topbar-action-btn" aria-label={t('topbar.notifications', lang)} data-tooltip={t('topbar.notifications', lang)}>
                         <span dangerouslySetInnerHTML={{ __html: icon(faBell, 'topbar-action-icon') }} />
                         <span class="topbar-action-badge" aria-hidden="true">12</span>
@@ -126,6 +127,12 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = null, showTools = 
                         />
 
                         <div class={`topbar-user-menu ${userMenuOpen ? 'topbar-user-menu--open' : ''}`} id="topbar-user-menu" role="menu" aria-labelledby="topbar-user">
+                            {user?.name && (
+                                <div class="topbar-user-name-row">
+                                    <span class="topbar-user-name">{user.name}</span>
+                                </div>
+                            )}
+
                             <div class="topbar-menu-section">
                                 <span class="topbar-menu-label">{t('topbar.theme', lang)}</span>
                                 <div class="topbar-theme-group" role="group" aria-label={t('topbar.theme', lang)}>

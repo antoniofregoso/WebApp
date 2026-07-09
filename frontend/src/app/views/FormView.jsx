@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo, useState } from 'preact/hooks';
 
 import { CommunicationPanel } from '../components/communicationPanel.jsx';
 import { FieldControl } from '../components/fields/index.js';
+import { One2manyFollowersField } from '../components/fields/One2manyFollowersField.jsx';
 import { faBoxArchive, faChevronLeft, faChevronRight, faFloppyDisk, faPen, faTrash } from '../components/icon.js';
 import { buildRecordUrl } from '../utils/index.js';
 import { getFormLayout } from './formLayout.js';
@@ -45,22 +46,53 @@ function Action({ definition, label, ...props }) {
     </button>;
 }
 
-function RecordNavigation({ data, record, recordModel, lang }) {
+function FooterFields({ fields, record, setValue, lang, context, readOnly }) {
+    if (!fields?.length) return null;
+    return (
+        <div class="flex min-w-0 items-center gap-3">
+            {fields.map(({ field }) => (
+                <FieldControl key={field.name} field={field} value={record[field.name]}
+                    onChange={setValue} lang={lang} readOnly={readOnly} context={context} />
+            ))}
+        </div>
+    );
+}
+
+function defaultFollowersField(field) {
+    return {
+        name: 'followers',
+        type: 'one2many_followers',
+        label: { es_MX: 'Seguidores', es: 'Seguidores', en_US: 'Followers', en: 'Followers' },
+        form: { footer: 'left' },
+        options: field?.options ?? [],
+    };
+}
+
+function followersField(schema) {
+    const followerField = schema.find((field) => field.type === 'one2many_followers');
+    return defaultFollowersField(followerField);
+}
+
+function RecordFooter({ data, record, recordModel, lang, followers, right }) {
     const records = getNavigableRecords(data, recordModel);
     const index = records.findIndex((item) => String(item.uuid) === String(record.uuid));
     const model = recordModel || data?.model?.name;
     const targets = [index > 0 ? records[index - 1] : null, index >= 0 && index < records.length - 1 ? records[index + 1] : null];
     const labels = lang === 'es' ? ['Registro anterior', 'Registro siguiente'] : ['Previous record', 'Next record'];
-    return <footer class="form-record-footer"><nav class="form-record-navigation" aria-label={lang === 'es' ? 'Navegación de registros' : 'Record navigation'}>
-        {targets.map((target, direction) => target && model
-            ? <a href={buildRecordUrl(model, target.uuid)} class="topbar-action-btn form-record-nav-btn" aria-label={labels[direction]}
-                data-form-nav={direction ? 'next' : 'previous'} key={direction}><Icon definition={direction ? faChevronRight : faChevronLeft} class="topbar-action-icon" /></a>
-            : <button type="button" class="topbar-action-btn form-record-nav-btn" aria-label={labels[direction]} disabled
-                data-form-nav={direction ? 'next' : 'previous'} key={direction}><Icon definition={direction ? faChevronRight : faChevronLeft} class="topbar-action-icon" /></button>)}
-        <span class="form-record-counter" aria-label={`${lang === 'es' ? 'Registro' : 'Record'} ${index + 1} ${lang === 'es' ? 'de' : 'of'} ${records.length}`}>
-            <span class="form-record-counter-current">{index + 1}</span><span aria-hidden="true">/</span><span>{records.length}</span>
-        </span>
-    </nav></footer>;
+    return <footer class="form-record-footer">
+        <div class="min-w-0">{followers}</div>
+        <div class="hidden min-w-0 items-center gap-3">{right}</div>
+        <nav class="form-record-navigation justify-self-end" aria-label={lang === 'es' ? 'Navegación de registros' : 'Record navigation'}>
+            {targets.map((target, direction) => target && model
+                ? <a href={buildRecordUrl(model, target.uuid)} class="topbar-action-btn form-record-nav-btn" aria-label={labels[direction]}
+                    data-form-nav={direction ? 'next' : 'previous'} key={direction}><Icon definition={direction ? faChevronRight : faChevronLeft} class="topbar-action-icon" /></a>
+                : <button type="button" class="topbar-action-btn form-record-nav-btn" aria-label={labels[direction]} disabled
+                    data-form-nav={direction ? 'next' : 'previous'} key={direction}><Icon definition={direction ? faChevronRight : faChevronLeft} class="topbar-action-icon" /></button>)}
+            <span class="form-record-counter" aria-label={`${lang === 'es' ? 'Registro' : 'Record'} ${index + 1} ${lang === 'es' ? 'de' : 'of'} ${records.length}`}>
+                <span class="form-record-counter-current">{index + 1}</span><span aria-hidden="true">/</span><span>{records.length}</span>
+            </span>
+        </nav>
+    </footer>;
 }
 
 export function FormView({ data = {}, lang = 'en', options = {} }) {
@@ -72,6 +104,7 @@ export function FormView({ data = {}, lang = 'en', options = {} }) {
     const isMainModel = !options.recordModel || options.recordModel === data?.model?.name;
     const schema = isMainModel ? (data?.model?.schema ?? []) : inferSchema(record);
     const layout = getFormLayout(schema);
+    const followerField = followersField(schema);
     const context = { ...(data?.model ?? {}), tags: data?.model?.tags ?? [] };
     const title = isMainModel ? (data?.model?.label?.[lang] ?? data?.model?.name ?? '') : (options.recordModel ?? record.model ?? '');
     const setValue = (name, value) => setRecord((current) => ({ ...current, [name]: value }));
@@ -103,7 +136,10 @@ export function FormView({ data = {}, lang = 'en', options = {} }) {
                     </div></div>
                 </div>
                 <SchemaFormLayout schema={schema} record={record} setValue={setValue} lang={lang} context={context} readOnly={!editing} />
-                <RecordNavigation data={data} record={record} recordModel={options.recordModel} lang={lang} />
+                <RecordFooter data={data} record={record} recordModel={options.recordModel} lang={lang}
+                    followers={<One2manyFollowersField field={followerField} value={record.followers}
+                        onChange={setValue} lang={lang} readOnly={!editing} context={context} />}
+                    right={<FooterFields fields={layout.footerRight} record={record} setValue={setValue} lang={lang} context={context} readOnly={!editing} />} />
             </section>
             <CommunicationPanel lang={lang} />
         </div>

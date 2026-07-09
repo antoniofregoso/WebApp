@@ -148,5 +148,6 @@ export function t(key, lang = 'en') {
         console.warn(`[i18n] Missing translation for key: "${key}"`);
         return key;
     }
-    return entry[lang] ?? entry['en'] ?? key;
+    const shortLang = String(lang).split(/[-_]/)[0];
+    return entry[lang] ?? entry[shortLang] ?? entry.en_US ?? entry.en ?? key;
 }

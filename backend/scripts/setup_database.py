@@ -26,6 +26,8 @@ if str(BACKEND_DIR) not in sys.path:
 
 from app.core.config.settings import settings
 from app.domains.system.models import (  # noqa: F401
+    SystemApp,
+    SystemCompany,
     SystemCountry,
     SystemCountryState,
     SystemCurrency,
@@ -163,6 +165,14 @@ def _hash_internal_password() -> str:
     return AuthService.hash_password(secrets.token_urlsafe(64))
 
 
+def _localized_dict(value: Any) -> dict[str, str]:
+    if isinstance(value, dict):
+        return value
+    if value is None:
+        return {}
+    return {"es_MX": str(value), "en_US": str(value)}
+
+
 def _currency_payload(
     record: dict[str, Any], bot_id: int, now: datetime
 ) -> dict[str, Any]:
@@ -175,7 +185,7 @@ def _currency_payload(
         "symbol": record.get("symbol") or currency_code,
         "currency_unit_label": record.get("currency_unit_label"),
         "currency_subunit_label": record.get("currency_subunit_label"),
-        "active": _bool_or_default(record.get("active")),
+        "active": _bool_or_default(record.get("active"), True),
     }
 
 
@@ -235,21 +245,30 @@ async def _load_remaining_users(
     bot_id: int,
     now: datetime,
     langs: dict[str, SystemLang],
+    companies: dict[str, SystemCompany],
+    company_by_user_email: dict[str, SystemCompany],
 ) -> None:
     for record in _load_json("user_users.json"):
         if record.get("name") == BOT_NAME:
             continue
         lang = langs.get(record.get("lang"))
+        email = (
+            record.get("email")
+            or f"{record['name'].lower().replace(' ', '.')}@app.local"
+        )
+        company = companies.get(record.get("company")) or company_by_user_email.get(
+            email
+        )
         session.add(
             UserUser(
                 **_audit_values(bot_id, now),
                 name=record["name"],
-                email=record.get("email")
-                or f"{record['name'].lower().replace(' ', '.')}@app.local",
+                email=email,
                 password=_hash_password(record.get("password")),
                 user_type=UserType(record.get("type") or UserType.HUMAN.value),
                 active=_bool_or_default(record.get("active"), True),
                 lang_id=lang.id if lang else None,
+                company_id=company.id if company else None,
             )
         )
     await session.flush()
@@ -293,6 +312,56 @@ async def _load_countries(
                     country_id=country.id,
                 )
             )
+    await session.flush()
+
+
+async def _load_companies(
+    session: AsyncSession, bot_id: int, now: datetime
+) -> tuple[dict[str, SystemCompany], dict[str, SystemCompany]]:
+    companies: dict[str, SystemCompany] = {}
+    company_by_user_email: dict[str, SystemCompany] = {}
+    for record in _load_json("system_company.json"):
+        company = SystemCompany(
+            **_audit_values(bot_id, now),
+            name=record["name"],
+            active=_bool_or_default(record.get("active"), True),
+            email=record.get("email"),
+            phone=record.get("phone"),
+            website=record.get("website"),
+            vat=record.get("vat"),
+        )
+        session.add(company)
+        await session.flush()
+        companies[company.name] = company
+
+        for user_record in record.get("users", []):
+            email = user_record.get("email")
+            if email:
+                company_by_user_email[email] = company
+
+    return companies, company_by_user_email
+
+
+async def _load_apps(
+    session: AsyncSession,
+    bot_id: int,
+    now: datetime,
+    companies: dict[str, SystemCompany],
+) -> None:
+    for record in _load_json("system_app.json"):
+        company = companies.get(record.get("company"))
+        session.add(
+            SystemApp(
+                **_audit_values(bot_id, now),
+                name=_localized_dict(record.get("name")),
+                description=_localized_dict(record.get("description")),
+                active=_bool_or_default(record.get("active"), True),
+                public=_bool_or_default(record.get("public"), True),
+                company_id=company.id if company else None,
+                keys=record.get("keys"),
+                schema_org=record.get("schema_org"),
+            )
+        )
     await session.flush()
 
 
@@ -371,10 +440,16 @@ async def seed_data() -> None:
             if bot_id is None:
                 raise RuntimeError("App Bot was not persisted correctly.")
 
-            langs = await _load_langs(session, bot_id, now)
-            await _load_remaining_users(session, bot_id, now, langs)
             currencies = await _load_currencies(session, bot_id, now)
             await _load_countries(session, bot_id, now, currencies)
+            langs = await _load_langs(session, bot_id, now)
+            companies, company_by_user_email = await _load_companies(
+                session, bot_id, now
+            )
+            await _load_remaining_users(
+                session, bot_id, now, langs, companies, company_by_user_email
+            )
+            await _load_apps(session, bot_id, now, companies)
             models = await _load_system_models(session, bot_id, now)
             await _load_model_schemas(session, bot_id, now, models)
 

@@ -82,8 +82,10 @@ class SystemQuery:
         model: str,
         use: SystemModelSchemaUseType,
         name: str,
+        info: strawberry.types.Info,
     ) -> SystemModelViewType:
-        view = await SystemModelService.get_view(model, use, name)
+        user = await get_current_user(info)
+        view = await SystemModelService.get_view(model, use, name, current_user_id=user.id)
         return SystemModelViewType(model=view["model"], records=view["records"])
 
     @strawberry.field(permission_classes=[IsAuthenticated])

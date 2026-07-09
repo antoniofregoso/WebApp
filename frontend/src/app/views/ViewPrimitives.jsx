@@ -66,7 +66,7 @@ export function SchemaFormLayout({ schema, record, setValue, lang, context, read
                         <div role="tabpanel" class="form-record-tab-panel" hidden={activeTab !== tab.position}
                             data-record-tab-panel={tab.position} key={tab.position}>
                             {tab.fields.map(({ field }) => <FormField key={field.name} field={field}
-                                value={record[field.name]} onChange={setValue} lang={lang} readOnly={readOnly} context={context} />)}
+                                value={record[field.name]} onChange={setValue} lang={lang} readOnly={readOnly} context={context} hideLabel />)}
                         </div>
                     ))}
                 </div>

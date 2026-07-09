@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 
 import { FieldControl } from '../components/fields/index.js';
 import { faBoxArchive, faGripVertical, faTrash } from '../components/icon.js';
-import { NUMERIC_TYPES, buildRecordUrl } from '../utils/index.js';
+import { NUMERIC_TYPES, buildRecordUrl, localizedValue } from '../utils/index.js';
 import { makeSortable } from '../utils/sortable.js';
 import { CreateModal, Icon, ViewHeader } from './ViewPrimitives.jsx';
 
@@ -19,15 +19,15 @@ export function getListColumns(schema = []) {
 
 function sortValue(field, value) {
     if (value == null || value === '') return '';
-    if (field.type === 'many2one') return value?.name ?? '';
+    if (field.type === 'many2one') return localizedValue(value?.name, 'en') ?? '';
     if (['monetary', 'decimal', 'integer', 'percentage'].includes(field.type)) return Number(value);
     if (field.type === 'boolean') return value ? 1 : 0;
-    return String(value);
+    return String(localizedValue(value, 'en'));
 }
 
 function Cell({ field, record, data, lang }) {
     const value = record[field.name];
-    if (field.name === 'name' && value) return <a href={buildRecordUrl(data?.model?.name, record.uuid)} class="font-medium text-[var(--dash-accent)] hover:underline">{value}</a>;
+    if (field.name === 'name' && value) return <a href={buildRecordUrl(data?.model?.name, record.uuid)} class="font-medium text-[var(--dash-accent)] hover:underline">{localizedValue(value, lang)}</a>;
     return <FieldControl field={field} value={value} onChange={() => {}} lang={lang} readOnly
         context={{ ...(data?.model ?? {}), tags: data?.model?.tags ?? [], view: 'list' }} />;
 }

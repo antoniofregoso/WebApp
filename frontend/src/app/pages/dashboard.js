@@ -1,6 +1,6 @@
 import { h, render } from 'preact';
 import { effect } from '@preact/signals';
-import { appSignal, isAuthenticated } from '../store';
+import { appSignal, authSignal, isAuthenticated } from '../store';
 import { contextActions, dashboardActions } from '../store/actions';
 import { mountSidebar, mountTopbar, MENU_ITEMS } from '../components';
 import { CalendarView, FormView, KanbanView, ListView, renderInsights, initInsights, patchInsights } from '../views';
@@ -196,6 +196,7 @@ function syncChrome(lang, theme, expanded, area, subarea, view, pagination) {
     const pageTitle = area ? getAreaTitle(area, lang, MENU_ITEMS) : '';
     const breadcrumb = getTopbarBreadcrumb(area, subarea, lang);
     const showTopbarTools = shouldShowTopbarTools(area, subarea);
+    const { name: userName, email: userEmail } = authSignal.value;
 
     mountSidebar(document.getElementById('dashboard-sidebar-root'), {
         lang,
@@ -212,6 +213,7 @@ function syncChrome(lang, theme, expanded, area, subarea, view, pagination) {
         currentView: view,
         router: _router,
         onViewChange: handleViewChange,
+        user: { name: userName, email: userEmail },
     });
 }
 

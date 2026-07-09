@@ -1640,8 +1640,10 @@ body {
 }
 
 .form-record-footer {
-  display: flex;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
   border-top: 1px solid var(--dash-border);
   padding: 0.75rem 1.25rem;
 }
@@ -2626,6 +2628,17 @@ body {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
+}
+
+.topbar-user-name-row {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--dash-border);
+}
+
+.topbar-user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--dash-text);
 }
 
 .topbar-menu-section {

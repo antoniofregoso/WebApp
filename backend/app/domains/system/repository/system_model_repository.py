@@ -20,6 +20,7 @@ from app.domains.system.models import (
     SystemWhatsAppMessage,
     SystemWhatsAppTemplate,
 )
+from app.domains.system.models.system_model_followers import SystemModelFollowers
 from app.domains.system.models.system_model import (
     SystemModel,
     SystemModelField,
@@ -27,6 +28,7 @@ from app.domains.system.models.system_model import (
     SystemModelSchemaUse,
 )
 from app.domains.users.models import UserLog, UserUser
+from app.domains.users.models.user_user import UserType
 
 MODEL_CLASS_BY_NAME = {
     "system.app": SystemApp,
@@ -35,7 +37,7 @@ MODEL_CLASS_BY_NAME = {
     "system.country": SystemCountry,
     "system.country.state": SystemCountryState,
     "system.currency": SystemCurrency,
-    "system.lan": SystemLang,
+    "system.lang": SystemLang,
     "system.message": SystemMessage,
     "system.model": SystemModel,
     "system.notification": SystemNotification,
@@ -162,6 +164,52 @@ class SystemModelRepository:
                 query = query.order_by(model_class.id)
             result = await session.execute(query)
             return result.scalars().all()
+
+    @staticmethod
+    async def get_records_by_ids(model_name: str, record_ids: set[int]) -> dict[int, object]:
+        model_class = MODEL_CLASS_BY_NAME.get(model_name)
+        if model_class is None or not record_ids:
+            return {}
+
+        async with db.session() as session:
+            query = select(model_class).where(model_class.id.in_(record_ids))
+            result = await session.execute(query)
+            return {record.id: record for record in result.scalars().all()}
+
+    @staticmethod
+    async def get_followable_users() -> list[UserUser]:
+        async with db.session() as session:
+            query = (
+                select(UserUser)
+                .where(UserUser.active.is_(True))
+                .where(UserUser.user_type != UserType.SYSTEM)
+                .order_by(UserUser.name)
+            )
+            result = await session.execute(query)
+            return result.scalars().all()
+
+    @staticmethod
+    async def get_followers_by_record(
+        model_id: int,
+        record_uuids: set[uuid_lib.UUID],
+    ) -> dict[str, list[UserUser]]:
+        if not record_uuids:
+            return {}
+
+        async with db.session() as session:
+            query = (
+                select(SystemModelFollowers)
+                .where(SystemModelFollowers.model_id == model_id)
+                .where(SystemModelFollowers.record_uuid.in_(record_uuids))
+                .options(selectinload(SystemModelFollowers.user))
+            )
+            result = await session.execute(query)
+            followers: dict[str, list[UserUser]] = {}
+            for follower in result.scalars().all():
+                if follower.user is None or follower.user.user_type == UserType.SYSTEM:
+                    continue
+                followers.setdefault(str(follower.record_uuid), []).append(follower.user)
+            return followers
 
     @staticmethod
     async def update(model_uuid: uuid_lib.UUID, model_data: dict):

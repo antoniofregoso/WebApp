@@ -5,6 +5,8 @@ let refreshToken = null;
 
 export const authSignal = signal({
     email: null,
+    name: null,
+    avatarUrl: null,
     isAuthenticated: false,
 });
 
@@ -16,8 +18,19 @@ export function setAuthSession({ email, token, accessToken: nextAccessToken, ref
     accessToken = nextAccessToken ?? token;
     refreshToken = nextRefreshToken ?? null;
     authSignal.value = {
+        ...authSignal.value,
         email,
         isAuthenticated: Boolean(accessToken),
+    };
+}
+
+/** Merges the authenticated user's profile (from the `me` query) into the session. */
+export function setCurrentUser({ name, email, avatarUrl } = {}) {
+    authSignal.value = {
+        ...authSignal.value,
+        name: name ?? authSignal.value.name,
+        email: email ?? authSignal.value.email,
+        avatarUrl: avatarUrl ?? authSignal.value.avatarUrl,
     };
 }
 
@@ -34,6 +47,8 @@ export function clearAuthSession() {
     refreshToken = null;
     authSignal.value = {
         email: null,
+        name: null,
+        avatarUrl: null,
         isAuthenticated: false,
     };
 }

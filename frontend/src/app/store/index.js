@@ -14,4 +14,5 @@ export {
   getRefreshToken,
   isAuthenticated,
   setAuthSession,
+  setCurrentUser,
 } from './authStore.js';

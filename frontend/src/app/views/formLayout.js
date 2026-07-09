@@ -13,6 +13,8 @@ export function getFormLayout(schema = []) {
         header: { image: null, title: null, subtitle: null },
         leftColumn: [],
         rightColumn: [],
+        footerLeft: [],
+        footerRight: [],
         tabs: [],
     };
     const tabGroups = new Map();
@@ -32,6 +34,11 @@ export function getFormLayout(schema = []) {
                 return;
             }
         }
+        const footer = String(config.footer ?? '').toLowerCase();
+        if (footer === 'left' || footer === 'right') {
+            layout[footer === 'left' ? 'footerLeft' : 'footerRight'].push({ field, position: index, index });
+            return;
+        }
         const tab = indexedField(field, index, config.tab);
         if (!tab) return;
         if (!tabGroups.has(tab.position)) tabGroups.set(tab.position, []);
@@ -40,6 +47,8 @@ export function getFormLayout(schema = []) {
 
     sortFields(layout.leftColumn);
     sortFields(layout.rightColumn);
+    sortFields(layout.footerLeft);
+    sortFields(layout.footerRight);
     layout.tabs = [...tabGroups.entries()]
         .sort(([left], [right]) => left - right)
         .map(([position, fields]) => ({ position, fields: sortFields(fields) }));

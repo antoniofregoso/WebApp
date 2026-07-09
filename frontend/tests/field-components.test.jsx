@@ -212,6 +212,52 @@ describe('one2many / many2many fields', () => {
     });
 });
 
+describe('one2many_kanban view', () => {
+    const field = {
+        name: 'users', type: 'one2many_pills',
+        form: { view: 'one2many_kanban', kanban_view: { header: { image: 'avatar_url', title: 'name', subtitle: 'email' } } },
+    };
+    const users = [
+        { uuid: 'u1', model: 'user.user', name: 'Ana', email: 'ana@example.com', avatar_url: '', color: 'blue' },
+        { uuid: 'u2', model: 'user.user', name: 'Beto', email: 'beto@example.com', avatar_url: 'https://example.com/beto.png' },
+    ];
+
+    it('overrides the type-based renderer in the form body and shows a dash when empty', () => {
+        const host = mount(<FormField field={field} value={[]} readOnly onChange={() => {}} hideLabel />);
+        expect(host.textContent).toBe('—');
+    });
+
+    it('renders a card per record with title, subtitle, and an icon avatar fallback', () => {
+        const host = mount(<FormField field={field} value={users} readOnly onChange={() => {}} hideLabel />);
+        const cards = host.querySelectorAll('article');
+        expect(cards.length).toBe(2);
+        expect(cards[0].textContent).toContain('Ana');
+        expect(cards[0].textContent).toContain('ana@example.com');
+        expect(cards[0].querySelector('img')).toBeNull();
+        expect(cards[0].querySelector('svg')).not.toBeNull();
+        expect(cards[1].querySelector('img').src).toBe('https://example.com/beto.png');
+    });
+
+    it('colors the card border from the record color and links to the record', () => {
+        const host = mount(<FormField field={field} value={users} readOnly onChange={() => {}} hideLabel />);
+        const [card] = host.querySelectorAll('article');
+        expect(card.style.borderColor).toBe('#2563eb');
+        expect(card.querySelector('a').getAttribute('href')).toContain('u1');
+    });
+
+    it('removes a record when editable', () => {
+        const onChange = vi.fn();
+        const host = mount(<FormField field={field} value={users} onChange={onChange} hideLabel />);
+        host.querySelector('article button').click();
+        expect(onChange).toHaveBeenCalledWith('users', [users[1]]);
+    });
+
+    it('does not apply to List/Kanban cells rendered via FieldControl directly', () => {
+        const host = mount(<FieldControl field={field} value={users} readOnly onChange={() => {}} />);
+        expect(host.querySelectorAll('article').length).toBe(0);
+    });
+});
+
 describe('many2many_pills field', () => {
     const tags = [
         { uuid: 't1', name: { en: 'Urgent', es: 'Urgente' }, color: 'red' },

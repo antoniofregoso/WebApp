@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 
 import { FieldControl } from '../components/fields/index.js';
 import { faGripVertical, faUser } from '../components/icon.js';
-import { COLOR_CLASS, COLOR_FALLBACK, buildRecordUrl } from '../utils/index.js';
+import { COLOR_CLASS, COLOR_FALLBACK, buildRecordUrl, localizedValue } from '../utils/index.js';
 import { makeSortable } from '../utils/sortable.js';
 import { CreateModal, Icon, ViewHeader } from './ViewPrimitives.jsx';
 
@@ -24,6 +24,16 @@ function buildLayout(schema = []) {
     return layout;
 }
 
+function normalizeColor(value) {
+    return String(value ?? '').toLowerCase();
+}
+
+function colorHex(field, value) {
+    if (!field || value == null || value === '') return null;
+    const normalized = normalizeColor(value);
+    return field.selection_values?.find((option) => normalizeColor(option.value) === normalized)?.hex ?? null;
+}
+
 function Avatar({ src, name }) {
     return src
         ? <img src={src} alt={name} class="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-[var(--dash-border)]" />
@@ -35,10 +45,12 @@ function Value({ field, value, lang, context }) {
     return <FieldControl field={field} value={value} onChange={() => {}} lang={lang} readOnly context={context} />;
 }
 
-function Card({ record, layout, modelName, lang, context }) {
+function Card({ record, layout, modelName, lang, context, colorField }) {
     const title = layout.title ? record[layout.title.name] : '';
-    const titleText = title?.name ?? title ?? '';
+    const titleText = localizedValue(title?.name ?? title, lang);
     const href = buildRecordUrl(modelName, record.uuid);
+    const accentColor = colorHex(colorField, colorField ? record[colorField.name] : null);
+    const cardStyle = accentColor ? { borderColor: accentColor } : undefined;
     const column = (item) => {
         const value = record[item.field.name];
         if (value == null || value === '') return null;
@@ -48,7 +60,7 @@ function Card({ record, layout, modelName, lang, context }) {
         </div>;
     };
     return (
-        <article data-uuid={record.uuid ?? ''} class="group rounded-lg border border-[var(--dash-border)] bg-[var(--dash-bg)] p-3 shadow-sm transition-shadow hover:shadow-md">
+        <article data-uuid={record.uuid ?? ''} class="group rounded-lg border border-[var(--dash-border)] bg-[var(--dash-bg)] p-3 shadow-sm transition-shadow hover:shadow-md" style={cardStyle}>
             <div class="flex items-start justify-between gap-2">
                 <div class="flex min-w-0 items-center gap-2">
                     <Avatar src={layout.image ? record[layout.image.name] : ''} name={titleText} />
@@ -77,7 +89,7 @@ function Card({ record, layout, modelName, lang, context }) {
     );
 }
 
-function Cards({ records, groupValue, layout, modelName, lang, context, groupBy, onMove }) {
+function Cards({ records, groupValue, layout, modelName, lang, context, groupBy, colorField, onMove }) {
     const ref = useRef(null);
     useEffect(() => makeSortable(ref.current, {
         handle: '.js-kanban-drag-handle',
@@ -86,7 +98,7 @@ function Cards({ records, groupValue, layout, modelName, lang, context, groupBy,
     }), [onMove]);
     return <div ref={ref} data-kanban-cards data-group-value={groupValue}
         class={groupBy ? 'flex min-h-24 flex-col gap-2 p-2' : 'grid w-full grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3'}>
-        {records.map((record) => <Card record={record} layout={layout} modelName={modelName} lang={lang} context={context} key={record.uuid} />)}
+        {records.map((record) => <Card record={record} layout={layout} modelName={modelName} lang={lang} context={context} colorField={colorField} key={record.uuid} />)}
     </div>;
 }
 
@@ -96,6 +108,7 @@ export function KanbanView({ data = {}, lang = 'en' }) {
     useEffect(() => setRecords(data.records ?? []), [data.records]);
     const schema = data?.model?.schema ?? [];
     const layout = useMemo(() => buildLayout(schema), [schema]);
+    const colorField = useMemo(() => schema.find((field) => field.type === 'color'), [schema]);
     const configured = data?.model?.groupBy;
     const groupBy = typeof configured === 'string' && configured.trim() ? configured.trim() : null;
     const groups = groupBy && Array.isArray(data?.model?.[groupBy]) ? data.model[groupBy] : [];
@@ -116,10 +129,10 @@ export function KanbanView({ data = {}, lang = 'en' }) {
                         <span data-kanban-count class="text-xs text-[var(--dash-text-muted)]">{cards.length}</span>
                     </header>
                     <Cards records={cards} groupValue={group.value} layout={layout} modelName={data?.model?.name ?? ''}
-                        lang={lang} context={context} groupBy={groupBy} onMove={onMove} />
+                        lang={lang} context={context} groupBy={groupBy} colorField={colorField} onMove={onMove} />
                 </section>;
             }) : <Cards records={records} layout={layout} modelName={data?.model?.name ?? ''} lang={lang}
-                context={context} groupBy={null} onMove={onMove} />}
+                context={context} groupBy={null} colorField={colorField} onMove={onMove} />}
         </div>
         <CreateModal data={data} lang={lang} open={modalOpen} onClose={() => setModalOpen(false)} />
     </main>;

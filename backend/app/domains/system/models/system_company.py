@@ -9,6 +9,7 @@ from app.domains.system.models.system_audit import SystemAudit
 from app.domains.system.models.system_colors import SystemColor
 
 if TYPE_CHECKING:
+    from app.domains.system.models.system_app import SystemApp
     from app.domains.system.models.system_whatsapp import SystemWhatsApp
     from app.domains.users.models.user_user import UserUser
 
@@ -26,7 +27,7 @@ class SystemCompany(SystemAudit, SQLModel, table=True):
         index=True,
     )
     name: str
-    active: bool = Field(default=False)
+    active: bool = Field(default=True)
     sequence: Optional[int] = Field(default=10)
     color: SystemColor = Field(
         default=SystemColor.zinc,
@@ -52,6 +53,7 @@ class SystemCompany(SystemAudit, SQLModel, table=True):
         back_populates="company",
         sa_relationship_kwargs={"foreign_keys": "[UserUser.company_id]"},
     )
+    apps: List["SystemApp"] = Relationship(back_populates="company")
     whatsapp_configurations: List["SystemWhatsApp"] = Relationship(
         back_populates="company"
     )

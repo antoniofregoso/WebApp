@@ -23,7 +23,6 @@
 - one2many
 - oney2many_kanban
 - one2many_list
-- one2many_followers
 - many2many
 - many2many_pills
 
@@ -151,6 +150,50 @@ Each field must declare only one placement. `required`, `readonly`, `placeholder
 ![Form](./images/form.png)
 
 ![Form Dark](./images/form_dark.png)
+
+### Followers
+
+Every record can be followed by users by default. Followers are not declared in
+the model schema JSON; the platform adds the followers widget automatically to
+the left side of the form footer.
+
+The widget displays human and AI-agent users only. System users are excluded.
+
+### one2many_kanban
+
+Any relational field (`one2many`, `one2many_pills`, etc.) can render its related
+records as mini-kanban cards instead of its default control by setting
+`"view": "one2many_kanban"` in its `form` config. `kanban_view.header` maps each
+card slot to a property name read directly off each related record — it does
+not reference schema fields.
+
+1. `image`: URL for the avatar, shown left of the title. Omitted entirely when
+   not declared; if declared but the record has no value, an icon placeholder
+   is shown instead — same as the [Kanban](#header) header image.
+2. `title`: card title, to the right of the image.
+3. `subtitle`: shown below the title, in smaller/muted text.
+
+If a related record has a `color` property, the card border is colored using
+the same palette as the [Color](#data-visualization-type) field type — see the
+regular Kanban view's accent-border behavior.
+
+```json
+{
+    "form": {
+        "tab": 0,
+        "view": "one2many_kanban",
+        "kanban_view": {"header": {"image": "avatar_url", "title": "name", "subtitle": "email"}},
+        "placeholder": {
+            "es_MX": "Usuarios",
+            "en_US": "Users"
+        },
+        "help": {
+            "es_MX": "Usuarios asociados",
+            "en_US": "Associated users"
+        }
+    }
+}
+```
 
 ## Calendar
 
