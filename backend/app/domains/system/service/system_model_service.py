@@ -3,6 +3,8 @@ from datetime import date, datetime
 from enum import Enum
 from uuid import UUID
 
+from sqlalchemy import inspect
+
 from app.core.exceptions import ResourceNotFoundException
 from app.domains.system.models.system_model import (
     SystemModel,
@@ -10,7 +12,24 @@ from app.domains.system.models.system_model import (
     SystemModelSchema,
     SystemModelSchemaUse,
 )
-from app.domains.system.repository.system_model_repository import SystemModelRepository
+from app.domains.system.repository.system_model_repository import (
+    MODEL_CLASS_BY_NAME,
+    SystemModelRepository,
+)
+
+MODEL_NAME_BY_CLASS = {cls: name for name, cls in MODEL_CLASS_BY_NAME.items()}
+RELATION_FIELD_TYPES = {"many2one", "many2one_avatar"}
+
+
+def _schema_payload(schema) -> list[dict]:
+    payload = getattr(schema, "schema", None)
+    if callable(payload):
+        payload = None
+    if payload is None:
+        payload = getattr(schema, "view", None)
+    if isinstance(payload, dict) and set(payload) == {"schema"}:
+        payload = payload["schema"]
+    return payload or []
 
 
 def _schema_field_names(schema: list[dict]) -> list[str]:
@@ -20,6 +39,28 @@ def _schema_field_names(schema: list[dict]) -> list[str]:
         if name and name not in field_names:
             field_names.append(name)
     return field_names
+
+
+def _relation_map(model: str, schema: list[dict]) -> dict[str, str]:
+    """Map FK columns (e.g. "company_id") to their relationship attribute
+    (e.g. "company") for many2one/many2one_avatar schema fields, so records
+    can embed the related {uuid, name, model} instead of the raw id."""
+    model_class = MODEL_CLASS_BY_NAME.get(model)
+    if model_class is None:
+        return {}
+
+    relationships = {relation.key for relation in inspect(model_class).relationships}
+    mapping: dict[str, str] = {}
+    for field in schema:
+        field_name = field.get("name", "")
+        if field.get("type") not in RELATION_FIELD_TYPES:
+            continue
+        if not field_name.endswith("_id"):
+            continue
+        attr_name = field_name[:-3]
+        if attr_name in relationships:
+            mapping[field_name] = attr_name
+    return mapping
 
 
 def _serialize_value(value):
@@ -32,7 +73,7 @@ def _serialize_value(value):
     if isinstance(value, UUID):
         return str(value)
     if isinstance(value, list):
-        return [_serialize_related_record(item) for item in value]
+        return [_serialize_value(item) for item in value]
     if isinstance(value, dict):
         return {key: _serialize_value(item) for key, item in value.items()}
     if hasattr(value, "__mapper__"):
@@ -41,18 +82,61 @@ def _serialize_value(value):
 
 
 def _serialize_related_record(record) -> dict:
-    return {
-        column.key: _serialize_value(getattr(record, column.key, None))
-        for column in record.__mapper__.column_attrs
-        if column.key != "id"
-    }
+    payload = {}
+    for column in record.__mapper__.column_attrs:
+        if column.key == "id":
+            continue
+        key = (
+            "schema"
+            if isinstance(record, SystemModelSchema) and column.key == "view"
+            else column.key
+        )
+        payload[key] = _serialize_value(getattr(record, column.key, None))
+    return payload
 
 
-def _serialize_record(record, field_names: list[str]) -> dict:
-    return {
-        field_name: _serialize_value(getattr(record, field_name, None))
-        for field_name in field_names
+def _display_name(related):
+    for method_name in ("get_label", "get_name"):
+        method = getattr(related, method_name, None)
+        if callable(method):
+            value = method()
+            if value:
+                return value
+    name = getattr(related, "name", None)
+    if isinstance(name, dict):
+        return name.get("es") or name.get("en") or next(iter(name.values()), "")
+    if name:
+        return name
+    return str(getattr(related, "uuid", ""))
+
+
+def _serialize_many2one(related) -> dict:
+    payload = {
+        "uuid": _serialize_value(getattr(related, "uuid", None)),
+        "name": _display_name(related),
+        "model": MODEL_NAME_BY_CLASS.get(type(related)),
     }
+    avatar = getattr(related, "avatar_url", None)
+    if avatar:
+        payload["avatar"] = avatar
+    return payload
+
+
+def _serialize_record(
+    record, field_names: list[str], relation_map: dict[str, str] | None = None
+) -> dict:
+    relation_map = relation_map or {}
+    result = {}
+    for field_name in field_names:
+        relation_attr = relation_map.get(field_name)
+        if relation_attr:
+            related = getattr(record, relation_attr, None)
+            result[field_name] = (
+                _serialize_many2one(related) if related is not None else None
+            )
+        else:
+            result[field_name] = _serialize_value(getattr(record, field_name, None))
+    return result
 
 
 class SystemModelService:
@@ -102,12 +186,15 @@ class SystemModelService:
                 resource_id=f"{model}/{use.value}/{name}",
             )
 
-        schema_fields = schema.view or []
+        schema_fields = _schema_payload(schema)
         field_names = _schema_field_names(schema_fields)
         if system_model.group_by and system_model.group_by not in field_names:
             field_names.append(system_model.group_by)
 
-        records = await SystemModelRepository.get_records(model, field_names)
+        relation_map = _relation_map(model, schema_fields)
+        records = await SystemModelRepository.get_records(
+            model, field_names, list(relation_map.values())
+        )
         model_payload = {
             "name": system_model.name,
             "label": system_model.label,
@@ -120,7 +207,10 @@ class SystemModelService:
 
         return {
             "model": model_payload,
-            "records": [_serialize_record(record, field_names) for record in records],
+            "records": [
+                _serialize_record(record, field_names, relation_map)
+                for record in records
+            ],
         }
 
     @staticmethod

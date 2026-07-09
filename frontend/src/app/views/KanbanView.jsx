@@ -99,7 +99,7 @@ export function KanbanView({ data = {}, lang = 'en' }) {
     const configured = data?.model?.groupBy;
     const groupBy = typeof configured === 'string' && configured.trim() ? configured.trim() : null;
     const groups = groupBy && Array.isArray(data?.model?.[groupBy]) ? data.model[groupBy] : [];
-    const context = { tags: data?.model?.tags ?? [], status: data?.model?.status ?? [] };
+    const context = { ...(data?.model ?? {}), tags: data?.model?.tags ?? [] };
     const onMove = (uuid, groupValue) => {
         if (!groupBy || groupValue == null) return;
         setRecords((current) => current.map((record) => String(record.uuid) === String(uuid) ? { ...record, [groupBy]: groupValue } : record));

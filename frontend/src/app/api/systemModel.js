@@ -1,5 +1,11 @@
 import { ClientError, gql, GraphQLClient } from 'graphql-request';
-import { getAccessToken } from '../store/authStore.js';
+import { refreshSession } from './auth.js';
+import {
+    clearAuthSession,
+    getAccessToken,
+    getRefreshToken,
+    setAuthSession,
+} from '../store/authStore.js';
 
 const GRAPHQL_ENDPOINT = new URL(
     import.meta.env.VITE_GRAPHQL_ENDPOINT ?? '/graphql',
@@ -22,6 +28,41 @@ export class SystemModelError extends Error {
     }
 }
 
+function isAuthenticationError(error) {
+    if (!(error instanceof ClientError)) return false;
+    const status = error.response.status;
+    if (status === 401) return true;
+    return error.response.errors?.some(({ message = '', extensions = {} }) => (
+        extensions.error_code === 'AUTHENTICATION_ERROR'
+        || /not authenticated|unauthenticated|token expired|invalid token/i.test(message)
+    )) ?? false;
+}
+
+async function refreshAuthSession(fetchImpl) {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) return false;
+
+    try {
+        const session = await refreshSession(refreshToken, fetchImpl);
+        setAuthSession(session);
+        return true;
+    } catch (error) {
+        clearAuthSession();
+        return false;
+    }
+}
+
+async function requestWithSessionRefresh(client, query, variables, fetchImpl) {
+    try {
+        return await client.request(query, variables);
+    } catch (error) {
+        if (!isAuthenticationError(error) || !await refreshAuthSession(fetchImpl)) {
+            throw error;
+        }
+        return client.request(query, variables);
+    }
+}
+
 /**
  * Fetches the declarative view payload for a model, including metadata,
  * schema, and records.
@@ -40,7 +81,12 @@ export async function fetchSystemModelView(
     });
 
     try {
-        const data = await client.request(SYSTEM_MODEL_VIEW_QUERY, { model, use, name });
+        const data = await requestWithSessionRefresh(
+            client,
+            SYSTEM_MODEL_VIEW_QUERY,
+            { model, use, name },
+            fetchImpl,
+        );
         return data.systemModelView;
     } catch (error) {
         if (error instanceof ClientError && error.response.errors?.length) {

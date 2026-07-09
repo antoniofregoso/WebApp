@@ -343,12 +343,18 @@ async def _load_model_schemas(
             raise RuntimeError(
                 f"Model '{record.get('model')}' is missing for schema '{record.get('name')}'."
             )
+        view = record.get("view")
+        if view is None:
+            raise RuntimeError(
+                f"Schema '{record.get('name')}' for model '{record.get('model')}' "
+                "must define the 'view' field."
+            )
         session.add(
             SystemModelSchema(
                 **_audit_values(bot_id, now),
                 name=record["name"],
                 use=record["use"],
-                view=record.get("view") or record.get("schema") or {},
+                view=view,
                 model_id=model.id,
             )
         )

@@ -29,7 +29,7 @@ function Cell({ field, record, data, lang }) {
     const value = record[field.name];
     if (field.name === 'name' && value) return <a href={buildRecordUrl(data?.model?.name, record.uuid)} class="font-medium text-[var(--dash-accent)] hover:underline">{value}</a>;
     return <FieldControl field={field} value={value} onChange={() => {}} lang={lang} readOnly
-        context={{ tags: data?.model?.tags ?? [], status: data?.model?.status ?? [], view: 'list' }} />;
+        context={{ ...(data?.model ?? {}), tags: data?.model?.tags ?? [], view: 'list' }} />;
 }
 
 function SortIcon({ direction }) {

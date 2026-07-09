@@ -18,6 +18,24 @@
                 "labelEn": "Users",
                 "labelEs": "Usuarios",
                 "url": "/dashboard/configuration/user.user"
+            },
+            {
+                "key": "users_online",
+                "labelEn": "Users Online",
+                "labelEs": "Usuarios en Línea",
+                "url": "/dashboard/configuration/user.user.log"
+            },
+            {
+                "key": "companies",
+                "labelEn": "Companies",
+                "labelEs": "Empresas",
+                "url": "/dashboard/configuration/system.company"
+            },
+            {
+                "key": "app",
+                "labelEn": "App",
+                "labelEs": "Aplicación",
+                "url": "/dashboard/configuration/system.app"
             }
         ]
     }

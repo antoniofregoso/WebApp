@@ -71,6 +71,10 @@ After `App Bot` exists, the script loads:
 `system_model_fields.json` is currently empty because fields are embedded in
 `system_models.json`.
 
+Each record in `system_model_schemas.json` must define its declarative layout in
+the `view` field. The setup stores that value in `SystemModelSchema.view`; the
+`systemModelView` GraphQL query exposes it as `model.schema` in the response.
+
 Human/system users loaded after `App Bot` use passwords from `user_users.json`.
 Those passwords are hashed with the same Argon2 helper used by the backend
 authentication flow (`AuthService.hash_password`) before they are inserted.

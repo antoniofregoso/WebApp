@@ -1773,6 +1773,16 @@ body {
   overflow-y: auto;
 }
 
+.form-modal:has(.form-json-editor) {
+  align-items: start;
+  overflow: auto;
+}
+
+.form-modal-panel:has(.form-json-editor),
+.form-modal-body:has(.form-json-editor) {
+  overflow: visible;
+}
+
 .form-control {
   width: 100%;
   min-height: 32px;
@@ -1810,6 +1820,16 @@ body {
 .form-control--edit:focus {
   border-color: var(--dash-accent);
   box-shadow: 0 0 0 3px var(--dash-accent-soft);
+}
+
+.form-password-control {
+  position: relative;
+  width: 100%;
+}
+
+.form-password-display {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  letter-spacing: 0.08em;
 }
 
 .form-record-header {
@@ -2301,6 +2321,51 @@ body {
 
 .form-rich-text-placeholder {
   color: var(--dash-text-muted);
+}
+
+.form-json-editor-shell {
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  background: var(--dash-surface);
+}
+
+.form-json-editor {
+  --jse-theme-color: var(--dash-accent);
+  --jse-theme-color-highlight: var(--dash-accent-hover);
+  --jse-button-primary-background: var(--dash-accent);
+  --jse-button-primary-background-highlight: var(--dash-accent-hover);
+  --jse-input-border-focus: var(--dash-accent);
+  min-height: 18rem;
+  overflow: visible;
+}
+
+.form-json-editor.jse-theme-dark {
+  --jse-theme-color: var(--dash-accent);
+  --jse-theme-color-highlight: var(--dash-accent-hover);
+}
+
+.form-json-editor .jse-main {
+  min-height: 18rem;
+  overflow: visible;
+}
+
+.form-modal .form-json-editor .jse-contextmenu,
+.form-modal .form-json-editor .jse-modal-wrapper {
+  z-index: 130;
+}
+
+.form-json-display {
+  max-height: 24rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  background: var(--dash-bg);
+  padding: 0.75rem;
+  color: var(--dash-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.8125rem;
+  line-height: 1.5;
 }
 
 .form-boolean-label {

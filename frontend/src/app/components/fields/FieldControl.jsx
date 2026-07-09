@@ -1,4 +1,5 @@
 import { StringField } from './StringField.jsx';
+import { PasswordField } from './PasswordField.jsx';
 import { IntegerField } from './IntegerField.jsx';
 import { DecimalField } from './DecimalField.jsx';
 import { MonetaryField } from './MonetaryField.jsx';
@@ -9,6 +10,7 @@ import { BooleanField } from './BooleanField.jsx';
 import { ImageField } from './ImageField.jsx';
 import { TextField } from './TextField.jsx';
 import { HtmlField } from './HtmlField.jsx';
+import { JsonField } from './JsonField.jsx';
 import { SelectionField } from './SelectionField.jsx';
 import { Many2oneField } from './Many2oneField.jsx';
 import { Many2oneAvatarField } from './Many2oneAvatarField.jsx';
@@ -18,6 +20,7 @@ import { Many2manyPillsField } from './Many2manyPillsField.jsx';
 
 const FIELD_COMPONENTS = {
     string: StringField,
+    password: PasswordField,
     integer: IntegerField,
     decimal: DecimalField,
     monetary: MonetaryField,
@@ -28,6 +31,7 @@ const FIELD_COMPONENTS = {
     image: ImageField,
     text: TextField,
     html: HtmlField,
+    json: JsonField,
     selection: SelectionField,
     status_badge: SelectionField,
     many2one: Many2oneField,

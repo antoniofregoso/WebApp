@@ -138,17 +138,22 @@ class SystemModelRepository:
             return system_model, schema
 
     @staticmethod
-    async def get_records(model_name: str, field_names: list[str]) -> list:
+    async def get_records(
+        model_name: str,
+        field_names: list[str],
+        relation_names: list[str] | None = None,
+    ) -> list:
         model_class = MODEL_CLASS_BY_NAME.get(model_name)
         if model_class is None:
             return []
 
         mapper = inspect(model_class)
         relationships = {relationship.key for relationship in mapper.relationships}
+        load_names = set(field_names) | set(relation_names or [])
         options = [
-            selectinload(getattr(model_class, field_name))
-            for field_name in field_names
-            if field_name in relationships
+            selectinload(getattr(model_class, name))
+            for name in load_names
+            if name in relationships
         ]
 
         async with db.session() as session:

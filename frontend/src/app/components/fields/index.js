@@ -3,6 +3,7 @@ export { FormField } from './FormField.jsx';
 export { FieldHelp } from './FieldHelp.jsx';
 
 export { StringField } from './StringField.jsx';
+export { PasswordField } from './PasswordField.jsx';
 export { IntegerField } from './IntegerField.jsx';
 export { DecimalField } from './DecimalField.jsx';
 export { MonetaryField } from './MonetaryField.jsx';
@@ -13,6 +14,7 @@ export { BooleanField } from './BooleanField.jsx';
 export { ImageField } from './ImageField.jsx';
 export { TextField } from './TextField.jsx';
 export { HtmlField } from './HtmlField.jsx';
+export { JsonField } from './JsonField.jsx';
 export { SelectionField } from './SelectionField.jsx';
 export { Many2oneField } from './Many2oneField.jsx';
 export { Many2oneAvatarField } from './Many2oneAvatarField.jsx';

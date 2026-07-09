@@ -40,6 +40,47 @@ describe('StringField / TextField', () => {
     });
 });
 
+describe('PasswordField', () => {
+    it('masks readonly values and shows a dash when empty', () => {
+        const host = mount(<FieldControl field={{ name: 'api_secret', type: 'password', label: { en: 'API secret' } }} value="super-secret" readOnly onChange={() => {}} />);
+        expect(host.textContent).toBe('••••••••');
+        expect(host.textContent).not.toContain('super-secret');
+
+        const emptyHost = mount(<FieldControl field={{ name: 'api_secret', type: 'password' }} value="" readOnly onChange={() => {}} />);
+        expect(emptyHost.textContent).toBe('—');
+    });
+
+    it('hides editable values without a reveal button and emits changes', () => {
+        const onChange = vi.fn();
+        const host = mount(<FieldControl field={{ name: 'password', type: 'password' }} value="changeMe123" lang="es" onChange={onChange} />);
+        const input = host.querySelector('input[name="password"]');
+
+        expect(input.type).toBe('password');
+        expect(host.querySelector('[data-password-field-toggle]')).toBeNull();
+
+        input.value = 'new-secret';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        expect(onChange).toHaveBeenCalledWith('password', 'new-secret');
+    });
+
+    it('does not expose encoded Argon hashes in edit mode', () => {
+        const hash = '$argon2id$v=19$m=65536,t=3,p=4$abc$def';
+        const onChange = vi.fn();
+        const host = mount(<FieldControl field={{ name: 'password', type: 'password' }} value={hash} onChange={onChange} />);
+        const input = host.querySelector('input[name="password"]');
+
+        expect(input.value).toBe('');
+        expect(input.placeholder).toBe('••••••••');
+        expect(host.textContent).not.toContain('argon2');
+        expect(host.querySelector('[data-password-field-toggle]')).toBeNull();
+        expect(input.value).toBe('');
+
+        input.value = 'replacement-secret';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        expect(onChange).toHaveBeenCalledWith('password', 'replacement-secret');
+    });
+});
+
 describe('numeric fields', () => {
     it('integer/decimal/monetary show em-dash when empty and format currency when readonly', () => {
         const monetaryHost = mount(

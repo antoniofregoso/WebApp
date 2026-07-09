@@ -1,8 +1,10 @@
+import uuid as uuid_lib
 from enum import Enum
 from typing import Optional
 
 from sqlmodel import SQLModel, Field
 from sqlalchemy import Enum as SAEnum
+from sqlalchemy import text as sa_text
 from sqlalchemy.dialects.postgresql import JSONB
 
 from app.domains.system.models.system_audit import SystemAudit
@@ -17,6 +19,14 @@ class SystemCurrency(SystemAudit, SQLModel, table=True):
     __tablename__ = "system_currencies"
 
     id: Optional[int] = Field(default=None, primary_key=True, nullable=False)
+    uuid: uuid_lib.UUID = Field(
+        default_factory=uuid_lib.uuid4,
+        sa_column_kwargs={
+            "server_default": sa_text("gen_random_uuid()"),
+            "unique": True,
+        },
+        index=True,
+    )
     name: str
     code: str
     iso_numeric: int
