@@ -29,6 +29,20 @@ class JWTManager:
         return encoded_jwt
 
     @staticmethod
+    def generate_access_token(data: dict) -> str:
+        """Genera un access token usando la duración configurada."""
+        return JWTManager.generate_token(
+            data, timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        )
+
+    @staticmethod
+    def generate_refresh_token(data: dict) -> str:
+        """Genera un refresh token usando la duración configurada."""
+        return JWTManager.generate_token(
+            data, timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        )
+
+    @staticmethod
     def verify_token(token: str) -> dict:
         """Verifica y decodifica un token JWT. Lanza ValueError si es inválido."""
         try:

@@ -11,6 +11,7 @@ export {
   authSignal,
   clearAuthSession,
   getAccessToken,
+  getRefreshToken,
   isAuthenticated,
   setAuthSession,
 } from './authStore.js';

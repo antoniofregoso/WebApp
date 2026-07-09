@@ -75,6 +75,20 @@ Human/system users loaded after `App Bot` use passwords from `user_users.json`.
 Those passwords are hashed with the same Argon2 helper used by the backend
 authentication flow (`AuthService.hash_password`) before they are inserted.
 
+## Default Admin User
+
+The initial seed creates a default development administrator:
+
+```json
+{
+  "email": "admin@app.com",
+  "password": "changeMe123"
+}
+```
+
+Use this account only for local setup and change the password before using a
+shared or production database.
+
 ## Audit Fields
 
 For records that inherit from `SystemAudit`, the setup writes:

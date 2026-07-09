@@ -44,7 +44,19 @@ class LoginInput:
     password: str
 
 
+@strawberry.input
+class RefreshSessionInput:
+    refresh_token: str
+
+
+@strawberry.input
+class LogoutInput:
+    refresh_token: str
+
+
 @strawberry.type
 class LoginType:
     email: str
     token: str
+    access_token: str
+    refresh_token: str

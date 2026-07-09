@@ -6,7 +6,7 @@ App.on('/', home);
 App.on('/login', login).setName("login");
 App.on('/password_reset', passwordReset)
 App.on('/dashboard', dashboard).setName("dash");
-App.on('/dashboard/{area}/{subarea}/{model}/{uuid}', dashboard);
-App.on('/dashboard/{area}/{model}/{uuid}', dashboard);
 App.on('/dashboard/{area}', dashboard);
-App.on('/dashboard/{area}/{subarea}', dashboard);
+App.on('/dashboard/{area}/{model}', dashboard);
+App.on('/dashboard/{area}/{model}/{uuid}', dashboard);
+ 

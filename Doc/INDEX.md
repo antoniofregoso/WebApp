@@ -17,3 +17,5 @@ The available queries are [here](./GRAPHQL_QUERIES.md).
 [Quick Start Guide - Backend](./BACKEND.md).
 
 [Database setup](./DATABASE_SETUP.md).
+
+[Session renewal](./SESSION_RENEWAL.md).

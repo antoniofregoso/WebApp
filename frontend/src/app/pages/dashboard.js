@@ -4,32 +4,59 @@ import { appSignal, isAuthenticated } from '../store';
 import { contextActions, dashboardActions } from '../store/actions';
 import { mountSidebar, mountTopbar, MENU_ITEMS } from '../components';
 import { CalendarView, FormView, KanbanView, ListView, renderInsights, initInsights, patchInsights } from '../views';
-import { applyTheme, getAreaTitle, mapSystemModelToViewModel, normalizePagination, paginateData, resetAppRoot } from '../utils';
-import { fetchSystemModelByName } from '../api/systemModel.js';
+import { applyTheme, getAreaTitle, normalizePagination, paginateData, resetAppRoot } from '../utils';
+import { fetchSystemModelView } from '../api/systemModel.js';
 
-import demoData from '../data/demo.json';
+const EMPTY_DASHBOARD_DATA = {
+    model: {
+        name: '',
+        label: {},
+        groupBy: null,
+        tags: [],
+        schema: [],
+    },
+    records: [],
+};
 
-// The declarative view schema (Doc/VIEWS_FORMAT.md) is served live by the
-// backend (see backend/migrations for the seeded "sale.order" model). Until
-// that fetch resolves — or if it fails — the bundled demo schema keeps the
-// dashboard usable, matching demoData.records for now.
-const SCHEMA_MODEL_NAME = 'sale.order';
-let _modelSchemaRequested = false;
+let _modelViewRequestKey = null;
 
-function ensureModelSchemaLoaded() {
-    if (_modelSchemaRequested) return;
-    _modelSchemaRequested = true;
-    fetchSystemModelByName(SCHEMA_MODEL_NAME)
-        .then((systemModel) => {
-            dashboardActions.setModelSchema(mapSystemModelToViewModel(systemModel));
-        })
-        .catch((error) => {
-            console.error(`Falling back to the local demo schema for "${SCHEMA_MODEL_NAME}".`, error);
-        });
+function getDashboardData(state = appSignal.value) {
+    return state.model ?? EMPTY_DASHBOARD_DATA;
 }
 
-function getData(state = appSignal.value) {
-    return { ...demoData, model: state.model ?? demoData.model };
+function getRouteSearchParams() {
+    return new URLSearchParams(globalThis.location?.search ?? '');
+}
+
+function getModelViewOptions() {
+    const params = getRouteSearchParams();
+    return {
+        name: params.get('view_name') || params.get('name') || 'default',
+        use: (params.get('mode') || params.get('use') || 'view').toLowerCase(),
+    };
+}
+
+function ensureModelViewLoaded(modelName, options) {
+    if (!modelName) {
+        if (appSignal.value.model) dashboardActions.setModelView(null);
+        _modelViewRequestKey = null;
+        return;
+    }
+
+    const requestKey = `${modelName}:${options.use}:${options.name}`;
+    if (_modelViewRequestKey === requestKey) return;
+    _modelViewRequestKey = requestKey;
+
+    fetchSystemModelView({ model: modelName, use: options.use, name: options.name })
+        .then((modelView) => {
+            if (_modelViewRequestKey !== requestKey) return;
+            dashboardActions.setModelView(modelView);
+        })
+        .catch((error) => {
+            if (_modelViewRequestKey !== requestKey) return;
+            console.error(`Unable to load dashboard view "${requestKey}".`, error);
+            dashboardActions.setModelView(null);
+        });
 }
 
 // ── Track last rendered values to avoid redundant re-renders ──────────────────
@@ -77,11 +104,11 @@ function hasRecordRoute() {
 }
 
 function getPagination(state = appSignal.value) {
-    return normalizePagination(state.dashboard, demoData.records.length);
+    return normalizePagination(state.dashboard, getDashboardData(state).records.length);
 }
 
 /** Render the content markup for the currently selected view. */
-function getViewProps(view, area, lang, pagination, data = getData()) {
+function getViewProps(view, area, lang, pagination, data = getDashboardData()) {
     const paginatedData = paginateData(data, pagination);
     if (view === 'form') {
         const commercialAreas = new Set(['crm', 'sales', 'sale', 'ventas']);
@@ -128,20 +155,9 @@ function initActiveView(view, lang) {
     if (initFn) _viewCleanup = initFn(lang) || null;
 }
 
-function navigateToUrl(url) {
-    window.history.pushState({}, '', url);
-    window.dispatchEvent(new PopStateEvent('popstate'));
-}
-
 /** Dock view-switch callback passed into the topbar. */
 function handleViewChange(view) {
-    if (hasRecordRoute()) {
-        const area = appSignal.value.context.active_area;
-        dashboardActions.setView(view);
-        navigateToUrl(`/dashboard/${area}`);
-    } else {
-        dashboardActions.setView(view);
-    }
+    dashboardActions.setView(view);
 }
 
 function getLabel(item, lang) {
@@ -323,7 +339,8 @@ export function dashboard(req, router) {
     }
     const areaChanged = areaFromUrl !== appSignal.value.context.active_area;
     const subareaChanged = _currentSubarea !== prevSubarea;
-    dashboardActions.setTotal(demoData.records.length);
+    const modelViewOptions = getModelViewOptions();
+    ensureModelViewLoaded(_currentRecordModel, modelViewOptions);
     if (areaFromUrl && areaChanged) {
         contextActions.setActiveArea(areaFromUrl);
     }
@@ -367,7 +384,6 @@ export function dashboard(req, router) {
     _lastRecordUuid = _currentRecordUuid;
     _lastInsights = state.insights;
     _lastModel = state.model;
-    ensureModelSchemaLoaded();
 
     // ── Cleanup previous effect if navigating back to this page ──────────────
     if (_effectCleanup) {

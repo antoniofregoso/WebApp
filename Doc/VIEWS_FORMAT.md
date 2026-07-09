@@ -99,7 +99,9 @@ Fields are ordered in descending order across the width of the Kanban card.
 }
 ```
 
-![Render Kanban](./images/kanban.png)
+![Kanban](./images/kanban.png)
+
+![Kanban Dark](./images/kanban_dark.png)
 
 ## List
 
@@ -110,7 +112,9 @@ Fields are ordered in descending order across the width of the Kanban card.
         },
 }
 ```
-![Render List](./images/list.png)
+![List](./images/list.png)
+
+![List Dark](./images/list_dark.png)
 
 ## Form
 
@@ -144,7 +148,9 @@ Each field must declare only one placement. `required`, `readonly`, `placeholder
 }
 ```
 
-![Render Form](./images/form.png)
+![Form](./images/form.png)
+
+![Form Dark](./images/form_dark.png)
 
 ## Calendar
 
@@ -162,7 +168,9 @@ time followed by the configured title.
     }
 }
 ```
-![Render Calendar](./images/calendar.png)
+![Calendar](./images/calendar.png)
+
+![Calendar Dark](./images/calendar_dark.png)
 
 ## Insight
 

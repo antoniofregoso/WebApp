@@ -33,3 +33,23 @@ def test_system_model_view_query_is_exposed():
     assert "use: SystemModelSchemaUse!" in schema
     assert "name: String!" in schema
     assert "type SystemModelViewType" in schema
+
+
+def test_refresh_session_mutation_is_exposed():
+    schema = strawberry.Schema(query=Query, mutation=Mutation).as_str()
+
+    assert "refreshSession(" in schema
+    assert "refresh: RefreshSessionInput!" in schema
+    assert "input RefreshSessionInput" in schema
+    assert "refreshToken: String!" in schema
+    assert "accessToken: String!" in schema
+    assert "refreshToken: String!" in schema
+
+
+def test_logout_mutation_is_exposed():
+    schema = strawberry.Schema(query=Query, mutation=Mutation).as_str()
+
+    assert "logout(" in schema
+    assert "logout: LogoutInput!" in schema
+    assert "input LogoutInput" in schema
+    assert "refreshToken: String!" in schema

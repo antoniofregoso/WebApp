@@ -64,8 +64,21 @@ export const dashboardActions = {
         appSignal.value = { ...appSignal.value, insights };
     },
 
+    setModelView(modelView) {
+        const total = Math.max(0, Number(modelView?.records?.length) || 0);
+        appSignal.value = {
+            ...appSignal.value,
+            model: modelView,
+            dashboard: {
+                ...appSignal.value.dashboard,
+                total,
+                page: 1,
+            },
+        };
+    },
+
     setModelSchema(model) {
-        appSignal.value = { ...appSignal.value, model };
+        dashboardActions.setModelView({ model, records: [] });
     },
 
     refreshInsights(data = {}) {

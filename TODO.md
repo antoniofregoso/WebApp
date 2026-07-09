@@ -14,15 +14,15 @@
 
 ## Renovación de sesión
 
-- [ ] Reducir la duración del access token a 15 minutos.
-- [ ] Agregar configuración para la duración del refresh token.
-- [ ] Generar access token y refresh token durante el login.
-- [ ] Crear una mutación GraphQL para renovar la sesión.
-- [ ] Guardar únicamente el hash del refresh token en PostgreSQL.
-- [ ] Implementar rotación: invalidar el refresh token usado y emitir uno nuevo.
-- [ ] Permitir revocar sesiones al cerrar sesión, cambiar contraseña o deshabilitar un usuario.
-- [ ] Detectar la reutilización de refresh tokens y revocar la sesión afectada.
-- [ ] Definir una expiración absoluta para la sesión, además del tiempo de inactividad.
+- [x] Reducir la duración del access token a 15 minutos.
+- [x] Agregar configuración para la duración del refresh token.
+- [x] Generar access token y refresh token durante el login.
+- [x] Crear una mutación GraphQL para renovar la sesión.
+- [x] Guardar únicamente el hash del refresh token en PostgreSQL.
+- [x] Implementar rotación: invalidar el refresh token usado y emitir uno nuevo.
+- [x] Permitir revocar sesiones al cerrar sesión, cambiar contraseña o deshabilitar un usuario.
+- [x] Detectar la reutilización de refresh tokens y revocar la sesión afectada.
+- [x] Definir una expiración absoluta para la sesión, además del tiempo de inactividad.
 
 ## Seguridad web
 

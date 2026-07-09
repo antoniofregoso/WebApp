@@ -4,86 +4,21 @@
         "icon": "faChartLine", 
         "labelEn": "Area 1", 
         "labelEs": "Área 1", 
-        "url": "#",
-        "items": [
-            {
-                "key": "insights",
-                "labelEn": "Insights",
-                "labelEs": "Perspectivas",
-                "url": "/dashboard/area1/insights"
-            },
-            {
-                "key": "subarea1",
-                "labelEn": "Subarea 1",
-                "labelEs": "Subárea 1",
-                "url": "/dashboard/area1/subarea1"
-            },
-            {
-                "key": "subarea2",
-                "labelEn": "Subarea 2",
-                "labelEs": "Subárea 2",
-                "url": "/dashboard/area1/subarea2"
-            },
-            {
-                "key": "configuration",
-                "labelEn": "Configuration",
-                "labelEs": "Configuración",
-                "url": "/dashboard/area1/configuration"
-            }
-        ]
-    },
-    { 
-        "key": "area2",
-        "icon": "faUsers",
-        "labelEn": "Area 2",
-        "labelEs": "Área 2",
-        "url": "/dashboard/area2" 
-    },
-    { 
-        "key": "area3",
-        "icon": "faFolder",
-        "labelEn": "Area 3",
-        "labelEs": "Área 3",
-        "url": "#",
-        "items": [
-            {
-                "key": "insights",
-                "labelEn": "Insights",
-                "labelEs": "Perspectivas",
-                "url": "/dashboard/area3/insights"
-            },
-            {
-                "key": "subarea1",
-                "labelEn": "Subarea 1",
-                "labelEs": "Subárea 1",
-                "url": "/dashboard/area3/subarea1"
-            },
-            {
-                "key": "subarea2",
-                "labelEn": "Subarea 2",
-                "labelEs": "Subárea 2",
-                "url": "/dashboard/area3/subarea2"
-            },
-            {
-                "key": "configuration",
-                "labelEn": "Configuration",
-                "labelEs": "Configuración",
-                "url": "/dashboard/area3/configuration"
-            }
-        ]
-    },
-    { 
-        "key": "area4", 
-        "icon": "faCloud", 
-        "labelEn": "Area 4", 
-        "labelEs": "Área 4", 
-        "url": "/dashboard/area4" 
+        "url": "#"
     },
     { 
         "key": "configuration", 
         "icon": "faGear", 
         "labelEn": "Configuration", 
         "labelEs": "Configuración", 
-        "url": "/dashboard/configuration" 
+        "url": "#",
+        "items": [
+            {
+                "key": "users",
+                "labelEn": "Users",
+                "labelEs": "Usuarios",
+                "url": "/dashboard/configuration/user.user"
+            }
+        ]
     }
 ]

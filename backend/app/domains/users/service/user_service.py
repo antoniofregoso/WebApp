@@ -2,6 +2,7 @@ import uuid as uuid_lib
 
 from app.domains.users.repository.user_repository import UserRepository
 from app.core.exceptions import ResourceNotFoundException
+from app.domains.users.service.auth_service import AuthService
 
 
 class UserService:
@@ -26,9 +27,17 @@ class UserService:
 
     @staticmethod
     async def update(user_uuid: uuid_lib.UUID, user_data: dict):
+        revoke_sessions = "password" in user_data or user_data.get("active") is False
+        if "password" in user_data:
+            user_data = {
+                **user_data,
+                "password": AuthService.hash_password(user_data["password"]),
+            }
         user = await UserRepository.update(user_uuid, user_data)
         if not user:
             raise ResourceNotFoundException(resource="User", resource_id=str(user_uuid))
+        if revoke_sessions:
+            await AuthService.revoke_user_sessions(user.id)
         return user
 
     @staticmethod

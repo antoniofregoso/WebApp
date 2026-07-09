@@ -186,7 +186,9 @@ DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/app_db
 # Seguridad
 SECRET_KEY=your-secret-key-here
 ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+ACCESS_TOKEN_EXPIRE_MINUTES=15
+REFRESH_TOKEN_EXPIRE_DAYS=7
+SESSION_ABSOLUTE_EXPIRE_DAYS=30
 
 # CORS
 CORS_ORIGINS=["http://localhost:5173", "http://localhost:3000"]

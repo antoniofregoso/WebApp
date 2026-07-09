@@ -18,7 +18,8 @@ import {
     faCalendarDays,
 } from './icon.js';
 import { contextActions, dashboardActions } from '../store/actions/index.js';
-import { clearAuthSession } from '../store/authStore.js';
+import { logout } from '../api/auth.js';
+import { clearAuthSession, getRefreshToken } from '../store/authStore.js';
 import { t } from '../../i18n/translations.js';
 import { normalizePagination } from '../utils';
 
@@ -70,6 +71,8 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = null, showTools = 
     }, [userMenuOpen]);
 
     const handleLogout = () => {
+        const refreshToken = getRefreshToken();
+        void logout(refreshToken);
         clearAuthSession();
         setUserMenuOpen(false);
         router?.goTo('login');

@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from app.domains.system.models.system_company import SystemCompany
     from app.domains.system.models.system_lang import SystemLang
     from app.domains.users.models.user_log import UserLog
+    from app.domains.users.models.user_session import UserSession
 
 from app.domains.system.models.system_message_user_rel import SystemMessageUserRel
 from app.domains.system.models.system_notification_user_rel import (
@@ -101,4 +102,9 @@ class UserUser(SystemAudit, SQLModel, table=True):
     logs: List["UserLog"] = Relationship(
         back_populates="user",
         sa_relationship_kwargs={"foreign_keys": "[UserLog.user_id]"},
+    )
+
+    sessions: List["UserSession"] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"foreign_keys": "[UserSession.user_id]"},
     )

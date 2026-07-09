@@ -4,6 +4,8 @@ from app.domains.users.graphql.types import (
     UserLogStatusType,
     LoginType,
     LoginInput,
+    RefreshSessionInput,
+    LogoutInput,
     RegisterInput,
 )
 from app.domains.users.graphql.queries import UserQuery
@@ -15,6 +17,8 @@ __all__ = [
     "UserLogStatusType",
     "LoginType",
     "LoginInput",
+    "RefreshSessionInput",
+    "LogoutInput",
     "RegisterInput",
     "UserQuery",
     "UserMutation",

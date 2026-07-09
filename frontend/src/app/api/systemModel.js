@@ -6,17 +6,11 @@ const GRAPHQL_ENDPOINT = new URL(
     globalThis.location?.origin ?? 'http://localhost',
 ).toString();
 
-const SYSTEM_MODEL_BY_NAME_QUERY = gql`
-  query SystemModelByName($name: String!) {
-    systemModelByName(name: $name) {
-      uuid
-      name
-      schemas {
-        uuid
-        name
-        use
-        view
-      }
+const SYSTEM_MODEL_VIEW_QUERY = gql`
+  query SystemModelView($model: String!, $use: SystemModelSchemaUse!, $name: String!) {
+    systemModelView(model: $model, use: $use, name: $name) {
+      model
+      records
     }
   }
 `;
@@ -29,11 +23,13 @@ export class SystemModelError extends Error {
 }
 
 /**
- * Fetches a declarative model (fields + view schemas) by its technical name,
- * e.g. "sale.order". This is the GraphQL-backed source for the dynamic views
- * documented in Doc/VIEWS_FORMAT.md.
+ * Fetches the declarative view payload for a model, including metadata,
+ * schema, and records.
  */
-export async function fetchSystemModelByName(name, fetchImpl = globalThis.fetch) {
+export async function fetchSystemModelView(
+    { model, use = 'view', name = 'default' },
+    fetchImpl = globalThis.fetch,
+) {
     const client = new GraphQLClient(GRAPHQL_ENDPOINT, {
         credentials: 'same-origin',
         fetch: fetchImpl,
@@ -44,12 +40,12 @@ export async function fetchSystemModelByName(name, fetchImpl = globalThis.fetch)
     });
 
     try {
-        const data = await client.request(SYSTEM_MODEL_BY_NAME_QUERY, { name });
-        return data.systemModelByName;
+        const data = await client.request(SYSTEM_MODEL_VIEW_QUERY, { model, use, name });
+        return data.systemModelView;
     } catch (error) {
         if (error instanceof ClientError && error.response.errors?.length) {
-            throw new SystemModelError(`Model "${name}" was not found`, { cause: error });
+            throw new SystemModelError(`View "${model}/${use}/${name}" was not found`, { cause: error });
         }
-        throw new SystemModelError(`Unable to load the schema for model "${name}"`, { cause: error });
+        throw new SystemModelError(`Unable to load the view for model "${model}"`, { cause: error });
     }
 }

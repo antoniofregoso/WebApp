@@ -10,7 +10,26 @@ const LOGIN_MUTATION = gql`
     login(login: $login) {
       email
       token
+      accessToken
+      refreshToken
     }
+  }
+`;
+
+const REFRESH_SESSION_MUTATION = gql`
+  mutation RefreshSession($refresh: RefreshSessionInput!) {
+    refreshSession(refresh: $refresh) {
+      email
+      token
+      accessToken
+      refreshToken
+    }
+  }
+`;
+
+const LOGOUT_MUTATION = gql`
+  mutation Logout($logout: LogoutInput!) {
+    logout(logout: $logout)
   }
 `;
 
@@ -40,7 +59,7 @@ export async function authenticate(email, password, fetchImpl = globalThis.fetch
             login: { email, password },
         });
 
-        if (!data.login?.token) {
+        if (!data.login?.token && !data.login?.accessToken) {
             throw new AuthenticationError('Invalid email or password');
         }
 
@@ -62,5 +81,57 @@ export async function authenticate(email, password, fetchImpl = globalThis.fetch
             'NETWORK_ERROR',
             { cause: error },
         );
+    }
+}
+
+export async function refreshSession(refreshToken, fetchImpl = globalThis.fetch) {
+    const client = new GraphQLClient(GRAPHQL_ENDPOINT, {
+        credentials: 'same-origin',
+        fetch: fetchImpl,
+    });
+
+    try {
+        const data = await client.request(REFRESH_SESSION_MUTATION, {
+            refresh: { refreshToken },
+        });
+
+        if (!data.refreshSession?.token && !data.refreshSession?.accessToken) {
+            throw new AuthenticationError('Invalid refresh token');
+        }
+
+        return data.refreshSession;
+    } catch (error) {
+        if (error instanceof AuthenticationError) throw error;
+        if (error instanceof ClientError) {
+            throw new AuthenticationError(
+                'Session refresh failed',
+                'SESSION_REFRESH_FAILED',
+                { cause: error },
+            );
+        }
+        throw new AuthenticationError(
+            'Unable to reach the authentication service',
+            'NETWORK_ERROR',
+            { cause: error },
+        );
+    }
+}
+
+export async function logout(refreshToken, fetchImpl = globalThis.fetch) {
+    if (!refreshToken) return true;
+
+    const client = new GraphQLClient(GRAPHQL_ENDPOINT, {
+        credentials: 'same-origin',
+        fetch: fetchImpl,
+    });
+
+    try {
+        const data = await client.request(LOGOUT_MUTATION, {
+            logout: { refreshToken },
+        });
+        return Boolean(data.logout);
+    } catch (error) {
+        if (error instanceof ClientError) return false;
+        throw error;
     }
 }

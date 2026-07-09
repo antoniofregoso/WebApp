@@ -1,17 +1,24 @@
 import { signal, effect, computed } from '@preact/signals';
 import initialStateJson from './state.json';
-import initialInsights from '../data/insights.json';
+
+const EMPTY_INSIGHTS = {
+    period: 'monthly',
+    kpis: [],
+    gauges: [],
+    graphics: [],
+    layout: {},
+};
 
 const INITIAL_STATE = {
     ...initialStateJson,
-    insights: initialInsights,
+    insights: EMPTY_INSIGHTS,
 };
 const STORAGE_KEY = 'dashboard_state';
 
 function persistState(storage, state) {
     const persistedState = { ...state };
     delete persistedState.insights;
-    // The declarative model schema is fetched fresh over GraphQL each session
+    // The declarative model view is fetched fresh over GraphQL each session
     // (see dashboard.js), so it should never be read back from a stale cache.
     delete persistedState.model;
     storage?.setItem(STORAGE_KEY, JSON.stringify(persistedState));
@@ -32,7 +39,7 @@ function loadInitialState() {
     const savedState = JSON.parse(localData);
     // Dashboard configuration and seed data are loaded fresh on every startup.
     // Runtime refreshes update indicator data in memory through dashboardActions.
-    savedState.insights = JSON.parse(JSON.stringify(initialInsights));
+    savedState.insights = JSON.parse(JSON.stringify(EMPTY_INSIGHTS));
     const sessionStarted = savedState.meta?.start > 0;
 
     // CASE 2: Return after 24 h — reset session but keep preferences
