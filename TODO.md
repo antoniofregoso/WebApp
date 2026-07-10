@@ -26,27 +26,27 @@
 
 ## Seguridad web
 
-- [ ] Entregar el refresh token mediante una cookie `HttpOnly`, `Secure` y `SameSite`.
-- [ ] Mantener el access token en memoria en el frontend.
-- [ ] Configurar correctamente CORS y protección CSRF para el flujo con cookies.
-- [ ] Agregar `issuer`, `audience`, `jti` y tipo de token a los JWT.
-- [ ] Solicitar contraseña o MFA nuevamente para operaciones críticas.
+- [x] Entregar el refresh token mediante una cookie `HttpOnly`, `Secure` y `SameSite`.
+- [x] Mantener el access token en memoria en el frontend.
+- [x] Configurar correctamente CORS y protección CSRF para el flujo con cookies.
+- [x] Agregar `issuer`, `audience`, `jti` y tipo de token a los JWT.
+- [x] Solicitar contraseña o MFA nuevamente para operaciones críticas.
 
 ## Frontend
 
-- [ ] Solicitar automáticamente la renovación antes de expirar el access token o al recibir un `401`.
-- [ ] Evitar múltiples solicitudes de refresh simultáneas.
-- [ ] Repetir la petición original después de renovar el token.
-- [ ] Cerrar la sesión y redirigir al login si la renovación falla.
+- [x] Solicitar automáticamente la renovación antes de expirar el access token o al recibir un `401`.
+- [x] Evitar múltiples solicitudes de refresh simultáneas.
+- [x] Repetir la petición original después de renovar el token.
+- [x] Cerrar la sesión y redirigir al login si la renovación falla.
 
 ## Logs de actividad de usuario
 
-- [ ] Crear endpoint o mutación GraphQL de heartbeat/ping para el usuario autenticado.
-- [ ] En cada ping, buscar el `UserLog` abierto del usuario (`status = ONLINE`, sin `end_date`) y actualizar `last_seen_at` con la hora del servidor.
-- [ ] Hacer que el frontend envíe el ping cada 30-60 segundos mientras la sesión esté activa y la pestaña esté visible.
-- [ ] Crear una tarea programada que marque como `OFFLINE` los logs sin ping reciente, usando un timeout definido, por ejemplo 2-5 minutos.
-- [ ] Al cerrar automáticamente, usar `last_seen_at` como `end_date` para que `duration` no cuente tiempo inactivo.
-- [ ] Probar login, logout explícito, cierre de pestaña/navegador, suspensión de laptop y múltiples pestañas.
+- [x] Crear endpoint o mutación GraphQL de heartbeat/ping para el usuario autenticado.
+- [x] En cada ping, buscar el `UserLog` abierto del usuario (`status = ONLINE`, sin `end_date`) y actualizar `last_seen_at` con la hora del servidor.
+- [x] Hacer que el frontend envíe el ping cada 30-60 segundos mientras la sesión esté activa y la pestaña esté visible.
+- [x] Crear una tarea programada que marque como `OFFLINE` los logs sin ping reciente, usando un timeout definido, por ejemplo 2-5 minutos.
+- [x] Al cerrar automáticamente, usar `last_seen_at` como `end_date` para que `duration` no cuente tiempo inactivo.
+- [x] Probar login, logout explícito, cierre de pestaña/navegador, suspensión de laptop y múltiples pestañas.
 
 ## Base de datos y pruebas
 

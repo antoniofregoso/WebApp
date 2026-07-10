@@ -46,12 +46,12 @@ class LoginInput:
 
 @strawberry.input
 class RefreshSessionInput:
-    refresh_token: str
+    refresh_token: Optional[str] = None
 
 
 @strawberry.input
 class LogoutInput:
-    refresh_token: str
+    refresh_token: Optional[str] = None
 
 
 @strawberry.type
@@ -59,4 +59,4 @@ class LoginType:
     email: str
     token: str
     access_token: str
-    refresh_token: str
+    refresh_token: Optional[str] = None

@@ -111,7 +111,7 @@ async def test_refresh_session_revokes_used_refresh_token_and_stores_new_hash(
 
     monkeypatch.setattr(
         "app.domains.users.service.auth_service.JWTManager.verify_token",
-        lambda token: {"sub": user.email},
+        lambda token, expected_token_type=None: {"sub": user.email},
     )
     monkeypatch.setattr(
         "app.domains.users.service.auth_service.JWTManager.generate_refresh_token",
@@ -155,20 +155,39 @@ async def test_refresh_session_revokes_used_refresh_token_and_stores_new_hash(
 @pytest.mark.asyncio
 async def test_logout_revokes_refresh_token_hash(monkeypatch):
     raw_refresh_token = "raw-refresh-token"
+    session = SimpleNamespace(user_id=42)
     revoked_hashes = []
+    closed_user_ids = []
+
+    async def get_by_refresh_token_hash(refresh_token_hash: str):
+        assert refresh_token_hash == AuthService.hash_refresh_token(raw_refresh_token)
+        return session
 
     async def revoke_by_refresh_token_hash(refresh_token_hash: str):
         revoked_hashes.append(refresh_token_hash)
         return True
 
+    async def close_open_for_user(user_id: int):
+        closed_user_ids.append(user_id)
+        return None
+
+    monkeypatch.setattr(
+        "app.domains.users.service.auth_service.UserSessionRepository.get_by_refresh_token_hash",
+        get_by_refresh_token_hash,
+    )
     monkeypatch.setattr(
         "app.domains.users.service.auth_service.UserSessionRepository.revoke_by_refresh_token_hash",
         revoke_by_refresh_token_hash,
+    )
+    monkeypatch.setattr(
+        "app.domains.users.service.auth_service.UserLogService.close_open_for_user",
+        close_open_for_user,
     )
 
     result = await AuthService.logout(raw_refresh_token)
 
     assert result is True
+    assert closed_user_ids == [session.user_id]
     assert revoked_hashes == [AuthService.hash_refresh_token(raw_refresh_token)]
 
 
@@ -199,7 +218,7 @@ async def test_refresh_session_detects_reused_refresh_token_and_revokes_user_ses
 
     monkeypatch.setattr(
         "app.domains.users.service.auth_service.JWTManager.verify_token",
-        lambda token: {"sub": "admin@app.com"},
+        lambda token, expected_token_type=None: {"sub": "admin@app.com"},
     )
     monkeypatch.setattr(
         "app.domains.users.service.auth_service.UserSessionRepository.get_active_by_refresh_token_hash",

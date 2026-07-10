@@ -20,6 +20,7 @@ from app.domains.users.models.user_session import UserSession
 from app.domains.users.models.user_user import UserUser
 from app.domains.users.repository.user_repository import UserRepository
 from app.domains.users.repository.user_session_repository import UserSessionRepository
+from app.domains.users.service.user_log_service import UserLogService
 
 
 @dataclass(frozen=True)
@@ -113,7 +114,9 @@ class AuthService:
     @classmethod
     async def refresh_session(cls, refresh_token: str) -> LoginResult:
         try:
-            payload = JWTManager.verify_token(refresh_token)
+            payload = JWTManager.verify_token(
+                refresh_token, expected_token_type="refresh"
+            )
         except ValueError as exc:
             raise AuthenticationException("Invalid or expired refresh token") from exc
 
@@ -155,6 +158,11 @@ class AuthService:
         if not refresh_token:
             return True
         refresh_token_hash = cls.hash_refresh_token(refresh_token)
+        session = await UserSessionRepository.get_by_refresh_token_hash(
+            refresh_token_hash
+        )
+        if session is not None:
+            await UserLogService.close_open_for_user(session.user_id)
         await UserSessionRepository.revoke_by_refresh_token_hash(refresh_token_hash)
         return True
 

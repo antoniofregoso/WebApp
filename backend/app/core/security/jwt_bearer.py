@@ -18,7 +18,7 @@ class IsAuthenticated(BasePermission):
         if authentication and authentication.startswith("Bearer "):
             token = authentication.split("Bearer ")[1]
             try:
-                JWTManager.verify_token(token)
+                JWTManager.verify_token(token, expected_token_type="access")
                 return True
             except Exception:
                 return False

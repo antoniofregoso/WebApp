@@ -81,6 +81,15 @@ export const dashboardActions = {
         dashboardActions.setModelView({ model, records: [] });
     },
 
+    setPendingCounts(counts = {}) {
+        const messages = Math.max(0, Number(counts.messages) || 0);
+        const notifications = Math.max(0, Number(counts.notifications) || 0);
+        appSignal.value = {
+            ...appSignal.value,
+            pendingCounts: { messages, notifications },
+        };
+    },
+
     refreshInsights(data = {}) {
         const state = appSignal.value;
         const insights = state.insights ?? {};

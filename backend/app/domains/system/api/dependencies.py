@@ -15,7 +15,10 @@ async def get_current_user(
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise AuthenticationException("Authentication required")
     try:
-        payload = JWTManager.verify_token(credentials.credentials)
+        payload = JWTManager.verify_token(
+            credentials.credentials,
+            expected_token_type="access",
+        )
     except ValueError as exc:
         raise AuthenticationException("Invalid or expired token") from exc
 

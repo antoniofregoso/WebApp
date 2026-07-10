@@ -45,7 +45,7 @@ from app.domains.users.service.user_service import UserService
 async def get_current_user(info: strawberry.types.Info):
     request = info.context["request"]
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    payload = JWTManager.verify_token(token)
+    payload = JWTManager.verify_token(token, expected_token_type="access")
     user = await UserService.get_by_email(payload["sub"])
     if not user.active:
         raise AuthorizationException("User account is disabled")
@@ -85,7 +85,9 @@ class SystemQuery:
         info: strawberry.types.Info,
     ) -> SystemModelViewType:
         user = await get_current_user(info)
-        view = await SystemModelService.get_view(model, use, name, current_user_id=user.id)
+        view = await SystemModelService.get_view(
+            model, use, name, current_user_id=user.id
+        )
         return SystemModelViewType(model=view["model"], records=view["records"])
 
     @strawberry.field(permission_classes=[IsAuthenticated])

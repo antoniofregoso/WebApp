@@ -1,7 +1,7 @@
 import { computed, signal } from '@preact/signals';
 
 let accessToken = null;
-let refreshToken = null;
+let accessTokenExpiresAt = null;
 
 export const authSignal = signal({
     email: null,
@@ -14,9 +14,9 @@ export const isAuthenticated = computed(
     () => authSignal.value.isAuthenticated,
 );
 
-export function setAuthSession({ email, token, accessToken: nextAccessToken, refreshToken: nextRefreshToken }) {
+export function setAuthSession({ email, token, accessToken: nextAccessToken }) {
     accessToken = nextAccessToken ?? token;
-    refreshToken = nextRefreshToken ?? null;
+    accessTokenExpiresAt = getTokenExpiration(accessToken);
     authSignal.value = {
         ...authSignal.value,
         email,
@@ -38,17 +38,32 @@ export function getAccessToken() {
     return accessToken;
 }
 
-export function getRefreshToken() {
-    return refreshToken;
+export function getAccessTokenExpiresAt() {
+    return accessTokenExpiresAt;
 }
 
 export function clearAuthSession() {
     accessToken = null;
-    refreshToken = null;
+    accessTokenExpiresAt = null;
     authSignal.value = {
         email: null,
         name: null,
         avatarUrl: null,
         isAuthenticated: false,
     };
+}
+
+function getTokenExpiration(token) {
+    if (!token) return null;
+    const [, payload] = token.split('.');
+    if (!payload) return null;
+
+    try {
+        const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
+        const decodedPayload = globalThis.atob(normalizedPayload);
+        const { exp } = JSON.parse(decodedPayload);
+        return Number.isFinite(exp) ? exp * 1000 : null;
+    } catch {
+        return null;
+    }
 }

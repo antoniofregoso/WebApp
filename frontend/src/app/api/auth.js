@@ -4,6 +4,7 @@ const GRAPHQL_ENDPOINT = new URL(
     import.meta.env.VITE_GRAPHQL_ENDPOINT ?? '/graphql',
     globalThis.location?.origin ?? 'http://localhost',
 ).toString();
+const REFRESH_CSRF_COOKIE_NAME = import.meta.env.VITE_REFRESH_CSRF_COOKIE_NAME ?? 'refresh_csrf';
 
 const LOGIN_MUTATION = gql`
   mutation Login($login: LoginInput!) {
@@ -11,25 +12,23 @@ const LOGIN_MUTATION = gql`
       email
       token
       accessToken
-      refreshToken
     }
   }
 `;
 
 const REFRESH_SESSION_MUTATION = gql`
-  mutation RefreshSession($refresh: RefreshSessionInput!) {
-    refreshSession(refresh: $refresh) {
+  mutation RefreshSession {
+    refreshSession(refresh: {}) {
       email
       token
       accessToken
-      refreshToken
     }
   }
 `;
 
 const LOGOUT_MUTATION = gql`
-  mutation Logout($logout: LogoutInput!) {
-    logout(logout: $logout)
+  mutation Logout {
+    logout(logout: {})
   }
 `;
 
@@ -48,9 +47,23 @@ function isCredentialError(error) {
     ));
 }
 
+function readCookie(name) {
+    const cookies = globalThis.document?.cookie ?? '';
+    return cookies
+        .split(';')
+        .map((cookie) => cookie.trim())
+        .find((cookie) => cookie.startsWith(`${name}=`))
+        ?.slice(name.length + 1) ?? '';
+}
+
+function csrfHeaders() {
+    const csrfToken = readCookie(REFRESH_CSRF_COOKIE_NAME);
+    return csrfToken ? { 'X-CSRF-Token': decodeURIComponent(csrfToken) } : {};
+}
+
 export async function authenticate(email, password, fetchImpl = globalThis.fetch) {
     const client = new GraphQLClient(GRAPHQL_ENDPOINT, {
-        credentials: 'same-origin',
+        credentials: 'include',
         fetch: fetchImpl,
     });
 
@@ -84,16 +97,15 @@ export async function authenticate(email, password, fetchImpl = globalThis.fetch
     }
 }
 
-export async function refreshSession(refreshToken, fetchImpl = globalThis.fetch) {
+export async function refreshSession(fetchImpl = globalThis.fetch) {
     const client = new GraphQLClient(GRAPHQL_ENDPOINT, {
-        credentials: 'same-origin',
+        credentials: 'include',
         fetch: fetchImpl,
+        headers: csrfHeaders,
     });
 
     try {
-        const data = await client.request(REFRESH_SESSION_MUTATION, {
-            refresh: { refreshToken },
-        });
+        const data = await client.request(REFRESH_SESSION_MUTATION);
 
         if (!data.refreshSession?.token && !data.refreshSession?.accessToken) {
             throw new AuthenticationError('Invalid refresh token');
@@ -117,18 +129,15 @@ export async function refreshSession(refreshToken, fetchImpl = globalThis.fetch)
     }
 }
 
-export async function logout(refreshToken, fetchImpl = globalThis.fetch) {
-    if (!refreshToken) return true;
-
+export async function logout(fetchImpl = globalThis.fetch) {
     const client = new GraphQLClient(GRAPHQL_ENDPOINT, {
-        credentials: 'same-origin',
+        credentials: 'include',
         fetch: fetchImpl,
+        headers: csrfHeaders,
     });
 
     try {
-        const data = await client.request(LOGOUT_MUTATION, {
-            logout: { refreshToken },
-        });
+        const data = await client.request(LOGOUT_MUTATION);
         return Boolean(data.logout);
     } catch (error) {
         if (error instanceof ClientError) return false;

@@ -1,5 +1,7 @@
 import uvicorn
+import asyncio
 from contextlib import asynccontextmanager
+from contextlib import suppress
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, Request
@@ -21,6 +23,7 @@ from app.domains.system.graphql.queries import SystemQuery
 from app.domains.system.api import attachment_router
 from app.domains.users.graphql.queries import UserQuery
 from app.domains.users.graphql.mutations import UserMutation
+from app.domains.users.service.user_log_service import UserLogService
 
 from strawberry.fastapi import GraphQLRouter
 from app.core.logging import configure_logging, get_logger
@@ -57,12 +60,28 @@ def create_error_response(
 
 
 def init_app():
+    async def close_stale_user_logs_periodically():
+        while True:
+            await asyncio.sleep(settings.USER_LOG_SWEEP_INTERVAL_SECONDS)
+            try:
+                closed_count = await UserLogService.close_stale_logs()
+                if closed_count:
+                    logger.info("Closed %s stale user activity logs", closed_count)
+            except Exception as exc:
+                logger.exception("Failed to close stale user activity logs: %s", exc)
+
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
         logger.info("Iniciando aplicación...")
-        yield
-        logger.info("Cerrando conexión a base de datos...")
-        await db.close()
+        stale_logs_task = asyncio.create_task(close_stale_user_logs_periodically())
+        try:
+            yield
+        finally:
+            stale_logs_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await stale_logs_task
+            logger.info("Cerrando conexión a base de datos...")
+            await db.close()
 
     apps = FastAPI(
         title=settings.APP_NAME,

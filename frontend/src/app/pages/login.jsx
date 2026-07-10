@@ -1,4 +1,5 @@
 import { useRef } from 'preact/hooks';
+import { startActivityHeartbeat } from '../api/activity.js';
 import { authenticate } from '../api/auth.js';
 import { fetchCurrentUser } from '../api/user.js';
 import { currentLang, setAuthSession, setCurrentUser } from '../store';
@@ -73,6 +74,7 @@ function Login({ lang, router }) {
                 // Non-critical: the topbar just won't show the user's name.
             }
             updateRememberedEmail(email, form.elements.remember.checked);
+            startActivityHeartbeat();
             router.goTo('dash');
         } catch (error) {
             const messageKey = error?.code === 'AUTHENTICATION_FAILED'

@@ -10,6 +10,7 @@ import {
 } from '../src/app/store/authStore.js';
 
 afterEach(() => {
+    vi.unstubAllGlobals();
     clearAuthSession();
     document.body.innerHTML = '';
 });
@@ -29,6 +30,12 @@ describe('authenticated navigation', () => {
     });
 
     it('clears the in-memory session and redirects when logging out', () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+            new Response(JSON.stringify({ data: { logout: true } }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' },
+            }),
+        ));
         setAuthSession({ email: 'user@example.com', token: 'access-token' });
         const router = { goTo: vi.fn() };
         document.body.innerHTML = '<div id="topbar-root"></div>';

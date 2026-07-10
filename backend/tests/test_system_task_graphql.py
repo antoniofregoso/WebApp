@@ -41,9 +41,9 @@ def test_refresh_session_mutation_is_exposed():
     assert "refreshSession(" in schema
     assert "refresh: RefreshSessionInput!" in schema
     assert "input RefreshSessionInput" in schema
-    assert "refreshToken: String!" in schema
+    assert "refreshToken: String = null" in schema
     assert "accessToken: String!" in schema
-    assert "refreshToken: String!" in schema
+    assert "refreshToken: String" in schema
 
 
 def test_logout_mutation_is_exposed():
@@ -52,4 +52,19 @@ def test_logout_mutation_is_exposed():
     assert "logout(" in schema
     assert "logout: LogoutInput!" in schema
     assert "input LogoutInput" in schema
-    assert "refreshToken: String!" in schema
+    assert "refreshToken: String = null" in schema
+
+
+def test_heartbeat_mutation_is_exposed():
+    schema = strawberry.Schema(query=Query, mutation=Mutation).as_str()
+
+    assert "heartbeat: UserLogType!" in schema
+
+
+def test_system_pending_counts_query_is_exposed():
+    schema = strawberry.Schema(query=Query, mutation=Mutation).as_str()
+
+    assert "systemPendingCounts: SystemPendingCountsType!" in schema
+    assert "type SystemPendingCountsType" in schema
+    assert "messages: Int!" in schema
+    assert "notifications: Int!" in schema

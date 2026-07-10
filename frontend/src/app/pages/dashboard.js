@@ -5,6 +5,8 @@ import { contextActions, dashboardActions } from '../store/actions';
 import { mountSidebar, mountTopbar, MENU_ITEMS } from '../components';
 import { CalendarView, FormView, KanbanView, ListView, renderInsights, initInsights, patchInsights } from '../views';
 import { applyTheme, getAreaTitle, normalizePagination, paginateData, resetAppRoot } from '../utils';
+import { startActivityHeartbeat } from '../api/activity.js';
+import { startPendingCountsPolling } from '../api/pendingCounts.js';
 import { fetchSystemModelView } from '../api/systemModel.js';
 
 const EMPTY_DASHBOARD_DATA = {
@@ -73,6 +75,7 @@ let _lastRecordModel = null;
 let _lastRecordUuid = null;
 let _lastInsights = null;
 let _lastModel = null;
+let _lastPendingCounts = null;
 let _effectCleanup = null;
 let _currentSubarea = null;
 let _currentRecordModel = null;
@@ -197,6 +200,7 @@ function syncChrome(lang, theme, expanded, area, subarea, view, pagination) {
     const breadcrumb = getTopbarBreadcrumb(area, subarea, lang);
     const showTopbarTools = shouldShowTopbarTools(area, subarea);
     const { name: userName, email: userEmail } = authSignal.value;
+    const pendingCounts = appSignal.value.pendingCounts ?? {};
 
     mountSidebar(document.getElementById('dashboard-sidebar-root'), {
         lang,
@@ -214,6 +218,7 @@ function syncChrome(lang, theme, expanded, area, subarea, view, pagination) {
         router: _router,
         onViewChange: handleViewChange,
         user: { name: userName, email: userEmail },
+        pendingCounts,
     });
 }
 
@@ -277,10 +282,12 @@ function patchDashboard(lang, theme, expanded, area, view, prevLang, prevTheme, 
     const insightsChanged = insights !== _lastInsights;
     const model = appSignal.value.model;
     const modelChanged = model !== _lastModel;
+    const pendingCounts = appSignal.value.pendingCounts;
+    const pendingCountsChanged = pendingCounts !== _lastPendingCounts;
 
     // Sidebar + topbar just get re-rendered with fresh props — Preact keeps
     // their DOM and event listeners in sync automatically.
-    if (areaChanged || langChanged || themeChanged || expandedChanged || viewChanged || recordRouteChanged || paginationChanged) {
+    if (areaChanged || langChanged || themeChanged || expandedChanged || viewChanged || recordRouteChanged || paginationChanged || pendingCountsChanged) {
         syncChrome(lang, theme, expanded, area, _currentSubarea, view, pagination);
     }
 
@@ -328,6 +335,8 @@ export function dashboard(req, router) {
         return;
     }
 
+    startActivityHeartbeat();
+    startPendingCountsPolling();
     _router = router;
     const areaFromUrl = req.params?.area;
     const prevSubarea = _currentSubarea;
@@ -386,6 +395,7 @@ export function dashboard(req, router) {
     _lastRecordUuid = _currentRecordUuid;
     _lastInsights = state.insights;
     _lastModel = state.model;
+    _lastPendingCounts = state.pendingCounts;
 
     // ── Cleanup previous effect if navigating back to this page ──────────────
     if (_effectCleanup) {
@@ -404,6 +414,7 @@ export function dashboard(req, router) {
         const newPagination = getPagination(s);
         const newInsights = s.insights;
         const newModel = s.model;
+        const newPendingCounts = s.pendingCounts;
 
         const changed =
             newLang !== _lastLang ||
@@ -416,6 +427,7 @@ export function dashboard(req, router) {
             newPagination.total !== _lastTotal ||
             newInsights !== _lastInsights ||
             newModel !== _lastModel ||
+            newPendingCounts !== _lastPendingCounts ||
             hasRecordRoute() !== _lastRecordRoute ||
             _currentRecordModel !== _lastRecordModel ||
             _currentRecordUuid !== _lastRecordUuid;
@@ -440,5 +452,6 @@ export function dashboard(req, router) {
         _lastRecordUuid = _currentRecordUuid;
         _lastInsights = newInsights;
         _lastModel = newModel;
+        _lastPendingCounts = newPendingCounts;
     });
 }

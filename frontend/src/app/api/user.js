@@ -1,10 +1,6 @@
-import { gql, GraphQLClient } from 'graphql-request';
-import { getAccessToken } from '../store/authStore.js';
+import { gql } from 'graphql-request';
 
-const GRAPHQL_ENDPOINT = new URL(
-    import.meta.env.VITE_GRAPHQL_ENDPOINT ?? '/graphql',
-    globalThis.location?.origin ?? 'http://localhost',
-).toString();
+import { requestAuthenticated } from './session.js';
 
 const ME_QUERY = gql`
   query Me {
@@ -18,15 +14,6 @@ const ME_QUERY = gql`
 
 /** Fetches the authenticated user's profile (name, email, avatar) using the current session token. */
 export async function fetchCurrentUser(fetchImpl = globalThis.fetch) {
-    const client = new GraphQLClient(GRAPHQL_ENDPOINT, {
-        credentials: 'same-origin',
-        fetch: fetchImpl,
-        headers: () => {
-            const token = getAccessToken();
-            return token ? { Authorization: `Bearer ${token}` } : {};
-        },
-    });
-
-    const data = await client.request(ME_QUERY);
+    const data = await requestAuthenticated(ME_QUERY, undefined, fetchImpl);
     return data.me;
 }

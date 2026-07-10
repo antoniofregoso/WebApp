@@ -18,8 +18,10 @@ import {
     faCalendarDays,
 } from './icon.js';
 import { contextActions, dashboardActions } from '../store/actions/index.js';
+import { stopActivityHeartbeat } from '../api/activity.js';
 import { logout } from '../api/auth.js';
-import { clearAuthSession, getRefreshToken } from '../store/authStore.js';
+import { stopPendingCountsPolling } from '../api/pendingCounts.js';
+import { clearAuthSession } from '../store/authStore.js';
 import { t } from '../../i18n/translations.js';
 import { normalizePagination } from '../utils';
 
@@ -36,6 +38,11 @@ const VIEW_BUTTONS = [
     { key: 'calendar', icon: faCalendarDays },
 ];
 
+function normalizeBadgeCount(value) {
+    const count = Math.max(0, Number(value) || 0);
+    return count > 99 ? '99+' : String(count);
+}
+
 /**
  * Top navigation bar. The user menu's open/close state and its outside-click
  * / Escape listeners are wired via hooks — Preact attaches and tears them
@@ -44,11 +51,19 @@ const VIEW_BUTTONS = [
  * (`router`) stay owned by the dashboard page, since both carry routing
  * side effects beyond this component's concern.
  */
-export function Topbar({ lang, theme, pageTitle, breadcrumb = null, showTools = true, pagination = {}, currentView, router, onViewChange, user = null }) {
+export function Topbar({ lang, theme, pageTitle, breadcrumb = null, showTools = true, pagination = {}, currentView, router, onViewChange, user = null, pendingCounts = {} }) {
     const { page, totalPages } = normalizePagination(pagination);
     const pageStatus = lang === 'es' ? `Página ${page} de ${totalPages}` : `Page ${page} of ${totalPages}`;
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const userMenuWrapRef = useRef(null);
+    const messageCount = Math.max(0, Number(pendingCounts.messages) || 0);
+    const notificationCount = Math.max(0, Number(pendingCounts.notifications) || 0);
+    const messageLabel = messageCount
+        ? `${t('topbar.messages', lang)} (${messageCount})`
+        : t('topbar.messages', lang);
+    const notificationLabel = notificationCount
+        ? `${t('topbar.notifications', lang)} (${notificationCount})`
+        : t('topbar.notifications', lang);
 
     useEffect(() => {
         if (!userMenuOpen) return undefined;
@@ -71,8 +86,9 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = null, showTools = 
     }, [userMenuOpen]);
 
     const handleLogout = () => {
-        const refreshToken = getRefreshToken();
-        void logout(refreshToken);
+        stopActivityHeartbeat();
+        stopPendingCountsPolling();
+        void logout();
         clearAuthSession();
         setUserMenuOpen(false);
         router?.goTo('login');
@@ -103,13 +119,13 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = null, showTools = 
                         data-tooltip={t('topbar.tasks', lang)}
                         dangerouslySetInnerHTML={{ __html: icon(faListCheck, 'topbar-action-icon') }}
                     />
-                    <a href="/dashboard/user/system.message" class="topbar-action-btn" aria-label={t('topbar.messages', lang)} data-tooltip={t('topbar.messages', lang)}>
+                    <a href="/dashboard/user/system.message" class="topbar-action-btn" aria-label={messageLabel} data-tooltip={t('topbar.messages', lang)}>
                         <span dangerouslySetInnerHTML={{ __html: icon(faEnvelope, 'topbar-action-icon') }} />
-                        <span class="topbar-action-badge" aria-hidden="true">22</span>
+                        {messageCount > 0 && <span class="topbar-action-badge" aria-hidden="true">{normalizeBadgeCount(messageCount)}</span>}
                     </a>
-                    <button class="topbar-action-btn" aria-label={t('topbar.notifications', lang)} data-tooltip={t('topbar.notifications', lang)}>
+                    <button class="topbar-action-btn" aria-label={notificationLabel} data-tooltip={t('topbar.notifications', lang)}>
                         <span dangerouslySetInnerHTML={{ __html: icon(faBell, 'topbar-action-icon') }} />
-                        <span class="topbar-action-badge" aria-hidden="true">12</span>
+                        {notificationCount > 0 && <span class="topbar-action-badge" aria-hidden="true">{normalizeBadgeCount(notificationCount)}</span>}
                     </button>
 
                     <div class="topbar-user-menu-wrap" ref={userMenuWrapRef}>

@@ -1,9 +1,10 @@
 import uuid as uuid_lib
+from datetime import datetime
 
 from sqlalchemy import select
 
 from app.core.database.session import db
-from app.domains.users.models.user_log import UserLog
+from app.domains.users.models.user_log import UserLog, UserLogStatus
 
 
 class UserLogRepository:
@@ -28,3 +29,77 @@ class UserLogRepository:
             )
             result = await session.execute(query)
             return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_open_by_user_id(user_id: int) -> UserLog | None:
+        async with db.session() as session:
+            query = (
+                select(UserLog)
+                .where(
+                    UserLog.user_id == user_id,
+                    UserLog.status == UserLogStatus.ONLINE,
+                    UserLog.end_date.is_(None),
+                )
+                .order_by(UserLog.start_date.desc())
+                .limit(1)
+            )
+            result = await session.execute(query)
+            return result.scalar_one_or_none()
+
+    @staticmethod
+    async def create(log: UserLog) -> UserLog:
+        async with db.session() as session:
+            session.add(log)
+            await session.commit()
+            await session.refresh(log)
+            return log
+
+    @staticmethod
+    async def touch(log_id: int, seen_at: datetime) -> UserLog | None:
+        async with db.session() as session:
+            log = await session.get(UserLog, log_id)
+            if log is None:
+                return None
+            log.last_seen_at = seen_at
+            session.add(log)
+            await session.commit()
+            await session.refresh(log)
+            return log
+
+    @staticmethod
+    async def close_open_by_user_id(user_id: int) -> UserLog | None:
+        async with db.session() as session:
+            query = select(UserLog).where(
+                UserLog.user_id == user_id,
+                UserLog.status == UserLogStatus.ONLINE,
+                UserLog.end_date.is_(None),
+            )
+            result = await session.execute(query)
+            logs = result.scalars().all()
+            if not logs:
+                return None
+            for log in logs:
+                log.status = UserLogStatus.OFFLINE
+                log.end_date = log.last_seen_at
+                session.add(log)
+            await session.commit()
+            log = logs[0]
+            await session.refresh(log)
+            return log
+
+    @staticmethod
+    async def close_stale(cutoff: datetime) -> int:
+        async with db.session() as session:
+            query = select(UserLog).where(
+                UserLog.status == UserLogStatus.ONLINE,
+                UserLog.end_date.is_(None),
+                UserLog.last_seen_at < cutoff,
+            )
+            result = await session.execute(query)
+            stale_logs = result.scalars().all()
+            for log in stale_logs:
+                log.status = UserLogStatus.OFFLINE
+                log.end_date = log.last_seen_at
+                session.add(log)
+            await session.commit()
+            return len(stale_logs)

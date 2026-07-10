@@ -28,12 +28,26 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     SESSION_ABSOLUTE_EXPIRE_DAYS: int = 30
+    USER_LOG_STALE_TIMEOUT_SECONDS: int = 300
+    USER_LOG_SWEEP_INTERVAL_SECONDS: int = 60
+    JWT_ISSUER: str = "webapp-api"
+    JWT_AUDIENCE: str = "webapp-client"
+    REFRESH_COOKIE_NAME: str = "refresh_token"
+    REFRESH_CSRF_COOKIE_NAME: str = "refresh_csrf"
+    REFRESH_CSRF_HEADER_NAME: str = "X-CSRF-Token"
+    REFRESH_COOKIE_SECURE: bool = True
+    REFRESH_COOKIE_SAMESITE: str = "lax"
+    REFRESH_COOKIE_PATH: str = "/graphql"
 
     # CORS Config
     CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:8000"]
     CORS_CREDENTIALS: bool = True
-    CORS_METHODS: list[str] = ["*"]
-    CORS_HEADERS: list[str] = ["*"]
+    CORS_METHODS: list[str] = ["GET", "POST", "OPTIONS"]
+    CORS_HEADERS: list[str] = [
+        "Authorization",
+        "Content-Type",
+        "X-CSRF-Token",
+    ]
 
     # Attachment filestore
     FILESTORE_ROOT: Path = Path("data/filestore")

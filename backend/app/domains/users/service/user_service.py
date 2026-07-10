@@ -1,7 +1,7 @@
 import uuid as uuid_lib
 
 from app.domains.users.repository.user_repository import UserRepository
-from app.core.exceptions import ResourceNotFoundException
+from app.core.exceptions import AuthenticationException, ResourceNotFoundException
 from app.domains.users.service.auth_service import AuthService
 
 
@@ -26,8 +26,21 @@ class UserService:
         return user
 
     @staticmethod
-    async def update(user_uuid: uuid_lib.UUID, user_data: dict):
+    async def update(
+        user_uuid: uuid_lib.UUID,
+        user_data: dict,
+        current_password: str | None = None,
+    ):
         revoke_sessions = "password" in user_data or user_data.get("active") is False
+        if revoke_sessions:
+            existing_user = await UserService.get_user_by_uuid(user_uuid)
+            if not current_password or not AuthService.verify_password(
+                current_password,
+                existing_user.password,
+            ):
+                raise AuthenticationException(
+                    "Current password is required for critical operations"
+                )
         if "password" in user_data:
             user_data = {
                 **user_data,

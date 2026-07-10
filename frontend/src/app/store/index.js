@@ -11,7 +11,7 @@ export {
   authSignal,
   clearAuthSession,
   getAccessToken,
-  getRefreshToken,
+  getAccessTokenExpiresAt,
   isAuthenticated,
   setAuthSession,
   setCurrentUser,
