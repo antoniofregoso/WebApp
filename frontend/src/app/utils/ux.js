@@ -35,13 +35,28 @@ export function locale(lang) {
     return lang === 'es' ? 'es-MX' : 'en-US';
 }
 
+export function localeKey(lang = 'en', value = null) {
+    const preferred = lang === 'es' ? 'es_MX' : lang === 'en' ? 'en_US' : lang;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return preferred;
+    if (Object.hasOwn(value, preferred)) return preferred;
+    if (Object.hasOwn(value, lang)) return lang;
+    return preferred;
+}
+
 /** Resolve a translated value while remaining compatible with plain strings. */
 export function localizedValue(value, lang = 'en') {
     if (value && typeof value === 'object' && !Array.isArray(value)) {
-        const locale = lang === 'es' ? 'es_MX' : lang === 'en' ? 'en_US' : lang;
+        const locale = localeKey(lang, value);
         return value[locale] ?? value[lang] ?? value.en_US ?? value.en ?? value.es_MX ?? value.es ?? Object.values(value)[0] ?? '';
     }
     return value ?? '';
+}
+
+export function nextLocalizedValue(value, lang = 'en', next = '') {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+        return { ...value, [localeKey(lang, value)]: next };
+    }
+    return next;
 }
 
 /** Resolve many-to-many tag UUIDs against the model-level tag catalog. */

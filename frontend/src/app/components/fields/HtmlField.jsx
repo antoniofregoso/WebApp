@@ -2,21 +2,12 @@ import { useLayoutEffect, useRef } from 'preact/hooks';
 
 import { RICH_TEXT_TOOLBAR } from '../../views/noteEditor.js';
 import { loadQuill } from '../../utils/loadQuill.js';
-import { localizedValue } from '../../utils/ux.js';
+import { localizedValue, nextLocalizedValue } from '../../utils/ux.js';
 import { safeRichTextNodes } from '../communicationPanel.jsx';
 import { isFieldReadOnly, localizedConfig, plainText } from './fieldHelpers.js';
 
-function localeKey(lang) {
-    if (lang === 'es') return 'es_MX';
-    if (lang === 'en') return 'en_US';
-    return lang;
-}
-
 function nextHtmlValue(value, lang, html) {
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-        return { ...value, [localeKey(lang)]: html };
-    }
-    return html;
+    return nextLocalizedValue(value, lang, html);
 }
 
 function cleanupQuillNode(node, parent) {

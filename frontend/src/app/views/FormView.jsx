@@ -1,9 +1,11 @@
-import { useLayoutEffect, useMemo, useState } from 'preact/hooks';
+import { useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 
+import { updateSystemModelRecord } from '../api/systemModel.js';
 import { CommunicationPanel } from '../components/communicationPanel.jsx';
 import { FieldControl } from '../components/fields/index.js';
 import { One2manyFollowersField } from '../components/fields/One2manyFollowersField.jsx';
 import { faBoxArchive, faChevronLeft, faChevronRight, faFloppyDisk, faPen, faTrash } from '../components/icon.js';
+import { dashboardActions } from '../store/actions/index.js';
 import { buildRecordUrl } from '../utils/index.js';
 import { getFormLayout } from './formLayout.js';
 import { CreateModal, Icon, SchemaFormLayout, ViewHeader } from './ViewPrimitives.jsx';
@@ -98,16 +100,43 @@ function RecordFooter({ data, record, recordModel, lang, followers, right }) {
 export function FormView({ data = {}, lang = 'en', options = {} }) {
     const sourceRecord = useMemo(() => getRecord(data, options.recordUuid, options.recordModel), [data, options.recordUuid, options.recordModel]);
     const [record, setRecord] = useState(sourceRecord);
+    const dirtyValuesRef = useRef({});
     const [editing, setEditing] = useState(false);
+    const [saving, setSaving] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
-    useLayoutEffect(() => { setRecord(sourceRecord); setEditing(false); }, [sourceRecord]);
+    useLayoutEffect(() => { setRecord(sourceRecord); dirtyValuesRef.current = {}; setEditing(false); setSaving(false); }, [sourceRecord]);
     const isMainModel = !options.recordModel || options.recordModel === data?.model?.name;
     const schema = isMainModel ? (data?.model?.schema ?? []) : inferSchema(record);
     const layout = getFormLayout(schema);
     const followerField = followersField(schema);
     const context = { ...(data?.model ?? {}), tags: data?.model?.tags ?? [], record };
     const title = isMainModel ? (data?.model?.label?.[lang] ?? data?.model?.name ?? '') : (options.recordModel ?? record.model ?? '');
-    const setValue = (name, value) => setRecord((current) => ({ ...current, [name]: value }));
+    const setValue = (name, value) => {
+        setRecord((current) => ({ ...current, [name]: value }));
+        dirtyValuesRef.current = { ...dirtyValuesRef.current, [name]: value };
+    };
+    const saveRecord = async () => {
+        if (!editing || saving) return;
+        const values = dirtyValuesRef.current;
+        if (Object.keys(values).length === 0) {
+            setEditing(false);
+            return;
+        }
+        const model = options.recordModel || record.model || data?.model?.name;
+        if (!model || record.uuid == null) return;
+        setSaving(true);
+        try {
+            await updateSystemModelRecord({ model, recordUuid: record.uuid, values });
+            dashboardActions.updateModelRecord(record.uuid, values);
+            dirtyValuesRef.current = {};
+            setEditing(false);
+        } catch (error) {
+            window.alert(lang === 'es' ? 'No se pudo guardar el registro.' : 'Unable to save the record.');
+            console.error('Unable to persist form record update.', error);
+        } finally {
+            setSaving(false);
+        }
+    };
     const labels = lang === 'es'
         ? { edit: 'Editar', save: 'Guardar', archive: 'Archivar', delete: 'Borrar' }
         : { edit: 'Edit', save: 'Save', archive: 'Archive', delete: 'Delete' };
@@ -129,7 +158,7 @@ export function FormView({ data = {}, lang = 'en', options = {} }) {
                         </div>
                         <div class="form-record-actions flex items-center gap-2">
                             <Action definition={faPen} label={labels.edit} data-form-edit aria-pressed={String(editing)} onClick={() => setEditing(true)} />
-                            <Action definition={faFloppyDisk} label={labels.save} data-form-save disabled={!editing} onClick={() => setEditing(false)} />
+                            <Action definition={faFloppyDisk} label={labels.save} data-form-save disabled={!editing || saving} onClick={() => { void saveRecord(); }} />
                             <Action definition={faBoxArchive} label={labels.archive} data-form-archive />
                             <Action definition={faTrash} label={labels.delete} data-form-delete />
                         </div>

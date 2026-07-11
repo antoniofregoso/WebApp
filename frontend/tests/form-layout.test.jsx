@@ -1,7 +1,12 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { updateSystemModelRecord } from '../src/app/api/systemModel.js';
 import { getFormLayout } from '../src/app/views/formLayout.js';
 import { mountForm } from './helpers/mountView.jsx';
+
+vi.mock('../src/app/api/systemModel.js', () => ({
+    updateSystemModelRecord: vi.fn().mockResolvedValue(true),
+}));
 
 const schema = [
     { name: 'avatar', type: 'image', label: { en: 'Image' }, form: { header: 'image' } },
@@ -18,7 +23,10 @@ const data = {
     records: [{ uuid: '1', avatar: '/avatar.jpg', name: 'SO-001', customer: { name: 'ACME' }, first: 'A', second: 'B', right: 'C', description: '', ignored: 'Hidden' }],
 };
 
-afterEach(() => { document.body.innerHTML = ''; });
+afterEach(() => {
+    updateSystemModelRecord.mockClear();
+    document.body.innerHTML = '';
+});
 
 describe('schema-driven form layout', () => {
     it('places and orders fields in the four supported areas', () => {
@@ -45,6 +53,32 @@ describe('schema-driven form layout', () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
         expect(host.querySelector('[data-form-field="first"] input')).toBeNull();
         expect(host.querySelector('[data-form-field="second"] input').disabled).toBe(false);
+        cleanup();
+    });
+
+    it('persists edited form values and keeps multilingual object shape', async () => {
+        const localizedData = {
+            ...data,
+            records: [{
+                ...data.records[0],
+                name: { en_US: 'Order', es_MX: 'Orden' },
+            }],
+        };
+        const { host, cleanup } = mountForm(localizedData, 'es');
+        host.querySelector('[data-form-edit]').click();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        const input = host.querySelector('input[name="name"]');
+        input.value = 'Orden actualizada';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        host.querySelector('[data-form-save]').click();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        expect(updateSystemModelRecord).toHaveBeenCalledWith({
+            model: 'sale.order',
+            recordUuid: '1',
+            values: { name: { en_US: 'Order', es_MX: 'Orden actualizada' } },
+        });
+        expect(host.querySelector('[data-form-root]').dataset.formMode).toBe('readonly');
         cleanup();
     });
 });

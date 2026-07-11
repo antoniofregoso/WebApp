@@ -38,6 +38,16 @@ describe('StringField / TextField', () => {
         const host = mount(<FieldControl field={{ name: 'notes', type: 'text' }} value="line1" onChange={() => {}} />);
         expect(host.querySelector('textarea').value).toBe('line1');
     });
+
+    it('edits only the active locale when the value is multilingual', () => {
+        const onChange = vi.fn();
+        const value = { en_US: 'Title', es_MX: 'Titulo' };
+        const host = mount(<FieldControl field={{ name: 'title', type: 'string' }} value={value} lang="es" onChange={onChange} />);
+        const input = host.querySelector('input[type="text"]');
+        input.value = 'Titulo nuevo';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        expect(onChange).toHaveBeenCalledWith('title', { en_US: 'Title', es_MX: 'Titulo nuevo' });
+    });
 });
 
 describe('PasswordField', () => {
