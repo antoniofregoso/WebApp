@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { FieldControl } from '../components/fields/index.js';
 import { faBoxArchive, faGripVertical, faTrash } from '../components/icon.js';
 import { NUMERIC_TYPES, buildRecordUrl, localizedValue } from '../utils/index.js';
+import { rememberRecordBreadcrumb } from '../utils/routing.js';
 import { makeSortable } from '../utils/sortable.js';
 import { CreateModal, Icon, ViewHeader } from './ViewPrimitives.jsx';
 
@@ -27,7 +28,12 @@ function sortValue(field, value) {
 
 function Cell({ field, record, data, lang }) {
     const value = record[field.name];
-    if (field.name === 'name' && value) return <a href={buildRecordUrl(data?.model?.name, record.uuid)} class="font-medium text-[var(--dash-accent)] hover:underline">{localizedValue(value, lang)}</a>;
+    if (field.name === 'name' && value) {
+        const href = buildRecordUrl(data?.model?.name, record.uuid);
+        const label = localizedValue(value, lang);
+        return <a href={href} onClick={() => rememberRecordBreadcrumb(href, label)}
+            class="font-medium text-[var(--dash-accent)] hover:underline">{label}</a>;
+    }
     return <FieldControl field={field} value={value} onChange={() => {}} lang={lang} readOnly
         context={{ ...(data?.model ?? {}), tags: data?.model?.tags ?? [], view: 'list' }} />;
 }

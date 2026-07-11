@@ -1,6 +1,7 @@
 import { FieldControl } from './FieldControl.jsx';
 import { FieldHelp } from './FieldHelp.jsx';
 import { One2manyKanbanField } from './One2manyKanbanField.jsx';
+import { One2manyListField } from './One2manyListField.jsx';
 import { fieldLabel, localizedConfig } from './fieldHelpers.js';
 
 /**
@@ -12,9 +13,14 @@ import { fieldLabel, localizedConfig } from './fieldHelpers.js';
 export function FormField({ field, value, onChange, lang = 'en', readOnly = false, context = {}, class: className = '', hideLabel = false }) {
     const help = localizedConfig(field, 'help', lang);
     const required = field?.form?.required === true;
-    const control = field?.form?.view === 'one2many_kanban'
-        ? <One2manyKanbanField field={field} value={value} onChange={onChange} lang={lang} readOnly={readOnly} context={context} />
-        : <FieldControl field={field} value={value} onChange={onChange} lang={lang} readOnly={readOnly} context={context} />;
+    let control;
+    if (field?.form?.view === 'one2many_kanban') {
+        control = <One2manyKanbanField field={field} value={value} onChange={onChange} lang={lang} readOnly={readOnly} context={context} />;
+    } else if (field?.form?.view === 'one2many_list') {
+        control = <One2manyListField field={field} value={value} onChange={onChange} lang={lang} readOnly={readOnly} context={context} />;
+    } else {
+        control = <FieldControl field={field} value={value} onChange={onChange} lang={lang} readOnly={readOnly} context={context} />;
+    }
 
     if (field.type === 'boolean' && !hideLabel) {
         return (

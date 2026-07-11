@@ -15,6 +15,42 @@ afterEach(() => {
 });
 
 describe('Topbar user menu', () => {
+    it('renders an ordered dynamic breadcrumb trail with smaller nested links', () => {
+        const breadcrumb = [
+            { label: 'Configuration', url: '/dashboard/configuration' },
+            { label: 'Companies', url: '/dashboard/configuration/system.company' },
+            { label: 'My Company', url: '/dashboard/configuration/system.company/company-1' },
+        ];
+        const host = mount(<Topbar lang="en" theme="light" pageTitle="" breadcrumb={breadcrumb} />);
+        const nav = host.querySelector('[aria-label="Breadcrumb"]');
+        expect([...nav.querySelectorAll('a')].map((item) => item.textContent)).toEqual(['Configuration', 'Companies']);
+        expect(nav.querySelector('[aria-current="page"]').textContent).toBe('My Company');
+        expect(nav.textContent).toContain('Configuration/Companies/My Company');
+    });
+
+    it('renders a breadcrumb root with # as plain text', () => {
+        const host = mount(<Topbar lang="en" theme="light" pageTitle="" breadcrumb={[
+            { label: 'Configuration', url: '#' },
+            { label: 'App', url: '/dashboard/configuration/system.app' },
+        ]} />);
+        const nav = host.querySelector('[aria-label="Breadcrumb"]');
+        expect(nav.querySelectorAll('a')).toHaveLength(0);
+        expect(nav.querySelector('[aria-current="page"]').textContent).toBe('App');
+        expect(nav.firstElementChild.textContent).toBe('Configuration');
+    });
+
+    it('keeps a fifth breadcrumb level visible instead of shrinking it away', () => {
+        const breadcrumb = ['Configuration', 'App', 'My App', 'Company', 'Currency'].map((label, index) => ({
+            label,
+            url: index === 0 ? '#' : `/level/${index}`,
+        }));
+        const host = mount(<Topbar lang="en" theme="light" pageTitle="" breadcrumb={breadcrumb} />);
+        const nav = host.querySelector('[aria-label="Breadcrumb"]');
+        expect(nav.querySelectorAll('a, [aria-current="page"]')).toHaveLength(4);
+        expect(nav.querySelector('[aria-current="page"]').textContent).toBe('Currency');
+        expect(nav.className).toContain('overflow-x-auto');
+    });
+
     it('shows the user name above the theme selection when known', () => {
         const host = mount(<Topbar lang="en" theme="light" pageTitle="" user={{ name: 'Ana Admin', email: 'ana@example.com' }} />);
         const nameRow = host.querySelector('.topbar-user-name-row');

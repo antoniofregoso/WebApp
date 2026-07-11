@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 
 import { fetchSystemModelView } from '../../api/systemModel.js';
-import { buildRecordUrl } from '../../utils/routing.js';
+import { buildRecordUrl, rememberRecordBreadcrumb } from '../../utils/routing.js';
 import { localizedValue } from '../../utils/ux.js';
 import { fieldLabel, isFieldReadOnly, localizedConfig, plainText } from './fieldHelpers.js';
 
@@ -83,7 +83,7 @@ export function Many2oneField({ field, value, onChange, lang = 'en', readOnly = 
         const href = value?.model && value?.uuid != null ? buildRecordUrl(value.model, value.uuid) : '';
         return href
             ? (
-                <a href={href} class="font-medium text-[var(--dash-accent)] hover:underline
+                <a href={href} onClick={() => rememberRecordBreadcrumb(href, name)} class="font-medium text-[var(--dash-accent)] hover:underline
                     focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2
                     focus-visible:outline-[var(--dash-accent)]">{name}</a>
             )

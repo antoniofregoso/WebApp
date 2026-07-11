@@ -22,5 +22,6 @@ export { Many2oneAvatarField } from './Many2oneAvatarField.jsx';
 export { One2manyField } from './One2manyField.jsx';
 export { One2manyFollowersField } from './One2manyFollowersField.jsx';
 export { One2manyKanbanField } from './One2manyKanbanField.jsx';
+export { One2manyListField } from './One2manyListField.jsx';
 export { Many2manyField } from './Many2manyField.jsx';
 export { Many2manyPillsField } from './Many2manyPillsField.jsx';

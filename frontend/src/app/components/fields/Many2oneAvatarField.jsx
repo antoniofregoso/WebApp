@@ -1,4 +1,4 @@
-import { buildRecordUrl } from '../../utils/routing.js';
+import { buildRecordUrl, rememberRecordBreadcrumb } from '../../utils/routing.js';
 import { Many2oneField } from './Many2oneField.jsx';
 import { isFieldReadOnly } from './fieldHelpers.js';
 
@@ -22,5 +22,5 @@ export function Many2oneAvatarField(props) {
             <span class={name ? 'font-medium text-[var(--dash-text)]' : 'text-[var(--dash-text-soft)]'}>{name || '—'}</span>
         </span>
     );
-    return href ? <a href={href} class="hover:underline">{content}</a> : content;
+    return href ? <a href={href} class="hover:underline" onClick={() => rememberRecordBreadcrumb(href, name)}>{content}</a> : content;
 }

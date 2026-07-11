@@ -286,7 +286,7 @@
                     "en_US": "Schema.org"
                 },
                 "form": {
-                    "tab": 2,
+                    "tab": 1,
                     "placeholder": {
                         "es_MX": "Schema.org",
                         "en_US": "Schema.org"
@@ -305,7 +305,36 @@
                     "en_US": "Settings"
                 },
                 "form": {
-                    "tab": 1,
+                    "tab": 2,
+                    "view": "one2many_list",
+                    "function":[
+                        {
+                            "name": "description",
+                            "type": "count",
+                            "label": {
+                                "es_MX": "Total",
+                                "en_US": "Total"
+                            }
+                        }
+                    ],
+                    "list_view": [
+                        {
+                            "name": "name",
+                            "type": "string",
+                            "label": {
+                                "es_MX": "Clave",
+                                "en_US": "Key"
+                            }
+                        },
+                        {
+                            "name": "description",
+                            "type": "string",
+                            "label": {
+                                "es_MX": "Descripción",
+                                "en_US": "Description"
+                            }
+                        }
+                    ],
                     "placeholder": {
                         "es_MX": "Configuraciones",
                         "en_US": "Settings"
@@ -332,14 +361,14 @@
                 }
             },
             {
-                "name": "key",
+                "name": "name",
                 "type": "string",
                 "label": {
                     "es_MX": "Clave",
                     "en_US": "Key"
                 },
                 "list": {
-                    "column": 1,
+                    "column": 0,
                     "order": true
                 },
                 "kanban": {
@@ -351,20 +380,35 @@
                 }
             },
             {
-                "name": "value",
+                "name": "description",
                 "type": "string",
+                "label": {
+                    "es_MX": "Descripción",
+                    "en_US": "Description"
+                },
+                "list": {
+                    "column": 1
+                },
+                "kanban": {
+                    "header": "subtitle"
+                },
+                "form": {
+                    "header": "subtitle",
+                    "placeholder": {
+                        "es_MX": "¿Para qué sirve esta configuración?",
+                        "en_US": "What is this setting used for?"
+                    }
+                }
+            },
+            {
+                "name": "value",
+                "type": "json",
                 "label": {
                     "es_MX": "Valor",
                     "en_US": "Value"
                 },
-                "list": {
-                    "column": 2
-                },
-                "kanban": {
-                    "leftColumn": 0
-                },
                 "form": {
-                    "leftColumn": 0,
+                    "tab": 0,
                     "required": true
                 }
             }
@@ -735,7 +779,7 @@
             },
             {
                 "name": "users",
-                "type": "one2many_pills",
+                "type": "one2many",
                 "label": {
                     "es_MX": "Usuarios",
                     "en_US": "Users"

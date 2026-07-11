@@ -139,10 +139,20 @@
         "tags":[],
         "fields":[
             {
-                "name":"key",
+                "name":"name",
                 "type":"string",
                 "required": true,
-                "readonly": false
+                "readonly": false,
+                "placeholder": { "es_MX": "Clave", "en_US": "Key" },
+                "help": { "es_MX": "Clave única de la configuración dentro de la aplicación", "en_US": "Unique setting key within the app" }
+            },
+            {
+                "name":"description",
+                "type":"string",
+                "required": false,
+                "readonly": false,
+                "placeholder": { "es_MX": "Descripción", "en_US": "Description" },
+                "help": { "es_MX": "Explica para qué sirve esta configuración", "en_US": "Explains what this setting is used for" }
             },
             {
                 "name":"value",

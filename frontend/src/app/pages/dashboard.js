@@ -5,6 +5,7 @@ import { contextActions, dashboardActions } from '../store/actions';
 import { mountSidebar, mountTopbar, MENU_ITEMS } from '../components';
 import { CalendarView, FormView, KanbanView, ListView, renderInsights, initInsights, patchInsights } from '../views';
 import { applyTheme, getAreaTitle, normalizePagination, paginateData, resetAppRoot } from '../utils';
+import { getRecordBreadcrumbs, setRecordBreadcrumbs } from '../utils/routing.js';
 import { startActivityHeartbeat } from '../api/activity.js';
 import { startPendingCountsPolling } from '../api/pendingCounts.js';
 import { fetchSystemModelView } from '../api/systemModel.js';
@@ -168,16 +169,23 @@ function getLabel(item, lang) {
 }
 
 function getTopbarBreadcrumb(area, subarea, lang) {
-    if (!subarea) return null;
-
     const areaItem = MENU_ITEMS.find((item) => item.key === area);
-    const subareaItem = areaItem?.items?.find((item) => item.key === subarea);
-
-    return {
-        areaLabel: areaItem ? getLabel(areaItem, lang) : area,
-        areaUrl: `/dashboard/${area}`,
-        subareaLabel: subareaItem ? getLabel(subareaItem, lang) : subarea,
-    };
+    const subareaItem = areaItem?.items?.find((item) => item.key === subarea
+        || item.url?.split('/').filter(Boolean).at(-1) === subarea);
+    if (!area) return [];
+    const items = [{ label: areaItem ? getLabel(areaItem, lang) : area, url: areaItem?.url ?? `/dashboard/${area}` }];
+    const subareaBreadcrumb = subarea ? {
+        label: subareaItem ? getLabel(subareaItem, lang) : subarea,
+        url: `/dashboard/${area}/${subarea}`,
+    } : null;
+    if (hasRecordRoute()) {
+        const recordItems = getRecordBreadcrumbs();
+        items.push(...(recordItems.length ? recordItems : (subareaBreadcrumb ? [subareaBreadcrumb] : [])));
+    } else if (subareaBreadcrumb) {
+        items.push(subareaBreadcrumb);
+        setRecordBreadcrumbs(window.location.pathname, [subareaBreadcrumb]);
+    }
+    return items;
 }
 
 function shouldShowTopbarTools(area, subarea) {
@@ -341,9 +349,9 @@ export function dashboard(req, router) {
     const areaFromUrl = req.params?.area;
     const prevSubarea = _currentSubarea;
     const hadRecordRoute = _currentRecordModel && _currentRecordUuid != null;
-    _currentSubarea = req.params?.subarea ?? null;
-    _currentRecordModel = req.params?.model ?? null;
     _currentRecordUuid = req.params?.uuid ?? null;
+    _currentSubarea = req.params?.model ?? null;
+    _currentRecordModel = req.params?.model ?? null;
     const isRecordRoute = hasRecordRoute();
     if (!MENU_ITEMS.some(item => item.key === areaFromUrl)) {
         if (areaFromUrl!=undefined) {return router.trigger404(req.pathname);}

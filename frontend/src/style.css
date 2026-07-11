@@ -2633,6 +2633,7 @@ body {
 .topbar-user-name-row {
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--dash-border);
+  text-align: center;
 }
 
 .topbar-user-name {

@@ -220,6 +220,13 @@ def _serialize_many2one(related) -> dict:
     avatar = getattr(related, "avatar_url", None)
     if avatar:
         payload["avatar"] = avatar
+    currency = getattr(related, "currency", None)
+    if currency:
+        payload["currency"] = {
+            "code": currency.code,
+            "symbol": currency.symbol,
+            "position": _serialize_value(currency.position),
+        }
     return payload
 
 

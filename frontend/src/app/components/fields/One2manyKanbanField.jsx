@@ -1,4 +1,4 @@
-import { buildRecordUrl } from '../../utils/routing.js';
+import { buildRecordUrl, rememberRecordBreadcrumb } from '../../utils/routing.js';
 import { localizedValue } from '../../utils/ux.js';
 import { icon, faUser, faXmark } from '../icon.js';
 import { isFieldReadOnly } from './fieldHelpers.js';
@@ -39,7 +39,8 @@ function Card({ item, header, lang, onRemove }) {
             {header.image && <Avatar src={item?.[header.image] ?? ''} name={title} />}
             <div class="min-w-0 flex-1">
                 {title && (href
-                    ? <a href={href} class="block truncate text-sm font-semibold text-[var(--dash-accent)] hover:underline">{title}</a>
+                    ? <a href={href} onClick={() => rememberRecordBreadcrumb(href, title)}
+                        class="block truncate text-sm font-semibold text-[var(--dash-accent)] hover:underline">{title}</a>
                     : <span class="block truncate text-sm font-semibold text-[var(--dash-text)]">{title}</span>)}
                 {subtitle && <span class="block truncate text-xs text-[var(--dash-text-muted)]">{subtitle}</span>}
             </div>

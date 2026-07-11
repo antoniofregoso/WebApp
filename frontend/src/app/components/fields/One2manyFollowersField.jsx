@@ -1,4 +1,4 @@
-import { buildRecordUrl } from '../../utils/routing.js';
+import { buildRecordUrl, rememberRecordBreadcrumb } from '../../utils/routing.js';
 import { localizedValue } from '../../utils/ux.js';
 import { isFieldReadOnly } from './fieldHelpers.js';
 
@@ -48,7 +48,8 @@ export function One2manyFollowersField({ field, value, onChange, lang = 'en', re
                                 </span>
                             );
                             return href
-                                ? <a href={href} class="relative hover:z-10" key={user.uuid}>{content}</a>
+                                ? <a href={href} onClick={() => rememberRecordBreadcrumb(href, name)}
+                                    class="relative hover:z-10" key={user.uuid}>{content}</a>
                                 : <span class="relative hover:z-10" key={user.uuid ?? name}>{content}</span>;
                         })}
                         {followers.length > 6 && (

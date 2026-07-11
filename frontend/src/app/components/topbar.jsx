@@ -51,7 +51,7 @@ function normalizeBadgeCount(value) {
  * (`router`) stay owned by the dashboard page, since both carry routing
  * side effects beyond this component's concern.
  */
-export function Topbar({ lang, theme, pageTitle, breadcrumb = null, showTools = true, pagination = {}, currentView, router, onViewChange, user = null, pendingCounts = {} }) {
+export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = true, pagination = {}, currentView, router, onViewChange, user = null, pendingCounts = {} }) {
     const { page, totalPages } = normalizePagination(pagination);
     const pageStatus = lang === 'es' ? `Página ${page} de ${totalPages}` : `Page ${page} of ${totalPages}`;
     const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -98,13 +98,18 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = null, showTools = 
         <div id="dashboard-topbar-shell" class="topbar-shell">
             <header id="dashboard-topbar" class="topbar" role="banner">
                 <div class="topbar-title">
-                    {breadcrumb?.subareaLabel ? (
-                        <nav class="flex min-w-0 items-center gap-2 text-[1.0625rem] font-semibold text-[var(--dash-text)]" aria-label="Breadcrumb">
-                            <a class="min-w-0 truncate text-[var(--dash-text-muted)] no-underline transition-colors hover:text-[var(--dash-accent)]" href={breadcrumb.areaUrl}>
-                                {breadcrumb.areaLabel}
-                            </a>
-                            <span class="shrink-0 text-[var(--dash-text-muted)]" aria-hidden="true">/</span>
-                            <span class="min-w-0 truncate text-[var(--dash-text)]" aria-current="page">{breadcrumb.subareaLabel}</span>
+                    {breadcrumb.length ? (
+                        <nav class="flex min-w-0 items-center gap-1.5 overflow-x-auto whitespace-nowrap text-[var(--dash-text)]" aria-label="Breadcrumb">
+                            {breadcrumb.map((item, index) => {
+                                const current = index === breadcrumb.length - 1;
+                                const linked = !current && item.url && item.url !== '#';
+                                return <span class="contents" key={`${item.url}:${index}`}>
+                                    {index > 0 && <span class="shrink-0 text-xs text-[var(--dash-text-muted)]" aria-hidden="true">/</span>}
+                                    {linked
+                                        ? <a class={`${index === 0 ? 'text-[1.0625rem] font-semibold' : 'text-sm font-medium'} max-w-36 shrink-0 truncate text-[var(--dash-text-muted)] no-underline transition-colors hover:text-[var(--dash-accent)]`} href={item.url}>{item.label}</a>
+                                        : <span class={`${index === 0 ? 'text-[1.0625rem] font-semibold' : 'text-sm font-medium'} max-w-36 shrink-0 truncate ${current ? 'text-[var(--dash-text)]' : 'text-[var(--dash-text-muted)]'}`} aria-current={current ? 'page' : undefined}>{item.label}</span>}
+                                </span>;
+                            })}
                         </nav>
                     ) : (
                         <h1 class="topbar-page-title">{pageTitle}</h1>

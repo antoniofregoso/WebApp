@@ -7,6 +7,10 @@ const schema = [
     { name: 'name', type: 'string', label: { en: 'Name' }, kanban: { header: 'title' }, list: { column: 0, order: true }, form: { header: 'title' }, calendar: { title: true } },
     { name: 'status', type: 'selection', label: { en: 'Status' }, list: { column: 1 } },
     { name: 'starts_at', type: 'datetime', label: { en: 'Start' }, calendar: { startDate: true }, form: { leftColumn: 0 } },
+    { name: 'color', type: 'color', label: { en: 'Color' }, selection_values: [
+        { value: 'Red', hex: '#dc2626', label: { en_US: 'Red' } },
+        { value: 'Blue', hex: '#2563eb', label: { en_US: 'Blue' } },
+    ] },
 ];
 const today = new Date();
 const localDay = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -38,6 +42,17 @@ describe('Preact schema views', () => {
         const host = mount(<KanbanView data={data} lang="en" />);
         expect(host.querySelectorAll('[data-group-value]')).toHaveLength(2);
         expect(host.querySelector('[data-group-value="todo"]').textContent).toContain('First');
+    });
+
+    it('opens a color-grid picker in the Kanban card footer', async () => {
+        const host = mount(<KanbanView data={data} lang="en" />);
+        const card = host.querySelector('[data-uuid="1"]');
+        card.querySelector('[data-kanban-color-picker] > button').click();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        const picker = host.querySelector('[data-uuid="1"] [role="radiogroup"]');
+        expect(picker).not.toBeNull();
+        expect(picker.querySelectorAll('[role="radio"]')).toHaveLength(2);
+        expect(picker.querySelector('[aria-label="Blue"]').style.backgroundColor).toBe('#2563eb');
     });
 
     it('sorts List rows through component state', async () => {

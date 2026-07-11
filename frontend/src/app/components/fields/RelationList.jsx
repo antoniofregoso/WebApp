@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 
 import { icon, faXmark } from '../icon.js';
-import { buildRecordUrl } from '../../utils/routing.js';
+import { buildRecordUrl, rememberRecordBreadcrumb } from '../../utils/routing.js';
 import { fieldLabel, isFieldReadOnly } from './fieldHelpers.js';
 
 function itemName(item) {
@@ -35,7 +35,8 @@ export function RelationList({ field, value, onChange, lang = 'en', readOnly = f
                     return (
                         <li key={itemKey(item, index)}>
                             {href
-                                ? <a href={href} class="font-medium text-[var(--dash-accent)] hover:underline">{name}</a>
+                                ? <a href={href} onClick={() => rememberRecordBreadcrumb(href, name)}
+                                    class="font-medium text-[var(--dash-accent)] hover:underline">{name}</a>
                                 : <span class="text-[var(--dash-text)]">{name}</span>}
                         </li>
                     );

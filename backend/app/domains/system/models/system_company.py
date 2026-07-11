@@ -10,6 +10,7 @@ from app.domains.system.models.system_colors import SystemColor
 
 if TYPE_CHECKING:
     from app.domains.system.models.system_app import SystemApp
+    from app.domains.system.models.system_currency import SystemCurrency
     from app.domains.system.models.system_whatsapp import SystemWhatsApp
     from app.domains.users.models.user_user import UserUser
 
@@ -34,6 +35,7 @@ class SystemCompany(SystemAudit, SQLModel, table=True):
         sa_column=sa.Column(sa.String(32), nullable=False),
     )
     currency_id: Optional[int] = Field(default=None, foreign_key="system_currencies.id")
+    currency: Optional["SystemCurrency"] = Relationship()
     logo_url: Optional[str] = None
     street: Optional[str] = None
     street2: Optional[str] = None

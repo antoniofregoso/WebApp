@@ -15,9 +15,9 @@ if TYPE_CHECKING:
 class SystemAppSettings(SystemAudit, SQLModel, table=True):
     __tablename__ = "system_app_settings"
     __table_args__ = (
-        UniqueConstraint("app_id", "key", name="uq_system_app_settings_app_key"),
+        UniqueConstraint("app_id", "name", name="uq_system_app_settings_app_name"),
         Index("ix_system_app_settings_app_id", "app_id"),
-        Index("ix_system_app_settings_key", "key"),
+        Index("ix_system_app_settings_name", "name"),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True, nullable=False)
@@ -30,7 +30,8 @@ class SystemAppSettings(SystemAudit, SQLModel, table=True):
         index=True,
     )
     app_id: int = Field(foreign_key="system_apps.id")
-    key: str
+    name: str
+    description: Optional[str] = Field(default=None)
     value: Any = Field(default=None, sa_type=JSONB)
     app: "SystemApp" = Relationship(back_populates="settings_ids")
 

@@ -245,6 +245,20 @@ describe('one2many_kanban view', () => {
         expect(card.querySelector('a').getAttribute('href')).toContain('u1');
     });
 
+    it('keeps the current breadcrumb trail when opening a user card', () => {
+        sessionStorage.clear();
+        window.history.replaceState({}, '', '/dashboard/configuration/system.company/company-1');
+        sessionStorage.setItem('dashboard:breadcrumbs:/dashboard/configuration/system.company/company-1', JSON.stringify([
+            { label: 'App', url: '/dashboard/configuration/system.app' },
+            { label: 'My App', url: '/dashboard/configuration/system.app/app-1' },
+            { label: 'My Company', url: '/dashboard/configuration/system.company/company-1' },
+        ]));
+        const host = mount(<FormField field={field} value={users} readOnly onChange={() => {}} hideLabel />);
+        host.querySelector('article a').click();
+        const stored = JSON.parse(sessionStorage.getItem('dashboard:breadcrumbs:/dashboard/configuration/user.user/u1'));
+        expect(stored.map((item) => item.label)).toEqual(['App', 'My App', 'My Company', 'Ana']);
+    });
+
     it('removes a record when editable', () => {
         const onChange = vi.fn();
         const host = mount(<FormField field={field} value={users} onChange={onChange} hideLabel />);
@@ -255,6 +269,97 @@ describe('one2many_kanban view', () => {
     it('does not apply to List/Kanban cells rendered via FieldControl directly', () => {
         const host = mount(<FieldControl field={field} value={users} readOnly onChange={() => {}} />);
         expect(host.querySelectorAll('article').length).toBe(0);
+    });
+});
+
+describe('one2many_list view', () => {
+    const field = {
+        name: 'settings_ids', type: 'one2many_list',
+        form: {
+            view: 'one2many_list',
+            list_view: [
+                { name: 'name', type: 'string', label: { es_MX: 'Clave', en_US: 'Key' } },
+                { name: 'description', type: 'string', label: { es_MX: 'Descripción', en_US: 'Description' } },
+                { name: 'active', type: 'boolean', label: { es_MX: 'Activo', en_US: 'Active' } },
+            ],
+        },
+    };
+    const settings = [
+        { uuid: 's1', model: 'system.app.settings', name: 'theme', description: 'Visual theme', active: true },
+        { uuid: 's2', model: 'system.app.settings', name: 'timezone', description: 'Default timezone', active: false },
+    ];
+
+    it('renders list_view fields in their declared order and uses their field types', () => {
+        const host = mount(<FormField field={field} value={settings} readOnly onChange={() => {}} hideLabel />);
+        const headers = [...host.querySelectorAll('th')].map((node) => node.textContent.trim());
+        expect(headers).toEqual(['Key', 'Description', 'Active']);
+        expect(host.querySelectorAll('tbody tr').length).toBe(2);
+        expect(host.querySelector('tbody tr').textContent).toContain('Visual theme');
+        expect(host.querySelector('tbody input[type="checkbox"]').checked).toBe(true);
+    });
+
+    it('links the name column to the related record and localizes labels', () => {
+        const host = mount(<FormField field={field} value={settings} lang="es" readOnly onChange={() => {}} hideLabel />);
+        expect(host.querySelectorAll('th')[0].textContent).toContain('Clave');
+        expect(host.querySelector('tbody a').getAttribute('href')).toContain('s1');
+    });
+
+    it('stores the object name when following a related record', () => {
+        sessionStorage.clear();
+        window.history.replaceState({}, '', '/dashboard/configuration/system.app/app-1');
+        const host = mount(<FormField field={field} value={settings} readOnly onChange={() => {}} hideLabel />);
+        host.querySelector('tbody a').click();
+        const stored = JSON.parse(sessionStorage.getItem('dashboard:breadcrumbs:/dashboard/configuration/system.app.settings/s1'));
+        expect(stored.at(-1).label).toBe('theme');
+    });
+
+    it('shows a dash when there are no related records', () => {
+        const host = mount(<FormField field={field} value={[]} readOnly onChange={() => {}} hideLabel />);
+        expect(host.textContent).toBe('—');
+    });
+
+    it('does not override cells rendered through FieldControl directly', () => {
+        const host = mount(<FieldControl field={field} value={settings} readOnly onChange={() => {}} />);
+        expect(host.querySelector('table')).toBeNull();
+    });
+
+    it('counts and sums configured columns in an aligned table footer', () => {
+        const totalsField = {
+            ...field,
+            form: {
+                ...field.form,
+                function: [
+                    { name: 'description', type: 'count', label: { en_US: 'Total' } },
+                    { name: 'amount', type: 'sum', label: { en_US: 'Amount' } },
+                ],
+                list_view: [
+                    ...field.form.list_view,
+                    { name: 'amount', type: 'decimal', label: { en_US: 'Amount' } },
+                ],
+            },
+        };
+        const values = settings.map((item, index) => ({ ...item, amount: index ? '5.25' : 10 }));
+        const host = mount(<FormField field={totalsField} value={values} readOnly onChange={() => {}} hideLabel />);
+        const totals = [...host.querySelectorAll('tfoot td')].map((node) => node.textContent.trim());
+        expect(totals).toEqual(['', 'Total: 2', '', 'Amount: 15.25']);
+    });
+
+    it('adds the company currency symbol to monetary sums and falls back to $', () => {
+        const monetaryField = {
+            ...field,
+            form: {
+                ...field.form,
+                function: [{ name: 'amount', type: 'sum', label: { en_US: 'Total' } }],
+                list_view: [{ name: 'amount', type: 'monetary', label: { en_US: 'Amount' } }],
+            },
+        };
+        const values = [{ amount: 10 }, { amount: 5.5 }];
+        const company = { currency: { symbol: '€', position: 'AFTER' } };
+        const host = mount(<FormField field={monetaryField} value={values} readOnly context={{ company }} onChange={() => {}} hideLabel />);
+        expect(host.querySelector('tfoot').textContent).toContain('15.50 €');
+
+        const fallbackHost = mount(<FormField field={monetaryField} value={values} readOnly onChange={() => {}} hideLabel />);
+        expect(fallbackHost.querySelector('tfoot').textContent).toContain('$15.50');
     });
 });
 

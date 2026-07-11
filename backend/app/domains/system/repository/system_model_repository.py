@@ -152,11 +152,16 @@ class SystemModelRepository:
         mapper = inspect(model_class)
         relationships = {relationship.key for relationship in mapper.relationships}
         load_names = set(field_names) | set(relation_names or [])
-        options = [
-            selectinload(getattr(model_class, name))
-            for name in load_names
-            if name in relationships
-        ]
+        options = []
+        for name in load_names:
+            if name not in relationships:
+                continue
+            attribute = getattr(model_class, name)
+            loader = selectinload(attribute)
+            related_class = inspect(model_class).relationships[name].mapper.class_
+            if "currency" in {relation.key for relation in inspect(related_class).relationships}:
+                loader = loader.selectinload(getattr(related_class, "currency"))
+            options.append(loader)
 
         async with db.session() as session:
             query = select(model_class).options(*options)

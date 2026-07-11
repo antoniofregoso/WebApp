@@ -147,6 +147,57 @@ Each field must declare only one placement. `required`, `readonly`, `placeholder
 }
 ```
 
+```json
+{
+    "name": "settings_ids",
+    "type": "one2many",
+    "label": {
+        "es_MX": "Configuraciones",
+        "en_US": "Settings"
+    },
+    "form": {
+        "tab": 2,
+        "view": "one2many_list",
+        "function":[
+            {
+                "name": "description",
+                "type": "count",
+                "label": {
+                    "es_MX": "Total",
+                    "en_US": "Total"
+                }
+            }
+        ],
+        "list_view": [
+            {
+                "name": "name",
+                "type": "string",
+                "label": {
+                    "es_MX": "Clave",
+                    "en_US": "Key"
+                }
+            },
+            {
+                "name": "description",
+                "type": "string",
+                "label": {
+                    "es_MX": "Descripción",
+                    "en_US": "Description"
+                }
+            }
+        ],
+        "placeholder": {
+            "es_MX": "Configuraciones",
+            "en_US": "Settings"
+        },
+        "help": {
+            "es_MX": "Configuraciones de la aplicación",
+            "en_US": "App settings"
+        }
+    }
+}
+```
+
 ![Form](./images/form.png)
 
 ![Form Dark](./images/form_dark.png)

@@ -27,6 +27,7 @@ if str(BACKEND_DIR) not in sys.path:
 from app.core.config.settings import settings
 from app.domains.system.models import (  # noqa: F401
     SystemApp,
+    SystemAppSettings,
     SystemCompany,
     SystemCountry,
     SystemCountryState,
@@ -350,18 +351,29 @@ async def _load_apps(
 ) -> None:
     for record in _load_json("system_app.json"):
         company = companies.get(record.get("company"))
-        session.add(
-            SystemApp(
-                **_audit_values(bot_id, now),
-                name=_localized_dict(record.get("name")),
-                description=_localized_dict(record.get("description")),
-                active=_bool_or_default(record.get("active"), True),
-                public=_bool_or_default(record.get("public"), True),
-                company_id=company.id if company else None,
-                keys=record.get("keys"),
-                schema_org=record.get("schema_org"),
-            )
+        app = SystemApp(
+            **_audit_values(bot_id, now),
+            name=_localized_dict(record.get("name")),
+            description=_localized_dict(record.get("description")),
+            active=_bool_or_default(record.get("active"), True),
+            public=_bool_or_default(record.get("public"), True),
+            company_id=company.id if company else None,
+            keys=record.get("keys"),
+            schema_org=record.get("schema_org"),
         )
+        session.add(app)
+        await session.flush()
+
+        for setting_record in record.get("settings_ids", []):
+            session.add(
+                SystemAppSettings(
+                    **_audit_values(bot_id, now),
+                    app_id=app.id,
+                    name=setting_record["name"],
+                    description=setting_record.get("description"),
+                    value=setting_record.get("value"),
+                )
+            )
     await session.flush()
 
 

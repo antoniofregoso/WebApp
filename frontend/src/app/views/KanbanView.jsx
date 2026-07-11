@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 
 import { FieldControl } from '../components/fields/index.js';
-import { faGripVertical, faUser } from '../components/icon.js';
+import { faGripVertical, faPalette, faUser } from '../components/icon.js';
 import { COLOR_CLASS, COLOR_FALLBACK, buildRecordUrl, localizedValue } from '../utils/index.js';
+import { rememberRecordBreadcrumb } from '../utils/routing.js';
 import { makeSortable } from '../utils/sortable.js';
 import { CreateModal, Icon, ViewHeader } from './ViewPrimitives.jsx';
 
@@ -34,6 +35,51 @@ function colorHex(field, value) {
     return field.selection_values?.find((option) => normalizeColor(option.value) === normalized)?.hex ?? null;
 }
 
+function ColorPicker({ field, value, lang, onChange, onOpenChange }) {
+    const [open, setOpen] = useState(false);
+    const options = field?.selection_values ?? [];
+    const selected = normalizeColor(value);
+    if (options.length === 0) return null;
+
+    return <div class="absolute bottom-1 right-1 z-10" data-kanban-color-picker>
+        <button type="button"
+            class="inline-flex size-5 items-center justify-center rounded text-[var(--dash-text-soft)] transition hover:bg-[var(--dash-surface-hover)] hover:text-[var(--dash-text)]"
+            aria-label={lang === 'es' ? 'Cambiar color' : 'Change color'} aria-expanded={String(open)}
+            onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setOpen((current) => {
+                    onOpenChange?.(!current);
+                    return !current;
+                });
+            }}>
+            <Icon definition={faPalette} class="size-3" />
+        </button>
+        {open && <div class="absolute bottom-full right-0 z-20 mb-1 grid w-max grid-cols-3 gap-0.5 rounded-md border border-[var(--dash-border)] bg-[var(--dash-surface)] p-1.5 shadow-lg"
+            role="radiogroup" aria-label={lang === 'es' ? 'Color de la tarjeta' : 'Card color'}>
+            {options.map((option) => {
+                const checked = normalizeColor(option.value) === selected;
+                const label = localizedValue(option.label, lang) || option.value;
+                return <button type="button" key={option.value} role="radio" aria-checked={String(checked)} aria-label={label}
+                    class={`block size-3 shrink-0 border-0 transition hover:scale-125 focus:outline-none ${checked ? 'z-10 scale-110 brightness-125 outline outline-1 outline-offset-1 outline-white' : ''}`}
+                    style={{
+                        backgroundColor: option.hex,
+                        width: '0.75rem',
+                        height: '0.75rem',
+                        boxShadow: checked ? `0 0 7px 2px ${option.hex}` : 'none',
+                    }}
+                    onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onChange(option.value);
+                        setOpen(false);
+                        onOpenChange?.(false);
+                    }} />;
+            })}
+        </div>}
+    </div>;
+}
+
 function Avatar({ src, name }) {
     return src
         ? <img src={src} alt={name} class="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-[var(--dash-border)]" />
@@ -45,11 +91,14 @@ function Value({ field, value, lang, context }) {
     return <FieldControl field={field} value={value} onChange={() => {}} lang={lang} readOnly context={context} />;
 }
 
-function Card({ record, layout, modelName, lang, context, colorField }) {
+function Card({ record, layout, modelName, lang, context, colorField, onColorChange }) {
+    const [cardColor, setCardColor] = useState(colorField ? record[colorField.name] : null);
+    const [pickerOpen, setPickerOpen] = useState(false);
+    useEffect(() => setCardColor(colorField ? record[colorField.name] : null), [colorField, record]);
     const title = layout.title ? record[layout.title.name] : '';
     const titleText = localizedValue(title?.name ?? title, lang);
     const href = buildRecordUrl(modelName, record.uuid);
-    const accentColor = colorHex(colorField, colorField ? record[colorField.name] : null);
+    const accentColor = colorHex(colorField, cardColor);
     const cardStyle = accentColor ? { borderColor: accentColor } : undefined;
     const column = (item) => {
         const value = record[item.field.name];
@@ -60,12 +109,14 @@ function Card({ record, layout, modelName, lang, context, colorField }) {
         </div>;
     };
     return (
-        <article data-uuid={record.uuid ?? ''} class="group rounded-lg border border-[var(--dash-border)] bg-[var(--dash-bg)] p-3 shadow-sm transition-shadow hover:shadow-md" style={cardStyle}>
+        <article data-uuid={record.uuid ?? ''} data-color={cardColor ?? ''}
+            class={`group relative rounded-lg border border-[var(--dash-border)] bg-[var(--dash-bg)] p-3 shadow-sm transition-shadow hover:shadow-md ${pickerOpen ? 'z-30' : ''}`} style={cardStyle}>
             <div class="flex items-start justify-between gap-2">
                 <div class="flex min-w-0 items-center gap-2">
                     <Avatar src={layout.image ? record[layout.image.name] : ''} name={titleText} />
                     <div class="flex min-w-0 flex-col gap-0.5">
-                        {titleText && <a href={href} class="truncate text-sm font-semibold text-[var(--dash-accent)] hover:underline">{titleText}</a>}
+                        {titleText && <a href={href} onClick={() => rememberRecordBreadcrumb(href, titleText)}
+                            class="truncate text-sm font-semibold text-[var(--dash-accent)] hover:underline">{titleText}</a>}
                         {layout.subtitle && <span class="truncate text-xs text-[var(--dash-text-muted)]"><Value field={layout.subtitle}
                             value={record[layout.subtitle.name]} lang={lang} context={context} /></span>}
                     </div>
@@ -78,18 +129,23 @@ function Card({ record, layout, modelName, lang, context, colorField }) {
                 <div class="flex flex-1 flex-col gap-1">{layout.leftColumn.map(column)}</div>
                 <div class="flex flex-1 flex-col items-end gap-1">{layout.rightColumn.map(column)}</div>
             </div>}
-            {layout.footer.length > 0 && <div class="mt-2 flex flex-col gap-1">{layout.footer.map(({ field }) => {
-                const value = record[field.name];
-                return value == null || value === '' ? null : <div class="text-xs text-[var(--dash-text-muted)]" key={field.name}>
-                    {field.type !== 'percentage' && <span>{field.label?.[lang] ?? field.name}: </span>}
-                    <Value field={field} value={value} lang={lang} context={context} />
-                </div>;
-            })}</div>}
+            {layout.footer.length > 0 && <div class={`mt-2 flex items-end gap-2 ${colorField ? 'pr-4' : ''}`}>
+                <div class="flex min-w-0 flex-1 flex-col gap-1">{layout.footer.map(({ field }) => {
+                    const value = record[field.name];
+                    return value == null || value === '' ? null : <div class="text-xs text-[var(--dash-text-muted)]" key={field.name}>
+                        {field.type !== 'percentage' && <span>{field.label?.[lang] ?? field.name}: </span>}
+                        <Value field={field} value={value} lang={lang} context={context} />
+                    </div>;
+                })}</div>
+            </div>}
+            {colorField && <ColorPicker field={colorField} value={cardColor} lang={lang}
+                onOpenChange={setPickerOpen}
+                onChange={(value) => { setCardColor(value); onColorChange(record.uuid, value); }} />}
         </article>
     );
 }
 
-function Cards({ records, groupValue, layout, modelName, lang, context, groupBy, colorField, onMove }) {
+function Cards({ records, groupValue, layout, modelName, lang, context, groupBy, colorField, onMove, onColorChange }) {
     const ref = useRef(null);
     useEffect(() => makeSortable(ref.current, {
         handle: '.js-kanban-drag-handle',
@@ -98,7 +154,8 @@ function Cards({ records, groupValue, layout, modelName, lang, context, groupBy,
     }), [onMove]);
     return <div ref={ref} data-kanban-cards data-group-value={groupValue}
         class={groupBy ? 'flex min-h-24 flex-col gap-2 p-2' : 'grid w-full grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3'}>
-        {records.map((record) => <Card record={record} layout={layout} modelName={modelName} lang={lang} context={context} colorField={colorField} key={record.uuid} />)}
+        {records.map((record) => <Card record={record} layout={layout} modelName={modelName} lang={lang} context={context}
+            colorField={colorField} onColorChange={onColorChange} key={record.uuid} />)}
     </div>;
 }
 
@@ -117,10 +174,16 @@ export function KanbanView({ data = {}, lang = 'en' }) {
         if (!groupBy || groupValue == null) return;
         setRecords((current) => current.map((record) => String(record.uuid) === String(uuid) ? { ...record, [groupBy]: groupValue } : record));
     };
+    const onColorChange = (uuid, value) => {
+        if (!colorField) return;
+        setRecords((current) => current.map((record) => String(record.uuid) === String(uuid)
+            ? { ...record, [colorField.name]: value }
+            : record));
+    };
     return <main id="dashboard-content" class="dash-content" role="main" aria-label="Kanban Board">
         <ViewHeader title={data?.model?.label?.[lang] ?? ''} count={data?.pagination?.total ?? records.length}
             lang={lang} onCreate={() => setModalOpen(true)} />
-        <div class="flex items-start gap-4 overflow-x-auto pb-2">
+        <div class="-mt-16 flex items-start gap-4 overflow-x-auto pb-2 pt-16">
             {groupBy ? groups.map((group) => {
                 const cards = records.filter((record) => String(record[groupBy]) === String(group.value));
                 return <section class="flex min-w-64 flex-1 flex-col rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[var(--dash-shadow)]" key={group.value}>
@@ -129,10 +192,10 @@ export function KanbanView({ data = {}, lang = 'en' }) {
                         <span data-kanban-count class="text-xs text-[var(--dash-text-muted)]">{cards.length}</span>
                     </header>
                     <Cards records={cards} groupValue={group.value} layout={layout} modelName={data?.model?.name ?? ''}
-                        lang={lang} context={context} groupBy={groupBy} colorField={colorField} onMove={onMove} />
+                        lang={lang} context={context} groupBy={groupBy} colorField={colorField} onMove={onMove} onColorChange={onColorChange} />
                 </section>;
             }) : <Cards records={records} layout={layout} modelName={data?.model?.name ?? ''} lang={lang}
-                context={context} groupBy={null} colorField={colorField} onMove={onMove} />}
+                context={context} groupBy={null} colorField={colorField} onMove={onMove} onColorChange={onColorChange} />}
         </div>
         <CreateModal data={data} lang={lang} open={modalOpen} onClose={() => setModalOpen(false)} />
     </main>;
