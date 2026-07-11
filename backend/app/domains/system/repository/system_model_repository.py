@@ -182,6 +182,51 @@ class SystemModelRepository:
             return {record.id: record for record in result.scalars().all()}
 
     @staticmethod
+    async def update_record(model_name: str, record_uuid: uuid_lib.UUID, values: dict):
+        model_class = MODEL_CLASS_BY_NAME.get(model_name)
+        if model_class is None:
+            return None
+        async with db.session() as session:
+            query = select(model_class).where(model_class.uuid == record_uuid)
+            result = await session.execute(query)
+            record = result.scalar_one_or_none()
+            if record is None:
+                return None
+            for key, value in values.items():
+                setattr(record, key, value)
+            session.add(record)
+            await session.commit()
+            await session.refresh(record)
+            return record
+
+    @staticmethod
+    async def get_record_by_uuid(model_name: str, record_uuid: uuid_lib.UUID):
+        model_class = MODEL_CLASS_BY_NAME.get(model_name)
+        if model_class is None:
+            return None
+        async with db.session() as session:
+            query = select(model_class).where(model_class.uuid == record_uuid)
+            if model_name == "system.message":
+                query = query.options(selectinload(SystemMessage.to_users))
+            result = await session.execute(query)
+            return result.scalar_one_or_none()
+
+    @staticmethod
+    async def delete_record(model_name: str, record_uuid: uuid_lib.UUID) -> bool:
+        model_class = MODEL_CLASS_BY_NAME.get(model_name)
+        if model_class is None:
+            return False
+        async with db.session() as session:
+            query = select(model_class).where(model_class.uuid == record_uuid)
+            result = await session.execute(query)
+            record = result.scalar_one_or_none()
+            if record is None:
+                return False
+            await session.delete(record)
+            await session.commit()
+            return True
+
+    @staticmethod
     async def get_followable_users() -> list[UserUser]:
         async with db.session() as session:
             query = (

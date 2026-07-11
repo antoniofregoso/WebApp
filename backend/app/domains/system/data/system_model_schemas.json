@@ -2003,6 +2003,15 @@
         "use": "view",
         "view": [
             {
+                "name": "sequence",
+                "type": "integer",
+                "hidden": true,
+                "label": {
+                    "es_MX": "Secuencia",
+                    "en_US": "Sequence"
+                }
+            },
+            {
                 "name": "uuid",
                 "type": "string",
                 "label": {

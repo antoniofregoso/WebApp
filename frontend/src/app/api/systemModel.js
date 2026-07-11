@@ -11,6 +11,18 @@ const SYSTEM_MODEL_VIEW_QUERY = gql`
   }
 `;
 
+const UPDATE_SYSTEM_MODEL_RECORD_MUTATION = gql`
+  mutation UpdateSystemModelRecord($model: String!, $recordUuid: UUID!, $values: JSON!) {
+    updateSystemModelRecord(model: $model, recordUuid: $recordUuid, values: $values)
+  }
+`;
+
+const DELETE_SYSTEM_MODEL_RECORD_MUTATION = gql`
+  mutation DeleteSystemModelRecord($model: String!, $recordUuid: UUID!) {
+    deleteSystemModelRecord(model: $model, recordUuid: $recordUuid)
+  }
+`;
+
 export class SystemModelError extends Error {
     constructor(message, options) {
         super(message, options);
@@ -39,4 +51,22 @@ export async function fetchSystemModelView(
         }
         throw new SystemModelError(`Unable to load the view for model "${model}"`, { cause: error });
     }
+}
+
+export async function updateSystemModelRecord({ model, recordUuid, values }, fetchImpl = globalThis.fetch) {
+    const data = await requestAuthenticated(
+        UPDATE_SYSTEM_MODEL_RECORD_MUTATION,
+        { model, recordUuid, values },
+        fetchImpl,
+    );
+    return data.updateSystemModelRecord;
+}
+
+export async function deleteSystemModelRecord({ model, recordUuid }, fetchImpl = globalThis.fetch) {
+    const data = await requestAuthenticated(
+        DELETE_SYSTEM_MODEL_RECORD_MUTATION,
+        { model, recordUuid },
+        fetchImpl,
+    );
+    return data.deleteSystemModelRecord;
 }

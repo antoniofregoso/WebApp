@@ -2,6 +2,7 @@ from dataclasses import asdict
 import uuid as uuid_lib
 
 import strawberry
+from strawberry.scalars import JSON
 
 from app.core.exceptions import ValidationException
 from app.core.security.jwt_bearer import IsAuthenticated
@@ -72,6 +73,29 @@ def _remove_none(value):
 
 @strawberry.type
 class SystemMutation:
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def delete_system_model_record(
+        self,
+        model: str,
+        record_uuid: uuid_lib.UUID,
+        info: strawberry.types.Info,
+    ) -> bool:
+        user = await get_current_user(info)
+        return await SystemModelService.delete_record(model, record_uuid, user.id)
+
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def update_system_model_record(
+        self,
+        model: str,
+        record_uuid: uuid_lib.UUID,
+        values: JSON,
+        info: strawberry.types.Info,
+    ) -> JSON:
+        user = await get_current_user(info)
+        return await SystemModelService.update_record(
+            model, record_uuid, dict(values), user.id
+        )
+
     @strawberry.mutation(permission_classes=[IsAuthenticated])
     async def create_system_model(
         self, model: SystemModelCreateInput

@@ -1460,6 +1460,11 @@ body {
   color: var(--dash-accent);
 }
 
+.topbar-tool-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
 .topbar-tool-icon {
   width: 14px;
   height: 14px;
@@ -3200,6 +3205,20 @@ body {
   text-transform: uppercase;
 }
 
+.cal-event-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 6px;
+  cursor: ns-resize;
+  background: color-mix(in srgb, var(--cal-event-border, var(--dash-accent)) 45%, transparent);
+}
+
+.cal-event-resize-handle:hover {
+  background: var(--cal-event-border, var(--dash-accent));
+}
+
 .cal-day-col:last-child {
   border-right: none;
 }
@@ -3212,14 +3231,14 @@ body {
   border-bottom: 1px solid var(--dash-border-soft);
 }
 
-/* ── Green "now" line (moves with the minutes) ────────────────────────────── */
+/* ── Red "now" line (moves with the minutes) ──────────────────────────────── */
 
 .cal-nowline {
   position: absolute;
   left: 0;
   right: 0;
   height: 0;
-  border-top: 2px solid var(--dash-info, var(--dash-accent));
+  border-top: 2px solid var(--dash-danger, #dc2626);
   z-index: 10;
   pointer-events: none;
 }
@@ -3231,7 +3250,25 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: var(--dash-info, var(--dash-accent));
+  background: var(--dash-danger, #dc2626);
+  animation: cal-nowdot-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes cal-nowdot-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(1.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cal-nowdot {
+    animation: none;
+  }
 }
 
 /* ── Calendar drag-and-drop ───────────────────────────────────────────────── */

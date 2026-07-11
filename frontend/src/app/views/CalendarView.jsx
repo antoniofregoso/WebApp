@@ -1,7 +1,9 @@
 import Sortable from 'sortablejs';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 
+import { updateSystemModelRecord } from '../api/systemModel.js';
 import { faChevronLeft, faChevronRight } from '../components/icon.js';
+import { dashboardActions } from '../store/actions/index.js';
 import { buildRecordUrl } from '../utils/index.js';
 import { CreateModal, Icon, ViewHeader } from './ViewPrimitives.jsx';
 
@@ -123,11 +125,12 @@ function MonthView({ cursor, events, lang, onDay, onMove }) {
     </div>;
 }
 
-function TimeView({ days, events, lang, onDay, onMove }) {
+function TimeView({ days, events, lang, onDay, onMove, onResize }) {
     const rootRef = useRef(null);
     useEffect(() => {
         const instances = [...rootRef.current.querySelectorAll('.cal-day-col')].map((container) => Sortable.create(container, {
             group: { name: 'cal-time', pull: true, put: true }, animation: 150, draggable: '.cal-time-event',
+            filter: '.cal-event-resize-handle', preventOnFilter: true,
             ghostClass: 'cal-drag-ghost', chosenClass: 'cal-drag-chosen', dragClass: 'cal-drag-item',
             onEnd: (event) => {
                 const rect = event.to.getBoundingClientRect();
@@ -139,6 +142,29 @@ function TimeView({ days, events, lang, onDay, onMove }) {
     }, [events, onMove]);
     const hours = Array.from({ length: 24 }, (_, hour) => hour);
     const nowTop = ((new Date().getHours() * 60 + new Date().getMinutes()) / 60) * HOUR_HEIGHT;
+    const beginResize = (pointerEvent, event, day) => {
+        pointerEvent.preventDefault();
+        pointerEvent.stopPropagation();
+        const column = pointerEvent.currentTarget.closest('.cal-day-col');
+        const move = (eventPointer) => {
+            const rect = column.getBoundingClientRect();
+            const minutes = Math.round(((eventPointer.clientY - rect.top) / HOUR_HEIGHT) * 4) * 15;
+            const end = new Date(day);
+            end.setHours(0, Math.max(0, Math.min(minutes, 24 * 60)), 0, 0);
+            onResize(event.id, end, false);
+        };
+        const end = (eventPointer) => {
+            document.removeEventListener('pointermove', move);
+            document.removeEventListener('pointerup', end);
+            const rect = column.getBoundingClientRect();
+            const minutes = Math.round(((eventPointer.clientY - rect.top) / HOUR_HEIGHT) * 4) * 15;
+            const finalEnd = new Date(day);
+            finalEnd.setHours(0, Math.max(0, Math.min(minutes, 24 * 60)), 0, 0);
+            onResize(event.id, finalEnd, true);
+        };
+        document.addEventListener('pointermove', move);
+        document.addEventListener('pointerup', end);
+    };
     return <div class="cal-time" style={{ '--cal-cols': days.length }} ref={rootRef}>
         <div class="cal-time-head"><div class="cal-corner" />{days.map((day) => <div class={`cal-col-head ${sameDay(day, new Date()) ? 'cal-col-head--today' : ''}`} key={dayKey(day)} onClick={() => onDay(day)}>
             <span class="cal-col-dow">{day.toLocaleDateString(locale(lang), { weekday: 'short' })}</span><span class={`cal-daynum ${sameDay(day, new Date()) ? 'cal-daynum--today' : ''}`}>{day.getDate()}</span>
@@ -153,6 +179,9 @@ function TimeView({ days, events, lang, onDay, onMove }) {
                     const height = Math.max(30, (Math.min(event.endsAt, addDays(startOfDay(day), 1)) - start) / 3_600_000 * HOUR_HEIGHT);
                     return <a href={event.href} class="cal-time-event" data-event-id={event.id} style={{ top, height, ...eventStyle(event.color) }} key={event.id}>
                         <span class="cal-time-event-hour">{formatTime(start, lang)}</span><span class="cal-time-event-title">{event.title}</span>{event.statusLabel && <span class="cal-time-event-status">{event.statusLabel}</span>}
+                        <span class="cal-event-resize-handle" aria-label={lang === 'es' ? 'Cambiar hora de fin' : 'Change end time'}
+                            onClick={(eventClick) => { eventClick.preventDefault(); eventClick.stopPropagation(); }}
+                            onPointerDown={(pointerEvent) => beginResize(pointerEvent, event, day)} />
                     </a>;
                 })}
             </div>)}</div>
@@ -172,12 +201,45 @@ export function CalendarView({ data = {}, lang = 'en' }) {
         if (view === 'month') return new Date(current.getFullYear(), current.getMonth() + step, 1);
         return addDays(current, step * (view === 'week' ? 7 : 1));
     });
+    const schema = data?.model?.schema ?? [];
+    const startField = schema.find((field) => field?.calendar?.startDate === true)?.name;
+    const endField = schema.find((field) => field?.calendar?.endDate === true)?.name;
+    const persistEvent = async (id, patch, rollback) => {
+        dashboardActions.updateModelRecord(id, patch);
+        try {
+            await updateSystemModelRecord({ model: data?.model?.name, recordUuid: id, values: patch });
+        } catch (error) {
+            setEvents((current) => current.map((event) => event.id === id ? { ...event, ...rollback.event } : event));
+            dashboardActions.updateModelRecord(id, rollback.record);
+            console.error('Unable to persist calendar event update.', error);
+        }
+    };
     const moveEvent = (id, day, minutes) => setEvents((current) => current.map((event) => {
         if (event.id !== id) return event;
         const duration = event.endsAt - event.startsAt;
         const next = new Date(day);
         next.setHours(minutes == null ? event.startsAt.getHours() : Math.floor(minutes / 60), minutes == null ? event.startsAt.getMinutes() : minutes % 60, 0, 0);
-        return { ...event, startsAt: next, endsAt: new Date(next.getTime() + duration) };
+        const endsAt = new Date(next.getTime() + duration);
+        const patch = { ...(startField ? { [startField]: next.toISOString() } : {}), ...(endField ? { [endField]: endsAt.toISOString() } : {}) };
+        const record = data.records?.find((item) => String(item.uuid) === id) ?? {};
+        void persistEvent(id, patch, { event: { startsAt: event.startsAt, endsAt: event.endsAt }, record: {
+            ...(startField ? { [startField]: record[startField] } : {}), ...(endField ? { [endField]: record[endField] } : {}),
+        } });
+        return { ...event, startsAt: next, endsAt };
+    }));
+    const resizeEvent = (id, end, commit) => setEvents((current) => current.map((event) => {
+        if (event.id !== id) return event;
+        if (end && end <= event.startsAt) return event;
+        if (!commit && end) return { ...event, endsAt: end };
+        if (commit && endField && end) {
+            const record = data.records?.find((item) => String(item.uuid) === id) ?? {};
+            void persistEvent(id, { [endField]: end.toISOString() }, {
+                event: { endsAt: parseDate(record[endField]) ?? new Date(event.startsAt.getTime() + DEFAULT_EVENT_MINUTES * 60_000) },
+                record: { [endField]: record[endField] },
+            });
+            return { ...event, endsAt: end };
+        }
+        return event;
     }));
     const days = useMemo(() => view === 'week' ? Array.from({ length: 7 }, (_, index) => addDays(startOfWeek(cursor), index)) : [startOfDay(cursor)], [view, cursor]);
     return <main id="dashboard-content" class="dash-content dash-content--calendar" role="main" aria-label="Calendar">
@@ -185,7 +247,8 @@ export function CalendarView({ data = {}, lang = 'en' }) {
         <div id="cal-root" class="cal"><Toolbar view={view} cursor={cursor} lang={lang} onView={setView} onNavigate={navigate}
             onPeriod={(month, year) => setCursor(new Date(year, month, Math.min(cursor.getDate(), new Date(year, month + 1, 0).getDate())))} />
             {view === 'month' ? <MonthView cursor={cursor} events={events} lang={lang} onDay={(day) => { setCursor(day); setView('day'); }} onMove={moveEvent} />
-                : <TimeView days={days} events={events} lang={lang} onDay={(day) => { setCursor(day); setView('day'); }} onMove={moveEvent} />}
+                : <TimeView days={days} events={events} lang={lang} onDay={(day) => { setCursor(day); setView('day'); }}
+                    onMove={moveEvent} onResize={resizeEvent} />}
         </div>
         <CreateModal data={data} lang={lang} open={modalOpen} onClose={() => setModalOpen(false)} />
     </main>;

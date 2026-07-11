@@ -81,6 +81,31 @@ export const dashboardActions = {
         dashboardActions.setModelView({ model, records: [] });
     },
 
+    updateModelRecord(recordUuid, patch) {
+        const model = appSignal.value.model;
+        if (!model?.records) return;
+        // This is an in-memory cache patch. Views already own their optimistic
+        // state; emitting a new root signal here would remount them and reset
+        // transient UI such as Calendar's active week/day mode.
+        model.records = model.records.map((record) => String(record.uuid) === String(recordUuid)
+            ? { ...record, ...patch }
+            : record);
+    },
+
+    removeModelRecords(recordUuids) {
+        const model = appSignal.value.model;
+        if (!model?.records) return;
+        const removed = new Set([...recordUuids].map(String));
+        model.records = model.records.filter((record) => !removed.has(String(record.uuid)));
+        appSignal.value = {
+            ...appSignal.value,
+            dashboard: {
+                ...appSignal.value.dashboard,
+                total: model.records.length,
+            },
+        };
+    },
+
     setPendingCounts(counts = {}) {
         const messages = Math.max(0, Number(counts.messages) || 0);
         const notifications = Math.max(0, Number(counts.notifications) || 0);

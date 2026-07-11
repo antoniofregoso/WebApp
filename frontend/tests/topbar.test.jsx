@@ -96,4 +96,11 @@ describe('Topbar user menu', () => {
 
         expect(badges).toEqual(['99+', '12']);
     });
+
+    it('disables configured view buttons', () => {
+        const host = mount(<Topbar lang="en" theme="light" pageTitle="Messages" showTools
+            currentView="list" disabledViews={['kanban']} />);
+        expect(host.querySelector('[data-view="kanban"]').disabled).toBe(true);
+        expect(host.querySelector('[data-view="list"]').disabled).toBe(false);
+    });
 });

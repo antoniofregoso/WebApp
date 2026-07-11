@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 
+import { deleteSystemModelRecord, updateSystemModelRecord } from '../api/systemModel.js';
 import { FieldControl } from '../components/fields/index.js';
 import { faBoxArchive, faGripVertical, faTrash } from '../components/icon.js';
 import { NUMERIC_TYPES, buildRecordUrl, localizedValue } from '../utils/index.js';
 import { rememberRecordBreadcrumb } from '../utils/routing.js';
 import { makeSortable } from '../utils/sortable.js';
+import { appSignal } from '../store/index.js';
+import { dashboardActions } from '../store/actions/index.js';
 import { CreateModal, Icon, ViewHeader } from './ViewPrimitives.jsx';
 
 export function getListColumns(schema = []) {
@@ -48,11 +51,15 @@ function SortIcon({ direction }) {
 export function ListView({ data = {}, lang = 'en' }) {
     const [modalOpen, setModalOpen] = useState(false);
     const [selected, setSelected] = useState(() => new Set());
+    const [recordPatches, setRecordPatches] = useState({});
+    const [hiddenRecords, setHiddenRecords] = useState(() => new Set());
     const [sort, setSort] = useState({ field: '', direction: '' });
     const tbodyRef = useRef(null);
     const columns = useMemo(() => getListColumns(data?.model?.schema ?? []), [data?.model?.schema]);
     const records = useMemo(() => {
-        const items = [...(data.records ?? [])];
+        const items = (data.records ?? [])
+            .filter((record) => !hiddenRecords.has(String(record.uuid)))
+            .map((record) => ({ ...record, ...(recordPatches[String(record.uuid)] ?? {}) }));
         const field = columns.find((item) => item.name === sort.field);
         if (!field || !sort.direction) return items;
         return items.sort((a, b) => {
@@ -61,14 +68,31 @@ export function ListView({ data = {}, lang = 'en' }) {
             const result = typeof left === 'number' && typeof right === 'number' ? left - right : String(left).localeCompare(String(right));
             return sort.direction === 'asc' ? result : -result;
         });
-    }, [data.records, columns, sort]);
+    }, [data.records, columns, sort, recordPatches, hiddenRecords]);
     useEffect(() => {
         if (!tbodyRef.current) return undefined;
         return makeSortable(tbodyRef.current, {
             handle: '.js-list-drag-handle',
             sortableOptions: { forceFallback: true, ghostClass: 'list-drag-ghost', chosenClass: 'list-drag-chosen', dragClass: 'list-drag-item' },
+            onReorder: (ids) => {
+                const full = appSignal.value.model?.records ?? data.records ?? [];
+                if (!full.some((record) => Object.hasOwn(record, 'sequence'))) return;
+                const visible = new Set(records.map((record) => String(record.uuid)));
+                let index = 0;
+                const reordered = full.map((record) => visible.has(String(record.uuid))
+                    ? full.find((item) => String(item.uuid) === ids[index++])
+                    : record);
+                const previous = new Map(full.map((record) => [String(record.uuid), record.sequence]));
+                reordered.forEach((record, position) => dashboardActions.updateModelRecord(record.uuid, { sequence: (position + 1) * 10 }));
+                void Promise.all(reordered.map((record, position) => updateSystemModelRecord({
+                    model: data?.model?.name, recordUuid: record.uuid, values: { sequence: (position + 1) * 10 },
+                }))).catch((error) => {
+                    previous.forEach((sequence, uuid) => dashboardActions.updateModelRecord(uuid, { sequence }));
+                    console.error('Unable to persist list sequence.', error);
+                });
+            },
         });
-    }, [records.length]);
+    }, [data, records]);
     const toggle = (uuid) => setSelected((current) => {
         const next = new Set(current);
         if (next.has(uuid)) next.delete(uuid); else next.add(uuid);
@@ -76,12 +100,72 @@ export function ListView({ data = {}, lang = 'en' }) {
     });
     const allSelected = records.length > 0 && records.every((record) => selected.has(String(record.uuid)));
     const setAll = (checked) => setSelected(checked ? new Set(records.map((record) => String(record.uuid))) : new Set());
-    const action = (definition, label) => <button type="button" class="topbar-action-btn" aria-label={label} data-tooltip={label}>
+    const archiveSelected = async () => {
+        const selectedRecords = records.filter((record) => selected.has(String(record.uuid)));
+        const model = data?.model?.name;
+        const patchFor = (record) => model === 'system.message'
+            ? { status: 'Archived' }
+            : (Object.hasOwn(record, 'active') ? { active: false } : null);
+        const changes = selectedRecords.map((record) => ({ record, patch: patchFor(record) })).filter((item) => item.patch);
+        if (changes.length === 0) {
+            window.alert(lang === 'es'
+                ? 'Este modelo no tiene un campo active ni un estado Archived.'
+                : 'This model has no active field or Archived status.');
+            return;
+        }
+        setRecordPatches((current) => Object.fromEntries([
+            ...Object.entries(current),
+            ...changes.map(({ record, patch }) => [String(record.uuid), { ...(current[String(record.uuid)] ?? {}), ...patch }]),
+        ]));
+        changes.forEach(({ record, patch }) => dashboardActions.updateModelRecord(record.uuid, patch));
+        try {
+            await Promise.all(changes.map(({ record, patch }) => updateSystemModelRecord({
+                model, recordUuid: record.uuid, values: patch,
+            })));
+            setSelected(new Set());
+        } catch (error) {
+            setRecordPatches((current) => {
+                const next = { ...current };
+                changes.forEach(({ record }) => { delete next[String(record.uuid)]; });
+                return next;
+            });
+            changes.forEach(({ record, patch }) => dashboardActions.updateModelRecord(
+                record.uuid,
+                Object.fromEntries(Object.keys(patch).map((key) => [key, record[key]])),
+            ));
+            window.alert(lang === 'es' ? 'No se pudieron archivar los registros.' : 'Unable to archive records.');
+            console.error('Unable to archive selected records.', error);
+        }
+    };
+    const deleteSelected = async () => {
+        const message = lang === 'es' ? '¿Borrar los registros seleccionados?' : 'Delete selected records?';
+        if (!window.confirm(message)) return;
+        const ids = [...selected];
+        setHiddenRecords((current) => new Set([...current, ...ids]));
+        setSelected(new Set());
+        try {
+            await Promise.all(ids.map((recordUuid) => deleteSystemModelRecord({ model: data?.model?.name, recordUuid })));
+            dashboardActions.removeModelRecords(ids);
+        } catch (error) {
+            setHiddenRecords((current) => {
+                const next = new Set(current);
+                ids.forEach((id) => next.delete(String(id)));
+                return next;
+            });
+            setSelected(new Set(ids));
+            window.alert(lang === 'es' ? 'No se pudieron borrar los registros.' : 'Unable to delete records.');
+            console.error('Unable to delete selected records.', error);
+        }
+    };
+    const action = (definition, label, onClick) => <button type="button" class="topbar-action-btn" aria-label={label} data-tooltip={label} onClick={onClick}>
         <Icon definition={definition} class="topbar-action-icon" />
     </button>;
     return <main id="dashboard-content" class="dash-content" role="main" aria-label="List">
         <ViewHeader title={data?.model?.label?.[lang] ?? ''} count={data?.pagination?.total ?? records.length} lang={lang}
-            actions={selected.size > 0 && <>{action(faTrash, lang === 'es' ? 'Borrar' : 'Delete')}{action(faBoxArchive, lang === 'es' ? 'Archivar' : 'Archive')}</>}
+            actions={selected.size > 0 && <>
+                {action(faTrash, lang === 'es' ? 'Borrar' : 'Delete', () => { void deleteSelected(); })}
+                {action(faBoxArchive, lang === 'es' ? 'Archivar' : 'Archive', () => { void archiveSelected(); })}
+            </>}
             onCreate={() => setModalOpen(true)} />
         <div class="w-full overflow-hidden rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[var(--dash-shadow)]">
             {columns.length > 0 && records.length > 0 ? <div class="overflow-x-auto"><table class="w-full border-collapse text-sm">

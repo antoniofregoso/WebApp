@@ -916,6 +916,17 @@
         "tags": [],
         "fields": [
             {
+                "name": "sequence",
+                "type": "integer",
+                "required": false,
+                "readonly": true,
+                "placeholder": {},
+                "help": {
+                    "es_MX": "Orden interno del registro",
+                    "en_US": "Internal record order"
+                }
+            },
+            {
                 "name": "title",
                 "type": "string",
                 "required": true,

@@ -209,6 +209,7 @@ function syncChrome(lang, theme, expanded, area, subarea, view, pagination) {
     const showTopbarTools = shouldShowTopbarTools(area, subarea);
     const { name: userName, email: userEmail } = authSignal.value;
     const pendingCounts = appSignal.value.pendingCounts ?? {};
+    const disabledViews = subarea === 'system.message' ? ['kanban'] : [];
 
     mountSidebar(document.getElementById('dashboard-sidebar-root'), {
         lang,
@@ -227,6 +228,7 @@ function syncChrome(lang, theme, expanded, area, subarea, view, pagination) {
         onViewChange: handleViewChange,
         user: { name: userName, email: userEmail },
         pendingCounts,
+        disabledViews,
     });
 }
 
@@ -370,7 +372,7 @@ export function dashboard(req, router) {
     if (isRecordRoute) {
         dashboardActions.setView('form');
     } else if (areaChanged || subareaChanged) {
-        dashboardActions.setView(DEFAULT_VIEW);
+        dashboardActions.setView(_currentSubarea === 'system.message' ? 'list' : DEFAULT_VIEW);
     } else if (hadRecordRoute && getView(appSignal.value) === 'form') {
         // Leaving a record route via browser back — reset to default view.
         // If the user clicked a view button, the signal is already set to the target

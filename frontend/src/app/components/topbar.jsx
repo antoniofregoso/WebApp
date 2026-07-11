@@ -51,7 +51,7 @@ function normalizeBadgeCount(value) {
  * (`router`) stay owned by the dashboard page, since both carry routing
  * side effects beyond this component's concern.
  */
-export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = true, pagination = {}, currentView, router, onViewChange, user = null, pendingCounts = {} }) {
+export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = true, pagination = {}, currentView, router, onViewChange, user = null, pendingCounts = {}, disabledViews = [] }) {
     const { page, totalPages } = normalizePagination(pagination);
     const pageStatus = lang === 'es' ? `Página ${page} de ${totalPages}` : `Page ${page} of ${totalPages}`;
     const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -219,6 +219,7 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
                                     data-view={v.key}
                                     aria-label={t(`topbar.view.${v.key}`, lang)}
                                     data-tooltip={t(`topbar.view.${v.key}`, lang)}
+                                    disabled={disabledViews.includes(v.key)}
                                     onClick={() => onViewChange?.(v.key)}
                                     dangerouslySetInnerHTML={{ __html: icon(v.icon, 'topbar-tool-icon') }}
                                 />

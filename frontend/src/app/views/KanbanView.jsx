@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 
+import { updateSystemModelRecord } from '../api/systemModel.js';
 import { FieldControl } from '../components/fields/index.js';
 import { faGripVertical, faPalette, faUser } from '../components/icon.js';
 import { COLOR_CLASS, COLOR_FALLBACK, buildRecordUrl, localizedValue } from '../utils/index.js';
 import { rememberRecordBreadcrumb } from '../utils/routing.js';
 import { makeSortable } from '../utils/sortable.js';
+import { dashboardActions } from '../store/actions/index.js';
+import { appSignal } from '../store/index.js';
 import { CreateModal, Icon, ViewHeader } from './ViewPrimitives.jsx';
 
 function buildLayout(schema = []) {
@@ -150,7 +153,11 @@ function Cards({ records, groupValue, layout, modelName, lang, context, groupBy,
     useEffect(() => makeSortable(ref.current, {
         handle: '.js-kanban-drag-handle',
         sortableOptions: { group: 'kanban', forceFallback: true, ghostClass: 'kanban-drag-ghost', chosenClass: 'kanban-drag-chosen', dragClass: 'kanban-drag-item' },
-        onReorder: (_ids, event) => onMove(event.item?.dataset.uuid, event.to?.dataset.groupValue),
+        onReorder: (_ids, event) => onMove(
+            event.item?.dataset.uuid,
+            event.to?.dataset.groupValue,
+            [...(event.to?.children ?? [])].map((item) => item.dataset.uuid).filter(Boolean),
+        ),
     }), [onMove]);
     return <div ref={ref} data-kanban-cards data-group-value={groupValue}
         class={groupBy ? 'flex min-h-24 flex-col gap-2 p-2' : 'grid w-full grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3'}>
@@ -170,15 +177,76 @@ export function KanbanView({ data = {}, lang = 'en' }) {
     const groupBy = typeof configured === 'string' && configured.trim() ? configured.trim() : null;
     const groups = groupBy && Array.isArray(data?.model?.[groupBy]) ? data.model[groupBy] : [];
     const context = { ...(data?.model ?? {}), tags: data?.model?.tags ?? [] };
-    const onMove = (uuid, groupValue) => {
-        if (!groupBy || groupValue == null) return;
-        setRecords((current) => current.map((record) => String(record.uuid) === String(uuid) ? { ...record, [groupBy]: groupValue } : record));
+    const persistPatch = async (uuid, patch) => {
+        const previous = records.find((record) => String(record.uuid) === String(uuid));
+        if (!previous) return;
+        const rollback = Object.fromEntries(Object.keys(patch).map((key) => [key, previous[key]]));
+        setRecords((current) => current.map((record) => String(record.uuid) === String(uuid) ? { ...record, ...patch } : record));
+        dashboardActions.updateModelRecord(uuid, patch);
+        try {
+            await updateSystemModelRecord({ model: data?.model?.name, recordUuid: uuid, values: patch });
+        } catch (error) {
+            setRecords((current) => current.map((record) => String(record.uuid) === String(uuid) ? { ...record, ...rollback } : record));
+            dashboardActions.updateModelRecord(uuid, rollback);
+            console.error('Unable to persist Kanban record update.', error);
+        }
+    };
+    const onMove = (uuid, groupValue, destinationIds = []) => {
+        const full = appSignal.value.model?.records ?? records;
+        const localBefore = records;
+        const visibleIds = new Set(records.map((record) => String(record.uuid)));
+        const moved = full.find((record) => String(record.uuid) === String(uuid));
+        if (!moved) return;
+        const groupChanged = groupBy && groupValue != null
+            && String(moved[groupBy]) !== String(groupValue);
+        if (groupChanged) {
+            void persistPatch(uuid, { [groupBy]: groupValue });
+        }
+        const withGroup = groupBy && groupValue != null
+            ? full.map((record) => String(record.uuid) === String(uuid) ? { ...record, [groupBy]: groupValue } : record)
+            : full;
+        const destinationSet = new Set(destinationIds.map(String));
+        const ordered = [];
+        if (groupBy) {
+            groups.forEach((group) => {
+                const groupRecords = withGroup.filter((record) => String(record[groupBy]) === String(group.value));
+                if (String(group.value) === String(groupValue)) {
+                    destinationIds.forEach((id) => {
+                        const record = groupRecords.find((item) => String(item.uuid) === String(id));
+                        if (record) ordered.push(record);
+                    });
+                    ordered.push(...groupRecords.filter((record) => !destinationSet.has(String(record.uuid))));
+                } else ordered.push(...groupRecords);
+            });
+        } else {
+            destinationIds.forEach((id) => {
+                const record = withGroup.find((item) => String(item.uuid) === String(id));
+                if (record) ordered.push(record);
+            });
+            ordered.push(...withGroup.filter((record) => !destinationSet.has(String(record.uuid))));
+        }
+        const included = new Set(ordered.map((record) => String(record.uuid)));
+        ordered.push(...withGroup.filter((record) => !included.has(String(record.uuid))));
+        const previous = new Map(full.map((record) => [String(record.uuid), { sequence: record.sequence }]));
+        const next = ordered.map((record, position) => ({ ...record, sequence: (position + 1) * 10 }));
+        setRecords(next.filter((record) => visibleIds.has(String(record.uuid))));
+        next.forEach((record) => dashboardActions.updateModelRecord(record.uuid, { sequence: record.sequence }));
+        void Promise.all(next.map((record) => updateSystemModelRecord({
+            model: data?.model?.name,
+            recordUuid: record.uuid,
+            values: { sequence: record.sequence },
+        }))).catch((error) => {
+            setRecords((current) => current.map((record) => {
+                const old = localBefore.find((item) => String(item.uuid) === String(record.uuid));
+                return old ? { ...record, sequence: old.sequence } : record;
+            }));
+            previous.forEach((patch, id) => dashboardActions.updateModelRecord(id, patch));
+            console.error('Unable to persist Kanban sequence.', error);
+        });
     };
     const onColorChange = (uuid, value) => {
         if (!colorField) return;
-        setRecords((current) => current.map((record) => String(record.uuid) === String(uuid)
-            ? { ...record, [colorField.name]: value }
-            : record));
+        void persistPatch(uuid, { [colorField.name]: value });
     };
     return <main id="dashboard-content" class="dash-content" role="main" aria-label="Kanban Board">
         <ViewHeader title={data?.model?.label?.[lang] ?? ''} count={data?.pagination?.total ?? records.length}

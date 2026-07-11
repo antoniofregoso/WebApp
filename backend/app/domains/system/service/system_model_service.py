@@ -294,6 +294,60 @@ def _serialize_record(
 
 class SystemModelService:
     @staticmethod
+    async def delete_record(
+        model: str,
+        record_uuid: uuid_lib.UUID,
+        current_user_id: int | None = None,
+    ) -> bool:
+        record = await SystemModelRepository.get_record_by_uuid(model, record_uuid)
+        if record is None or (
+            model in USER_SCOPED_MODELS
+            and current_user_id is not None
+            and not _belongs_to_user(model, record, current_user_id)
+        ):
+            raise ResourceNotFoundException(resource=model, resource_id=str(record_uuid))
+        return await SystemModelRepository.delete_record(model, record_uuid)
+
+    @staticmethod
+    async def update_record(
+        model: str,
+        record_uuid: uuid_lib.UUID,
+        values: dict,
+        current_user_id: int | None = None,
+    ) -> dict:
+        model_class = MODEL_CLASS_BY_NAME.get(model)
+        if model_class is None:
+            raise ResourceNotFoundException(resource="SystemModel", resource_id=model)
+        protected = {"id", "uuid", "created_at", "create_by", "updated_at", "updated_by"}
+        columns = {column.key for column in inspect(model_class).columns} - protected
+        invalid = set(values) - columns
+        if invalid:
+            raise ValidationException(f"Fields cannot be updated: {', '.join(sorted(invalid))}")
+        mapper_columns = inspect(model_class).columns
+        for key, value in list(values.items()):
+            if value is None or not isinstance(value, str):
+                continue
+            try:
+                python_type = mapper_columns[key].type.python_type
+            except (AttributeError, NotImplementedError):
+                continue
+            if python_type is datetime:
+                values[key] = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            elif python_type is date:
+                values[key] = date.fromisoformat(value)
+        existing = await SystemModelRepository.get_record_by_uuid(model, record_uuid)
+        if existing is None or (
+            model in USER_SCOPED_MODELS
+            and current_user_id is not None
+            and not _belongs_to_user(model, existing, current_user_id)
+        ):
+            raise ResourceNotFoundException(resource=model, resource_id=str(record_uuid))
+        record = await SystemModelRepository.update_record(model, record_uuid, values)
+        if record is None:
+            raise ResourceNotFoundException(resource=model, resource_id=str(record_uuid))
+        return {key: _serialize_value(getattr(record, key)) for key in values}
+
+    @staticmethod
     async def create(model_data: dict):
         fields_data = model_data.pop("fields", [])
         schemas_data = model_data.pop("schemas", [])
@@ -352,6 +406,9 @@ class SystemModelService:
             follower_options,
         )
         field_names = _schema_field_names(schema_fields)
+        model_class = MODEL_CLASS_BY_NAME.get(model)
+        if model_class is not None and "sequence" in inspect(model_class).columns and "sequence" not in field_names:
+            field_names.append("sequence")
         if system_model.group_by and system_model.group_by not in field_names:
             field_names.append(system_model.group_by)
 
