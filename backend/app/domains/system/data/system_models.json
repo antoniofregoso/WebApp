@@ -1545,6 +1545,7 @@
             "es_MX": "Registros de sesión",
             "en_US": "User Logs"
         },
+        "readonly": true,
         "group_by": "status",
         "group_by_values": [
             {
@@ -1566,6 +1567,7 @@
                 "name": "user_id",
                 "type": "many2one_avatar",
                 "model": "user.user",
+                "sequence": 10,
                 "required": true,
                 "readonly": true,
                 "placeholder": { "es_MX": "Usuario", "en_US": "User" },

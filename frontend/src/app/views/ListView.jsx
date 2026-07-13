@@ -36,7 +36,9 @@ function initialListSort(schema = []) {
 
 function Cell({ field, record, data, lang }) {
     const value = record[field.name];
-    const isRecordTitle = field.name === 'name' || String(field?.form?.header ?? '').toLowerCase() === 'title';
+    const isRelation = ['many2one', 'many2one_avatar'].includes(field.type);
+    const isRecordTitle = !isRelation
+        && (field.name === 'name' || String(field?.form?.header ?? '').toLowerCase() === 'title');
     if (isRecordTitle && value) {
         const href = buildRecordUrl(data?.model?.name, record.uuid);
         const label = localizedValue(value, lang);
@@ -61,6 +63,7 @@ export function ListView({ data = {}, lang = 'en' }) {
     const [hiddenRecords, setHiddenRecords] = useState(() => new Set());
     const [sort, setSort] = useState(() => initialListSort(data?.model?.schema));
     const tbodyRef = useRef(null);
+    const readOnly = data?.model?.readonly === true;
     const columns = useMemo(() => getListColumns(data?.model?.schema ?? []), [data?.model?.schema]);
     const records = useMemo(() => {
         const items = (data.records ?? [])
@@ -76,7 +79,7 @@ export function ListView({ data = {}, lang = 'en' }) {
         });
     }, [data.records, columns, sort, recordPatches, hiddenRecords]);
     useEffect(() => {
-        if (!tbodyRef.current) return undefined;
+        if (readOnly || !tbodyRef.current) return undefined;
         return makeSortable(tbodyRef.current, {
             handle: '.js-list-drag-handle',
             sortableOptions: { forceFallback: true, ghostClass: 'list-drag-ghost', chosenClass: 'list-drag-chosen', dragClass: 'list-drag-item' },
@@ -98,7 +101,7 @@ export function ListView({ data = {}, lang = 'en' }) {
                 });
             },
         });
-    }, [data, records]);
+    }, [data, records, readOnly]);
     const toggle = (uuid) => setSelected((current) => {
         const next = new Set(current);
         if (next.has(uuid)) next.delete(uuid); else next.add(uuid);
@@ -168,18 +171,18 @@ export function ListView({ data = {}, lang = 'en' }) {
     </button>;
     return <main id="dashboard-content" class="dash-content" role="main" aria-label="List">
         <ViewHeader title={data?.model?.label?.[lang] ?? ''} count={data?.pagination?.total ?? records.length} lang={lang}
-            actions={selected.size > 0 && <>
+            actions={!readOnly && selected.size > 0 && <>
                 {action(faTrash, lang === 'es' ? 'Borrar' : 'Delete', () => { void deleteSelected(); })}
                 {action(faBoxArchive, lang === 'es' ? 'Archivar' : 'Archive', () => { void archiveSelected(); })}
             </>}
-            onCreate={() => setModalOpen(true)} />
+            onCreate={readOnly ? undefined : () => setModalOpen(true)} />
         <div class="w-full overflow-hidden rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[var(--dash-shadow)]">
             {columns.length > 0 && records.length > 0 ? <div class="overflow-x-auto"><table class="w-full border-collapse text-sm">
                 <thead><tr class="border-b border-[var(--dash-border)] bg-[var(--dash-surface-hover)]">
-                    <th class="w-10" aria-hidden="true" />
-                    <th class="w-10 px-2 text-center align-middle"><input type="checkbox" checked={allSelected}
+                    {!readOnly && <th class="w-10" aria-hidden="true" />}
+                    {!readOnly && <th class="w-10 px-2 text-center align-middle"><input type="checkbox" checked={allSelected}
                         class="js-list-select-all h-4 w-4" aria-label={lang === 'es' ? 'Seleccionar todas las filas' : 'Select all rows'}
-                        onChange={(event) => setAll(event.currentTarget.checked)} /></th>
+                        onChange={(event) => setAll(event.currentTarget.checked)} /></th>}
                     {columns.map((field) => {
                         const align = NUMERIC_TYPES.has(field.type) ? 'text-right' : 'text-left';
                         const direction = sort.field === field.name ? sort.direction : '';
@@ -194,9 +197,9 @@ export function ListView({ data = {}, lang = 'en' }) {
                 <tbody ref={tbodyRef} data-list-rows>{records.map((record) => {
                     const uuid = String(record.uuid ?? '');
                     return <tr data-uuid={uuid} class={`border-b border-[var(--dash-border-soft)] last:border-0 hover:bg-[var(--dash-surface-hover)] ${selected.has(uuid) ? 'list-row--selected' : ''}`} key={uuid}>
-                        <td class="w-10 px-2 text-center"><button type="button" class="js-list-drag-handle inline-flex cursor-grab" aria-label="Reorder row"><Icon definition={faGripVertical} class="h-3.5 w-3.5" /></button></td>
-                        <td class="w-10 px-2 text-center"><input type="checkbox" checked={selected.has(uuid)} class="js-list-row-select h-4 w-4"
-                            aria-label={lang === 'es' ? 'Seleccionar fila' : 'Select row'} onChange={() => toggle(uuid)} /></td>
+                        {!readOnly && <td class="w-10 px-2 text-center"><button type="button" class="js-list-drag-handle inline-flex cursor-grab" aria-label="Reorder row"><Icon definition={faGripVertical} class="h-3.5 w-3.5" /></button></td>}
+                        {!readOnly && <td class="w-10 px-2 text-center"><input type="checkbox" checked={selected.has(uuid)} class="js-list-row-select h-4 w-4"
+                            aria-label={lang === 'es' ? 'Seleccionar fila' : 'Select row'} onChange={() => toggle(uuid)} /></td>}
                         {columns.map((field) => <td class={`${NUMERIC_TYPES.has(field.type) ? 'text-right' : 'text-left'} whitespace-nowrap px-4 py-2.5 text-[var(--dash-text)]`} key={field.name}>
                             <Cell field={field} record={record} data={data} lang={lang} />
                         </td>)}
@@ -204,6 +207,6 @@ export function ListView({ data = {}, lang = 'en' }) {
                 })}</tbody>
             </table></div> : <div class="px-5 py-10 text-center text-sm text-[var(--dash-text-muted)]">{lang === 'es' ? 'Sin registros' : 'No records'}</div>}
         </div>
-        <CreateModal data={data} lang={lang} open={modalOpen} onClose={() => setModalOpen(false)} />
+        {!readOnly && <CreateModal data={data} lang={lang} open={modalOpen} onClose={() => setModalOpen(false)} />}
     </main>;
 }

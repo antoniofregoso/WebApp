@@ -67,6 +67,7 @@ class SystemModelType:
     uuid: uuid_lib.UUID
     name: str
     search: bool
+    readonly: bool
     fields: list[SystemModelFieldType]
     schemas: list[SystemModelSchemaType]
     created_at: datetime

@@ -3379,10 +3379,10 @@
                     "column": 1
                 },
                 "kanban": {
-                    "header": "subtitle"
+                    "header": "title"
                 },
                 "form": {
-                    "header": "subtitle",
+                    "header": "title",
                     "required": true,
                     "readonly": true,
                     "placeholder": {

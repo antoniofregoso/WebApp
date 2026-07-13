@@ -24,10 +24,10 @@ export function ViewHeader({ title = '', count = null, lang = 'en', class: class
             </div>
             <div class="flex items-center gap-2">
                 {actions}
-                <button type="button" class="topbar-action-btn" aria-label={label} data-tooltip={label}
+                {onCreate && <button type="button" class="topbar-action-btn" aria-label={label} data-tooltip={label}
                     data-create-open onClick={onCreate}>
                     <Icon definition={faPlus} class="topbar-action-icon" />
-                </button>
+                </button>}
             </div>
         </header>
     );

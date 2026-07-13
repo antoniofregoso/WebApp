@@ -37,6 +37,7 @@ def system_model_to_type(system_model):
             for field in system_model.fields
         ],
         search=system_model.search,
+        readonly=system_model.readonly,
         schemas=[
             SystemModelSchemaType(
                 uuid=schema.uuid,

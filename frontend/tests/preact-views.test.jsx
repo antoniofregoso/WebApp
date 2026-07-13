@@ -44,6 +44,66 @@ describe('Preact schema views', () => {
         expect(host.querySelector('[data-group-value="todo"]').textContent).toContain('First');
     });
 
+    it('renders a related user name and avatar in Kanban and List views', () => {
+        const userField = {
+            name: 'user_id',
+            type: 'many2one_avatar',
+            model: 'user.user',
+            label: { en: 'User' },
+            kanban: { header: 'title' },
+            list: { column: 1 },
+            form: { header: 'title', readonly: true },
+        };
+        const user = {
+            uuid: 'user-1',
+            name: 'Ana Admin',
+            avatar: 'https://example.com/ana.jpg',
+            model: 'user.user',
+        };
+        const userLogData = {
+            model: { name: 'user.log', label: { en: 'User Logs' }, schema: [userField] },
+            records: [{ uuid: 'log-1', user_id: user }],
+        };
+
+        const kanbanHost = mount(<KanbanView data={userLogData} lang="en" />);
+        const card = kanbanHost.querySelector('[data-uuid="log-1"]');
+        expect(card.textContent).toContain('Ana Admin');
+        expect(card.querySelector('img').getAttribute('src')).toBe(user.avatar);
+        render(null, kanbanHost);
+        kanbanHost.remove();
+
+        const listHost = mount(<ListView data={userLogData} lang="en" />);
+        const row = listHost.querySelector('[data-list-rows] [data-uuid="log-1"]');
+        expect(row.textContent).toContain('Ana Admin');
+        expect(row.querySelector('img').getAttribute('src')).toBe(user.avatar);
+    });
+
+    it('removes mutation controls from readonly model views', () => {
+        const readonlyData = {
+            ...data,
+            model: { ...data.model, readonly: true },
+        };
+
+        const kanbanHost = mount(<KanbanView data={readonlyData} lang="en" />);
+        expect(kanbanHost.querySelector('[data-create-open]')).toBeNull();
+        expect(kanbanHost.querySelector('.js-kanban-drag-handle')).toBeNull();
+        render(null, kanbanHost);
+        kanbanHost.remove();
+
+        const listHost = mount(<ListView data={readonlyData} lang="en" />);
+        expect(listHost.querySelector('[data-create-open]')).toBeNull();
+        expect(listHost.querySelector('.js-list-drag-handle')).toBeNull();
+        expect(listHost.querySelector('.js-list-row-select')).toBeNull();
+        render(null, listHost);
+        listHost.remove();
+
+        const formHost = mount(<FormView data={readonlyData} lang="en" />);
+        expect(formHost.querySelector('[data-create-open]')).toBeNull();
+        expect(formHost.querySelector('[data-form-edit]')).toBeNull();
+        expect(formHost.querySelector('[data-form-save]')).toBeNull();
+        expect(formHost.querySelector('[data-form-root]').dataset.formMode).toBe('readonly');
+    });
+
     it('opens a color-grid picker in the Kanban card footer', async () => {
         const host = mount(<KanbanView data={data} lang="en" />);
         const card = host.querySelector('[data-uuid="1"]');

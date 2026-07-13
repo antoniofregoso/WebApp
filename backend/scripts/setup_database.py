@@ -389,6 +389,7 @@ async def _load_system_models(
             **_audit_values(bot_id, now),
             name=record["name"],
             label=record["label"],
+            readonly=_bool_or_default(record.get("readonly")),
             group_by=record.get("group_by") or None,
             group_by_values=record.get("group_by_values") or [],
             tags=record.get("tags") or [],

@@ -434,7 +434,7 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
                                             onClick={handleAvatarRemove}
                                             disabled={!user?.uuid || avatarUploading}
                                         >
-                                            {lang === 'es' ? 'Quitar foto' : 'Remove photo'}
+                                            {lang === 'es' ? 'Quitar imagen' : 'Remove image'}
                                         </button>
                                     )}
                                     {user?.name && <span class="topbar-user-name">{user.name}</span>}

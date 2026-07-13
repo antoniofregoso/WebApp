@@ -152,7 +152,10 @@ describe('image field', () => {
     it('lets an editable image be cleared', () => {
         const onChange = vi.fn();
         const host = mount(<FieldControl field={{ name: 'photo', type: 'image' }} value="data:image/png;base64,AAAA" onChange={onChange} />);
-        host.querySelector('button[aria-label="Remove image"]').click();
+        const removeButton = host.querySelector('[data-image-remove]');
+        expect(removeButton.textContent).toBe('Remove image');
+        expect(removeButton.previousElementSibling.querySelector('img')).not.toBeNull();
+        removeButton.click();
         expect(onChange).toHaveBeenCalledWith('photo', '');
     });
 

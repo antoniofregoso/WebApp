@@ -139,6 +139,7 @@ export function FormView({ data = {}, lang = 'en', options = {} }) {
     const readMessageRef = useRef('');
     useLayoutEffect(() => { setRecord(sourceRecord); dirtyValuesRef.current = {}; setEditing(false); setSaving(false); }, [sourceRecord]);
     const isMainModel = !options.recordModel || options.recordModel === data?.model?.name;
+    const modelReadOnly = isMainModel && data?.model?.readonly === true;
     const schema = isMainModel ? (data?.model?.schema ?? []) : inferSchema(record);
     const layout = getFormLayout(schema);
     const followerField = followersField(schema);
@@ -217,7 +218,7 @@ export function FormView({ data = {}, lang = 'en', options = {} }) {
         : { edit: 'Edit', save: isMessage ? 'Send' : 'Save', archive: 'Archive', delete: 'Delete' };
     return <main id="dashboard-content" class="dash-content" role="main" aria-label="Form" data-form-root data-form-mode={editing ? 'edit' : 'readonly'}>
         <input type="hidden" data-uuid={record.uuid ?? ''} value={record.uuid ?? ''} />
-        <ViewHeader title={title} lang={lang} onCreate={() => setModalOpen(true)} />
+        <ViewHeader title={title} lang={lang} onCreate={modelReadOnly ? undefined : () => setModalOpen(true)} />
         <div class="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
             <section data-form-record class="rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-[var(--dash-shadow)]">
                 {!editing && schema.map((field) => <input type="hidden" name={field.name} value={typeof record[field.name] === 'object' ? '' : (record[field.name] ?? '')} key={`value-${field.name}`} />)}
@@ -231,28 +232,28 @@ export function FormView({ data = {}, lang = 'en', options = {} }) {
                             {layout.header.subtitle && <div class="mt-1" data-form-header="subtitle"><FieldControl field={layout.header.subtitle}
                                 value={record[layout.header.subtitle.name]} onChange={setValue} lang={lang} readOnly={!editing} context={context} /></div>}
                         </div>
-                        <div class="form-record-actions flex items-center gap-2">
+                        {!modelReadOnly && <div class="form-record-actions flex items-center gap-2">
                             {isMessage && <Action definition={faPaperPlane} label={lang === 'es' ? 'Contestar' : 'Reply'}
                                 data-message-reply onClick={() => setReplyOpen(true)} />}
                             <Action definition={faPen} label={labels.edit} data-form-edit aria-pressed={String(editing)} onClick={() => setEditing(true)} />
                             <Action definition={isMessage ? faPaperPlane : faFloppyDisk} label={labels.save} data-form-save disabled={!editing || saving} onClick={() => { void saveRecord(); }} />
                             <Action definition={faBoxArchive} label={labels.archive} data-form-archive />
                             <Action definition={faTrash} label={labels.delete} data-form-delete />
-                        </div>
+                        </div>}
                     </div></div>
                 </div>
-                <SchemaFormLayout schema={schema} record={record} setValue={setValue} lang={lang} context={context} readOnly={!editing} />
+                <SchemaFormLayout schema={schema} record={record} setValue={setValue} lang={lang} context={context} readOnly={modelReadOnly || !editing} />
                 <RecordFooter data={data} record={record} recordModel={options.recordModel} lang={lang}
                     followers={<One2manyFollowersField field={followerField} value={record.followers}
-                        onChange={setValue} lang={lang} readOnly={!editing} context={context} />}
-                    right={<FooterFields fields={layout.footerRight} record={record} setValue={setValue} lang={lang} context={context} readOnly={!editing} />} />
+                        onChange={setValue} lang={lang} readOnly={modelReadOnly || !editing} context={context} />}
+                    right={<FooterFields fields={layout.footerRight} record={record} setValue={setValue} lang={lang} context={context} readOnly={modelReadOnly || !editing} />} />
             </section>
-            <CommunicationPanel lang={lang}
+            {!modelReadOnly && <CommunicationPanel lang={lang}
                 modelName={options.recordModel || record.model || data?.model?.name}
                 modelUuid={isMainModel ? data?.model?.uuid : undefined} recordUuid={record.uuid}
-                users={followerField.options ?? []} />
+                users={followerField.options ?? []} />}
         </div>
-        <CreateModal data={data} lang={lang} open={modalOpen} onClose={() => setModalOpen(false)} />
+        {!modelReadOnly && <CreateModal data={data} lang={lang} open={modalOpen} onClose={() => setModalOpen(false)} />}
         {replyOpen && <CreateModal data={data} lang={lang} open onClose={() => setReplyOpen(false)} initialValues={replyInitialValues} />}
     </main>;
 }

@@ -101,6 +101,7 @@ async def test_system_model_view_places_group_values_under_group_by(monkeypatch)
     assert list(result["model"]) == [
         "name",
         "label",
+        "readonly",
         "groupBy",
         "status",
         "tags",
@@ -360,10 +361,22 @@ async def test_user_log_view_includes_user_name_in_list_and_kanban(monkeypatch):
     view = next(item["view"] for item in schemas if item["model"] == "user.log")
     user_field = next(field for field in view if field["name"] == "user_id")
 
+    models_path = data_path.with_name("system_models.json")
+    models = json.loads(models_path.read_text(encoding="utf-8"))
+    user_log_model = next(item for item in models if item["name"] == "user.log")
+    model_user_field = next(
+        field for field in user_log_model["fields"] if field["name"] == "user_id"
+    )
+
+    assert model_user_field["type"] == "many2one_avatar"
+    assert model_user_field["model"] == "user.user"
+    assert model_user_field["sequence"] == 10
     assert user_field["type"] == "many2one_avatar"
     assert user_field["model"] == "user.user"
     assert user_field["list"] == {"column": 1}
-    assert user_field["kanban"] == {"header": "subtitle"}
+    assert user_field["kanban"] == {"header": "title"}
+    assert user_field["form"]["header"] == "title"
+    assert user_field["form"]["readonly"] is True
 
     system_model = SimpleNamespace(
         name="user.log",
@@ -371,6 +384,7 @@ async def test_user_log_view_includes_user_name_in_list_and_kanban(monkeypatch):
         group_by="status",
         group_by_values=[],
         tags=[],
+        readonly=True,
     )
     schema = SimpleNamespace(view=view)
     user = SimpleNamespace(uuid="user-uuid", name="Ana López", avatar_url=None)
@@ -406,3 +420,4 @@ async def test_user_log_view_includes_user_name_in_list_and_kanban(monkeypatch):
     )
 
     assert result["records"][0]["user_id"]["name"] == "Ana López"
+    assert result["model"]["readonly"] is True

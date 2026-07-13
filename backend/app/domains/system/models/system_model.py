@@ -58,6 +58,7 @@ class SystemModel(SystemAudit, SQLModel, table=True):
     )
     name: str
     search: bool = Field(default=False, nullable=False)
+    readonly: bool = Field(default=False, nullable=False)
     label: dict = Field(
         default_factory=dict,
         sa_column=Column(JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")),
@@ -128,10 +129,11 @@ class SystemModelField(SystemAudit, SQLModel, table=True):
 
     def get_placeholder(self, lang: str = "es", fallback: str = "en") -> str:
         return self.placeholder.get(lang) or self.placeholder.get(fallback) or next(iter(self.placeholder.values()), "")
-    
+
     def get_help(self, lang: str = "es", fallback: str = "en") -> str:
         return self.help.get(lang) or self.help.get(fallback) or next(iter(self.help.values()), "")
-    
+
+
 class SystemModelSchema(SystemAudit, SQLModel, table=True):
     __tablename__ = "system_model_schemas"
 

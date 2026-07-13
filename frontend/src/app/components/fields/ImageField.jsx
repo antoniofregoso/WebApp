@@ -2,7 +2,6 @@ import { useRef, useState } from 'preact/hooks';
 
 import { uploadAttachment } from '../../api/attachments.js';
 import { AuthenticatedImage } from '../AuthenticatedImage.jsx';
-import { icon, faXmark } from '../icon.js';
 import { fieldLabel, isFieldReadOnly } from './fieldHelpers.js';
 
 function readAsDataUrl(file) {
@@ -53,16 +52,18 @@ export function ImageField({ field, value, onChange, lang = 'en', readOnly = fal
     };
 
     return (
-        <div class="flex items-center gap-3">
+        <div class="inline-flex flex-col items-center gap-1.5">
             <button type="button" class="block" onClick={() => inputRef.current?.click()} aria-label={fieldLabel(field, lang)}>
                 {value
                     ? <AuthenticatedImage src={value} alt="" class="h-20 w-20 rounded-xl object-cover ring-1 ring-[var(--dash-border)]" />
                     : <span class="form-image-placeholder">{uploading ? (lang === 'es' ? 'Subiendo...' : 'Uploading...') : (lang === 'es' ? 'Subir imagen' : 'Upload image')}</span>}
             </button>
             {value && (
-                <button type="button" class="topbar-action-btn" aria-label={lang === 'es' ? 'Quitar imagen' : 'Remove image'}
-                    disabled={uploading} onClick={() => onChange(field.name, '')}
-                    dangerouslySetInnerHTML={{ __html: icon(faXmark, 'topbar-action-icon') }} />
+                <button type="button" class="form-image-remove" data-image-remove
+                    aria-label={lang === 'es' ? 'Quitar imagen' : 'Remove image'}
+                    disabled={uploading} onClick={() => onChange(field.name, '')}>
+                    {lang === 'es' ? 'Quitar imagen' : 'Remove image'}
+                </button>
             )}
             <input ref={inputRef} type="file" name={field.name} accept="image/*" class="hidden" disabled={uploading} onChange={onFileChange} />
         </div>

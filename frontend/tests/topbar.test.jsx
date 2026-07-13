@@ -159,7 +159,9 @@ describe('Topbar user menu', () => {
             />,
         );
 
-        host.querySelector('.topbar-user-avatar-remove').click();
+        const removeButton = host.querySelector('.topbar-user-avatar-remove');
+        expect(removeButton.textContent).toBe('Remove image');
+        removeButton.click();
         await vi.waitFor(() => expect(updateSystemModelRecord).toHaveBeenCalled());
 
         expect(updateSystemModelRecord).toHaveBeenCalledWith({

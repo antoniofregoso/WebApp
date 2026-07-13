@@ -261,6 +261,12 @@ def _serialize_follower(user) -> dict:
 
 
 USER_SCOPED_MODELS = {"system.task", "system.message"}
+READ_ONLY_MODELS = {"user.log"}
+
+
+def _require_writable_model(model: str) -> None:
+    if model in READ_ONLY_MODELS:
+        raise AuthorizationException(f"Model '{model}' is read-only")
 
 
 def _coerce_temporal_strings(model_class, values: dict) -> dict:
@@ -354,6 +360,7 @@ class SystemModelService:
         values: dict,
         current_user_id: int | None = None,
     ) -> dict:
+        _require_writable_model(model)
         if model == "system.message":
             sender = await UserRepository.get_by_id(current_user_id) if current_user_id is not None else None
             if sender is None:
@@ -435,6 +442,7 @@ class SystemModelService:
         record_uuid: uuid_lib.UUID,
         current_user_id: int | None = None,
     ) -> bool:
+        _require_writable_model(model)
         record = await SystemModelRepository.get_record_by_uuid(model, record_uuid)
         if record is None or (
             model in USER_SCOPED_MODELS
@@ -451,6 +459,7 @@ class SystemModelService:
         values: dict,
         current_user_id: int | None = None,
     ) -> dict:
+        _require_writable_model(model)
         values = dict(values)
         follower_values = values.pop(FOLLOWERS_FIELD_NAME, None)
         model_class = MODEL_CLASS_BY_NAME.get(model)
@@ -619,6 +628,7 @@ class SystemModelService:
         model_payload = {
             "name": system_model.name,
             "label": _with_locale_aliases(system_model.label),
+            "readonly": bool(getattr(system_model, "readonly", False)),
             "groupBy": system_model.group_by,
         }
         if getattr(system_model, "uuid", None) is not None:

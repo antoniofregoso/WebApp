@@ -95,12 +95,18 @@ function Value({ field, value, lang, context }) {
     return <FieldControl field={field} value={value} onChange={() => {}} lang={lang} readOnly context={context} />;
 }
 
-function Card({ record, layout, modelName, lang, context, colorField, onColorChange }) {
+function Card({ record, layout, modelName, lang, context, colorField, onColorChange, readOnly }) {
     const [cardColor, setCardColor] = useState(colorField ? record[colorField.name] : null);
     const [pickerOpen, setPickerOpen] = useState(false);
     useEffect(() => setCardColor(colorField ? record[colorField.name] : null), [colorField, record]);
     const title = layout.title ? record[layout.title.name] : '';
     const titleText = localizedValue(title?.name ?? title, lang);
+    const relatedAvatarField = [layout.title, layout.subtitle]
+        .find((field) => field?.type === 'many2one_avatar');
+    const relatedAvatar = relatedAvatarField
+        ? record[relatedAvatarField.name]?.avatar
+        : '';
+    const avatar = layout.image ? record[layout.image.name] : relatedAvatar;
     const href = buildRecordUrl(modelName, record.uuid);
     const accentColor = colorHex(colorField, cardColor);
     const cardStyle = accentColor ? { borderColor: accentColor } : undefined;
@@ -117,7 +123,7 @@ function Card({ record, layout, modelName, lang, context, colorField, onColorCha
             class={`group relative rounded-lg border border-[var(--dash-border)] bg-[var(--dash-bg)] p-3 shadow-sm transition-shadow hover:shadow-md ${pickerOpen ? 'z-30' : ''}`} style={cardStyle}>
             <div class="flex items-start justify-between gap-2">
                 <div class="flex min-w-0 items-center gap-2">
-                    <Avatar src={layout.image ? record[layout.image.name] : ''} name={titleText} />
+                    <Avatar src={avatar} name={titleText} />
                     <div class="flex min-w-0 flex-col gap-0.5">
                         {titleText && <a href={href} onClick={() => rememberRecordBreadcrumb(href, titleText)}
                             class="truncate text-sm font-semibold text-[var(--dash-accent)] hover:underline">{titleText}</a>}
@@ -125,9 +131,9 @@ function Card({ record, layout, modelName, lang, context, colorField, onColorCha
                             value={record[layout.subtitle.name]} lang={lang} context={context} /></span>}
                     </div>
                 </div>
-                <button type="button" class="js-kanban-drag-handle inline-flex shrink-0 cursor-grab items-center justify-center text-[var(--dash-text-soft)] hover:text-[var(--dash-text)]" aria-label="Reorder card">
+                {!readOnly && <button type="button" class="js-kanban-drag-handle inline-flex shrink-0 cursor-grab items-center justify-center text-[var(--dash-text-soft)] hover:text-[var(--dash-text)]" aria-label="Reorder card">
                     <Icon definition={faGripVertical} class="h-3.5 w-3.5" />
-                </button>
+                </button>}
             </div>
             {(layout.leftColumn.length > 0 || layout.rightColumn.length > 0) && <div class="mt-2 flex gap-2">
                 <div class="flex flex-1 flex-col gap-1">{layout.leftColumn.map(column)}</div>
@@ -142,16 +148,16 @@ function Card({ record, layout, modelName, lang, context, colorField, onColorCha
                     </div>;
                 })}</div>
             </div>}
-            {colorField && <ColorPicker field={colorField} value={cardColor} lang={lang}
+            {!readOnly && colorField && <ColorPicker field={colorField} value={cardColor} lang={lang}
                 onOpenChange={setPickerOpen}
                 onChange={(value) => { setCardColor(value); onColorChange(record.uuid, value); }} />}
         </article>
     );
 }
 
-function Cards({ records, groupValue, layout, modelName, lang, context, groupBy, colorField, onMove, onColorChange }) {
+function Cards({ records, groupValue, layout, modelName, lang, context, groupBy, colorField, onMove, onColorChange, readOnly }) {
     const ref = useRef(null);
-    useEffect(() => makeSortable(ref.current, {
+    useEffect(() => readOnly ? undefined : makeSortable(ref.current, {
         handle: '.js-kanban-drag-handle',
         sortableOptions: { group: 'kanban', forceFallback: true, ghostClass: 'kanban-drag-ghost', chosenClass: 'kanban-drag-chosen', dragClass: 'kanban-drag-item' },
         onReorder: (_ids, event) => onMove(
@@ -159,17 +165,18 @@ function Cards({ records, groupValue, layout, modelName, lang, context, groupBy,
             event.to?.dataset.groupValue,
             [...(event.to?.children ?? [])].map((item) => item.dataset.uuid).filter(Boolean),
         ),
-    }), [onMove]);
+    }), [onMove, readOnly]);
     return <div ref={ref} data-kanban-cards data-group-value={groupValue}
         class={groupBy ? 'flex min-h-24 flex-col gap-2 p-2' : 'grid w-full grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3'}>
         {records.map((record) => <Card record={record} layout={layout} modelName={modelName} lang={lang} context={context}
-            colorField={colorField} onColorChange={onColorChange} key={record.uuid} />)}
+            colorField={colorField} onColorChange={onColorChange} readOnly={readOnly} key={record.uuid} />)}
     </div>;
 }
 
 export function KanbanView({ data = {}, lang = 'en' }) {
     const [modalOpen, setModalOpen] = useState(false);
     const [records, setRecords] = useState(data.records ?? []);
+    const readOnly = data?.model?.readonly === true;
     useEffect(() => setRecords(data.records ?? []), [data.records]);
     const schema = data?.model?.schema ?? [];
     const layout = useMemo(() => buildLayout(schema), [schema]);
@@ -251,7 +258,7 @@ export function KanbanView({ data = {}, lang = 'en' }) {
     };
     return <main id="dashboard-content" class="dash-content" role="main" aria-label="Kanban Board">
         <ViewHeader title={data?.model?.label?.[lang] ?? ''} count={data?.pagination?.total ?? records.length}
-            lang={lang} onCreate={() => setModalOpen(true)} />
+            lang={lang} onCreate={readOnly ? undefined : () => setModalOpen(true)} />
         <div class="-mt-16 flex items-start gap-4 overflow-x-auto pb-2 pt-16">
             {groupBy ? groups.map((group) => {
                 const cards = records.filter((record) => String(record[groupBy]) === String(group.value));
@@ -261,11 +268,11 @@ export function KanbanView({ data = {}, lang = 'en' }) {
                         <span data-kanban-count class="text-xs text-[var(--dash-text-muted)]">{cards.length}</span>
                     </header>
                     <Cards records={cards} groupValue={group.value} layout={layout} modelName={data?.model?.name ?? ''}
-                        lang={lang} context={context} groupBy={groupBy} colorField={colorField} onMove={onMove} onColorChange={onColorChange} />
+                        lang={lang} context={context} groupBy={groupBy} colorField={colorField} onMove={onMove} onColorChange={onColorChange} readOnly={readOnly} />
                 </section>;
             }) : <Cards records={records} layout={layout} modelName={data?.model?.name ?? ''} lang={lang}
-                context={context} groupBy={null} colorField={colorField} onMove={onMove} onColorChange={onColorChange} />}
+                context={context} groupBy={null} colorField={colorField} onMove={onMove} onColorChange={onColorChange} readOnly={readOnly} />}
         </div>
-        <CreateModal data={data} lang={lang} open={modalOpen} onClose={() => setModalOpen(false)} />
+        {!readOnly && <CreateModal data={data} lang={lang} open={modalOpen} onClose={() => setModalOpen(false)} />}
     </main>;
 }

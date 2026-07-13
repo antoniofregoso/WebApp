@@ -1,11 +1,25 @@
 from types import SimpleNamespace
 import uuid
 
+import pytest
+
+from app.core.exceptions import AuthorizationException
 from app.domains.system.repository.system_model_repository import SystemModelRepository
 from app.domains.system.service.system_model_service import SystemModelService
 from app.domains.users.repository.user_repository import UserRepository
 from app.domains.users.service.auth_service import AuthService
 from app.domains.system.service.system_message_service import SystemMessageService
+
+
+async def test_user_log_records_are_read_only():
+    record_uuid = uuid.uuid4()
+
+    with pytest.raises(AuthorizationException, match="read-only"):
+        await SystemModelService.create_record("user.log", {})
+    with pytest.raises(AuthorizationException, match="read-only"):
+        await SystemModelService.update_record("user.log", record_uuid, {})
+    with pytest.raises(AuthorizationException, match="read-only"):
+        await SystemModelService.delete_record("user.log", record_uuid)
 
 
 async def test_create_user_record_hashes_password_and_returns_safe_record(monkeypatch):
