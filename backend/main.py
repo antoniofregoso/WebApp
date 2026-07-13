@@ -24,6 +24,9 @@ from app.domains.system.api import attachment_router, note_router
 from app.domains.users.graphql.queries import UserQuery
 from app.domains.users.graphql.mutations import UserMutation
 from app.domains.users.service.user_log_service import UserLogService
+from app.domains.system.service.system_task_reminder_service import (
+    SystemTaskReminderService,
+)
 
 from strawberry.fastapi import GraphQLRouter
 from app.core.logging import configure_logging, get_logger
@@ -70,16 +73,30 @@ def init_app():
             except Exception as exc:
                 logger.exception("Failed to close stale user activity logs: %s", exc)
 
+    async def sweep_task_reminders_periodically():
+        while True:
+            await asyncio.sleep(settings.TASK_REMINDER_SWEEP_INTERVAL_SECONDS)
+            try:
+                created = await SystemTaskReminderService.sweep()
+                if created:
+                    logger.info("Generated %s task reminder notifications", created)
+            except Exception as exc:
+                logger.exception("Failed to sweep task reminders: %s", exc)
+
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
         logger.info("Iniciando aplicación...")
         stale_logs_task = asyncio.create_task(close_stale_user_logs_periodically())
+        task_reminders_task = asyncio.create_task(sweep_task_reminders_periodically())
         try:
             yield
         finally:
             stale_logs_task.cancel()
+            task_reminders_task.cancel()
             with suppress(asyncio.CancelledError):
                 await stale_logs_task
+            with suppress(asyncio.CancelledError):
+                await task_reminders_task
             logger.info("Cerrando conexión a base de datos...")
             await db.close()
 

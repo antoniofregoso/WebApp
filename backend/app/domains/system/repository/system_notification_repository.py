@@ -70,6 +70,45 @@ class SystemNotificationRepository:
             return result.scalar_one_or_none()
 
     @staticmethod
+    async def get_recent_by_user_id(user_id: int, limit: int = 30):
+        async with db.session() as session:
+            query = (
+                select(SystemNotification)
+                .outerjoin(
+                    SystemNotificationUserRel,
+                    SystemNotificationUserRel.notification_id == SystemNotification.id,
+                )
+                .where(
+                    or_(
+                        SystemNotification.user_id == user_id,
+                        SystemNotificationUserRel.user_id == user_id,
+                    )
+                )
+                .options(
+                    selectinload(SystemNotification.user),
+                    selectinload(SystemNotification.users),
+                )
+                .order_by(
+                    SystemNotification.date.desc(),
+                    SystemNotification.created_at.desc(),
+                )
+                .limit(limit)
+            )
+            result = await session.execute(query)
+            return result.scalars().unique().all()
+
+    @staticmethod
+    async def get_existing_dedupe_keys(keys: list[str]) -> set[str]:
+        if not keys:
+            return set()
+        async with db.session() as session:
+            query = select(SystemNotification.dedupe_key).where(
+                SystemNotification.dedupe_key.in_(keys)
+            )
+            result = await session.execute(query)
+            return set(result.scalars().all())
+
+    @staticmethod
     async def count_unread_by_user_id(user_id: int) -> int:
         async with db.session() as session:
             query = (

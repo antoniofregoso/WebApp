@@ -2685,6 +2685,138 @@ body {
   transform: translateY(0);
 }
 
+/* ── Notifications dropdown ─────────────────────────────────────────────── */
+
+.topbar-notifications-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.topbar-notifications-menu {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  width: 340px;
+  max-width: 88vw;
+  max-height: 26rem;
+  overflow: hidden;
+  background: var(--dash-topbar-bg);
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+  box-shadow: var(--dash-shadow-md);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.15s, transform 0.15s;
+  z-index: 130;
+}
+
+.topbar-notifications-menu--open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.topbar-notifications-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--dash-border);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--dash-text);
+}
+
+.topbar-notifications-empty {
+  margin: 0;
+  padding: 1.75rem 1rem;
+  color: var(--dash-text-muted);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+.topbar-notifications-list {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.topbar-notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-bottom: 1px solid var(--dash-border-soft);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.topbar-notification-item:last-child { border-bottom: 0; }
+.topbar-notification-item:hover { background: var(--dash-surface-hover); }
+
+.topbar-notification-item--unread {
+  background: color-mix(in srgb, var(--dash-accent) 6%, transparent);
+}
+
+.topbar-notification-item--unread:hover {
+  background: color-mix(in srgb, var(--dash-accent) 10%, transparent);
+}
+
+.topbar-notification-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 0.125rem;
+  flex-shrink: 0;
+}
+
+.topbar-notification-icon svg { width: 16px; height: 16px; }
+
+.topbar-notification-icon--info    { color: var(--dash-info); }
+.topbar-notification-icon--warning { color: var(--dash-warning); }
+.topbar-notification-icon--danger  { color: var(--dash-danger); }
+
+.topbar-notification-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.topbar-notification-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--dash-text);
+}
+
+.topbar-notification-message {
+  font-size: 0.75rem;
+  color: var(--dash-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.topbar-notification-time {
+  font-size: 0.6875rem;
+  color: var(--dash-text-soft);
+  margin-top: 0.125rem;
+}
+
 .topbar-user-profile-card {
   display: flex;
   flex-direction: column;
@@ -3571,4 +3703,136 @@ body {
 .ql-editor pre.ql-syntax {
   background: var(--dash-surface-hover) !important;
   color: var(--dash-text) !important;
+}
+
+/* ── Live alert toast stack ─────────────────────────────────────────────── */
+/* Fixed to the bottom-right corner. New toasts enter at the bottom and push
+   earlier ones upward (column-reverse + DOM order = newest at the bottom).
+   Nothing here auto-dismisses; the user closes each toast explicitly. */
+
+.alert-stack {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 1500;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.625rem;
+  width: min(23rem, calc(100vw - 2.5rem));
+  pointer-events: none;
+}
+
+.alert-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.875rem 0.875rem 0.875rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--dash-border);
+  border-left: 4px solid var(--dash-accent);
+  background: color-mix(in srgb, var(--dash-topbar-bg) 92%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--dash-shadow-md);
+  pointer-events: auto;
+  animation: alert-toast-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.alert-toast--closing {
+  animation: alert-toast-out 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.alert-toast--info    { border-left-color: var(--dash-info); }
+.alert-toast--warning { border-left-color: var(--dash-warning); }
+.alert-toast--danger  { border-left-color: var(--dash-danger); }
+
+.alert-toast-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 0.0625rem;
+  flex-shrink: 0;
+}
+
+.alert-toast-icon svg { width: 18px; height: 18px; }
+
+.alert-toast--info    .alert-toast-icon { color: var(--dash-info); }
+.alert-toast--warning .alert-toast-icon { color: var(--dash-warning); }
+.alert-toast--danger  .alert-toast-icon { color: var(--dash-danger); }
+
+.alert-toast-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1875rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.alert-toast-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--dash-text);
+}
+
+.alert-toast-message {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--dash-text-muted);
+}
+
+.alert-toast-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin: -0.125rem -0.125rem 0 0;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dash-text-soft);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.alert-toast-close svg { width: 12px; height: 12px; }
+
+.alert-toast-close:hover,
+.alert-toast-close:focus-visible {
+  background: var(--dash-surface-hover);
+  color: var(--dash-text);
+  outline: none;
+}
+
+@keyframes alert-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes alert-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(12px) scale(0.92);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alert-toast,
+  .alert-toast--closing {
+    animation-duration: 0.01ms !important;
+  }
 }

@@ -24,6 +24,12 @@ class NotificationStatus(str, enum.Enum):
     read = "read"
 
 
+class NotificationPriority(str, enum.Enum):
+    info = "info"
+    warning = "warning"
+    danger = "danger"
+
+
 class SystemNotification(SystemAudit, SQLModel, table=True):
     __tablename__ = "system_notifications"
 
@@ -60,6 +66,16 @@ class SystemNotification(SystemAudit, SQLModel, table=True):
     color: SystemColor = Field(
         default=SystemColor.zinc,
         sa_column=sa.Column(sa.String(32), nullable=False),
+    )
+    priority: NotificationPriority = Field(
+        default=NotificationPriority.info,
+        sa_column=sa.Column(sa.String(32), nullable=False, server_default="info"),
+    )
+    # Deduplication key for system-generated reminders (e.g. task start/due
+    # alerts), so the periodic sweep never creates the same reminder twice.
+    dedupe_key: Optional[str] = Field(
+        default=None,
+        sa_column=sa.Column(sa.String(255), nullable=True, unique=True),
     )
     # Single-user target
     user_id: Optional[int] = Field(

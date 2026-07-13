@@ -2,12 +2,13 @@ import { h, render } from 'preact';
 import { effect } from '@preact/signals';
 import { appSignal, authSignal, isAuthenticated } from '../store';
 import { contextActions, dashboardActions } from '../store/actions';
-import { mountSidebar, mountTopbar, MENU_ITEMS } from '../components';
+import { mountSidebar, mountTopbar, ensureAlertStackMounted, MENU_ITEMS } from '../components';
 import { CalendarView, FormView, KanbanView, ListView, renderInsights, initInsights, patchInsights } from '../views';
 import { applyTheme, getAreaTitle, normalizePagination, paginateData, resetAppRoot } from '../utils';
 import { getRecordBreadcrumbs, setRecordBreadcrumbs } from '../utils/routing.js';
 import { startActivityHeartbeat } from '../api/activity.js';
 import { startPendingCountsPolling } from '../api/pendingCounts.js';
+import { startNotificationsPolling } from '../store/notificationsStore.js';
 import { fetchSystemModelView } from '../api/systemModel.js';
 
 const EMPTY_DASHBOARD_DATA = {
@@ -363,6 +364,8 @@ export function dashboard(req, router) {
 
     startActivityHeartbeat();
     startPendingCountsPolling();
+    startNotificationsPolling();
+    ensureAlertStackMounted();
     _router = router;
     const areaFromUrl = req.params?.area;
     const prevSubarea = _currentSubarea;

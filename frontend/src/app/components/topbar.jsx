@@ -16,17 +16,46 @@ import {
     faList,
     faRectangleList,
     faCalendarDays,
+    faCircleInfo,
+    faTriangleExclamation,
+    faCircleExclamation,
 } from './icon.js';
 import { uploadAttachment } from '../api/attachments.js';
 import { contextActions, dashboardActions } from '../store/actions/index.js';
 import { stopActivityHeartbeat } from '../api/activity.js';
 import { logout } from '../api/auth.js';
-import { stopPendingCountsPolling } from '../api/pendingCounts.js';
+import { refreshPendingCounts, stopPendingCountsPolling } from '../api/pendingCounts.js';
+import { markNotificationRead } from '../api/notifications.js';
 import { fetchSystemModelByName, searchSystemModels, updateSystemModelRecord } from '../api/systemModel.js';
 import { clearAuthSession, setCurrentUser } from '../store/authStore.js';
+import { markNotificationReadLocally, notificationsSignal, refreshNotificationsNow, stopNotificationsPolling } from '../store/notificationsStore.js';
 import { t } from '../../i18n/translations.js';
 import { normalizePagination } from '../utils';
+import { localizedValue } from '../utils/ux.js';
 import { AuthenticatedImage } from './AuthenticatedImage.jsx';
+
+const PRIORITY_META = {
+    info: { icon: faCircleInfo, class: 'topbar-notification-icon--info' },
+    warning: { icon: faTriangleExclamation, class: 'topbar-notification-icon--warning' },
+    danger: { icon: faCircleExclamation, class: 'topbar-notification-icon--danger' },
+};
+
+function priorityMeta(priority) {
+    return PRIORITY_META[String(priority ?? '').toLowerCase()] ?? PRIORITY_META.info;
+}
+
+function formatRelativeTime(value, lang) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const diffMs = Date.now() - date.getTime();
+    const minutes = Math.floor(diffMs / 60_000);
+    if (minutes < 1) return t('notifications.just_now', lang);
+    if (minutes < 60) return `${minutes} ${t('notifications.minutes_ago', lang)}`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} ${t('notifications.hours_ago', lang)}`;
+    const days = Math.floor(hours / 24);
+    return `${days} ${t('notifications.days_ago', lang)}`;
+}
 
 const THEMES = [
     { key: 'light', icon: faSun, labelEn: 'Light', labelEs: 'Claro' },
@@ -96,8 +125,11 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchLoading, setSearchLoading] = useState(false);
     const [searchError, setSearchError] = useState('');
+    const [notificationsOpen, setNotificationsOpen] = useState(false);
     const userMenuWrapRef = useRef(null);
     const searchRef = useRef(null);
+    const notificationsWrapRef = useRef(null);
+    const notifications = notificationsSignal.value;
     const messageCount = Math.max(0, Number(pendingCounts.messages) || 0);
     const notificationCount = Math.max(0, Number(pendingCounts.notifications) || 0);
     const messageLabel = messageCount
@@ -140,6 +172,41 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
         };
     }, [searchOpen]);
 
+    useEffect(() => {
+        if (!notificationsOpen) return undefined;
+        const closeOnOutsideClick = (event) => {
+            if (!notificationsWrapRef.current?.contains(event.target)) {
+                setNotificationsOpen(false);
+            }
+        };
+        const closeOnEscape = (event) => {
+            if (event.key === 'Escape') setNotificationsOpen(false);
+        };
+        document.addEventListener('click', closeOnOutsideClick);
+        document.addEventListener('keydown', closeOnEscape);
+        return () => {
+            document.removeEventListener('click', closeOnOutsideClick);
+            document.removeEventListener('keydown', closeOnEscape);
+        };
+    }, [notificationsOpen]);
+
+    const toggleNotifications = (event) => {
+        event.stopPropagation();
+        setNotificationsOpen((open) => {
+            const next = !open;
+            if (next) void refreshNotificationsNow();
+            return next;
+        });
+    };
+
+    const handleNotificationClick = (notification) => {
+        if (notification.read) return;
+        markNotificationReadLocally(notification.uuid);
+        markNotificationRead(notification.uuid)
+            .then(() => refreshPendingCounts())
+            .catch((error) => console.error('Unable to mark notification as read.', error));
+    };
+
     const submitSearch = async (event) => {
         event.preventDefault();
         const query = searchQuery.trim();
@@ -162,6 +229,7 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
     const handleLogout = () => {
         stopActivityHeartbeat();
         stopPendingCountsPolling();
+        stopNotificationsPolling();
         void logout();
         clearAuthSession();
         setUserMenuOpen(false);
@@ -244,10 +312,48 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
                         <span dangerouslySetInnerHTML={{ __html: icon(faEnvelope, 'topbar-action-icon') }} />
                         {messageCount > 0 && <span class="topbar-action-badge" aria-hidden="true">{normalizeBadgeCount(messageCount)}</span>}
                     </a>
-                    <button class="topbar-action-btn" aria-label={notificationLabel} data-tooltip={t('topbar.notifications', lang)}>
-                        <span dangerouslySetInnerHTML={{ __html: icon(faBell, 'topbar-action-icon') }} />
-                        {notificationCount > 0 && <span class="topbar-action-badge" aria-hidden="true">{normalizeBadgeCount(notificationCount)}</span>}
-                    </button>
+                    <div class="topbar-notifications-wrap" ref={notificationsWrapRef}>
+                        <button
+                            class="topbar-action-btn"
+                            aria-label={notificationLabel}
+                            aria-expanded={String(notificationsOpen)}
+                            aria-controls="topbar-notifications-menu"
+                            data-tooltip={t('topbar.notifications', lang)}
+                            onClick={toggleNotifications}
+                        >
+                            <span dangerouslySetInnerHTML={{ __html: icon(faBell, 'topbar-action-icon') }} />
+                            {notificationCount > 0 && <span class="topbar-action-badge" aria-hidden="true">{normalizeBadgeCount(notificationCount)}</span>}
+                        </button>
+
+                        <div class={`topbar-notifications-menu ${notificationsOpen ? 'topbar-notifications-menu--open' : ''}`} id="topbar-notifications-menu" role="region" aria-label={t('notifications.panel_title', lang)}>
+                            <div class="topbar-notifications-header">{t('notifications.panel_title', lang)}</div>
+                            {notifications.length === 0 ? (
+                                <p class="topbar-notifications-empty">{t('notifications.empty', lang)}</p>
+                            ) : (
+                                <ul class="topbar-notifications-list">
+                                    {notifications.map((notification) => {
+                                        const meta = priorityMeta(notification.priority);
+                                        return (
+                                            <li key={notification.uuid}>
+                                                <button
+                                                    type="button"
+                                                    class={`topbar-notification-item ${notification.read ? '' : 'topbar-notification-item--unread'}`}
+                                                    onClick={() => handleNotificationClick(notification)}
+                                                >
+                                                    <span class={`topbar-notification-icon ${meta.class}`} aria-hidden="true" dangerouslySetInnerHTML={{ __html: icon(meta.icon) }} />
+                                                    <span class="topbar-notification-body">
+                                                        <strong class="topbar-notification-title">{localizedValue(notification.title, lang)}</strong>
+                                                        <span class="topbar-notification-message">{localizedValue(notification.message, lang)}</span>
+                                                        <time class="topbar-notification-time">{formatRelativeTime(notification.date, lang)}</time>
+                                                    </span>
+                                                </button>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            )}
+                        </div>
+                    </div>
 
                     <div class="topbar-user-menu-wrap" ref={userMenuWrapRef}>
                         <button

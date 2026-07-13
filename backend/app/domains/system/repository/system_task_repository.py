@@ -1,10 +1,10 @@
 import uuid as uuid_lib
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import selectinload
 
 from app.core.database.session import db
-from app.domains.system.models.system_task import SystemTask
+from app.domains.system.models.system_task import SystemTask, TaskStatus
 from app.domains.users.models.user_user import UserUser
 
 
@@ -46,6 +46,26 @@ class SystemTaskRepository:
             )
             result = await session.execute(query)
             return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_pending_with_reminder_dates():
+        async with db.session() as session:
+            query = (
+                select(SystemTask)
+                .where(
+                    SystemTask.user_id.is_not(None),
+                    SystemTask.status.in_(
+                        [TaskStatus.pending, TaskStatus.in_progress]
+                    ),
+                    or_(
+                        SystemTask.date_assign.is_not(None),
+                        SystemTask.date_due.is_not(None),
+                    ),
+                )
+                .options(selectinload(SystemTask.user))
+            )
+            result = await session.execute(query)
+            return result.scalars().all()
 
     @staticmethod
     async def update(task_uuid: uuid_lib.UUID, task_data: dict):

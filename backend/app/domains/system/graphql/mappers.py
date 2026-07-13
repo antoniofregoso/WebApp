@@ -74,6 +74,7 @@ def system_notification_to_type(notification):
         active=notification.active,
         sequence=notification.sequence,
         color=notification.color,
+        priority=notification.priority,
         user=user_to_type(notification.user),
         users=[user_to_type(user) for user in notification.users],
         created_at=notification.created_at,

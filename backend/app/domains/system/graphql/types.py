@@ -8,7 +8,10 @@ from strawberry.scalars import JSON
 from app.domains.system.models.system_colors import SystemColor
 from app.domains.system.models.system_message import MessageStatus
 from app.domains.system.models.system_model import FieldType, SystemModelSchemaUse
-from app.domains.system.models.system_notification import NotificationStatus
+from app.domains.system.models.system_notification import (
+    NotificationPriority,
+    NotificationStatus,
+)
 from app.domains.system.models.system_task import TaskPriority, TaskStatus
 from app.domains.system.models.system_whatsapp import (
     WhatsAppMessageDirection,
@@ -22,6 +25,7 @@ SystemModelSchemaUseType = strawberry.enum(SystemModelSchemaUse)
 SystemMessageStatus = strawberry.enum(MessageStatus)
 SystemColorType = strawberry.enum(SystemColor)
 SystemNotificationStatus = strawberry.enum(NotificationStatus)
+SystemNotificationPriority = strawberry.enum(NotificationPriority)
 SystemTaskPriority = strawberry.enum(TaskPriority)
 SystemTaskStatus = strawberry.enum(TaskStatus)
 SystemWhatsAppMessageDirection = strawberry.enum(WhatsAppMessageDirection)
@@ -123,6 +127,7 @@ class SystemNotificationType:
     active: bool
     sequence: Optional[int]
     color: SystemColorType
+    priority: SystemNotificationPriority
     user: Optional[SystemUserRefType]
     users: list[SystemUserRefType]
     created_at: datetime
@@ -258,6 +263,7 @@ class SystemNotificationCreateInput:
     active: bool = False
     sequence: Optional[int] = 10
     color: SystemColorType = SystemColor.zinc
+    priority: SystemNotificationPriority = NotificationPriority.info
     user_uuid: Optional[uuid_lib.UUID] = None
     user_uuids: Optional[list[uuid_lib.UUID]] = None
 
@@ -272,6 +278,7 @@ class SystemNotificationUpdateInput:
     active: Optional[bool] = None
     sequence: Optional[int] = None
     color: Optional[SystemColorType] = None
+    priority: Optional[SystemNotificationPriority] = None
     user_uuid: Optional[uuid_lib.UUID] = None
     user_uuids: Optional[list[uuid_lib.UUID]] = None
 

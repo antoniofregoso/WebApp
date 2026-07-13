@@ -23,6 +23,10 @@ class SystemTaskService:
         return task
 
     @staticmethod
+    async def get_pending_with_reminder_dates():
+        return await SystemTaskRepository.get_pending_with_reminder_dates()
+
+    @staticmethod
     async def update(task_uuid: uuid_lib.UUID, task_data: dict):
         task = await SystemTaskRepository.update(task_uuid, task_data)
         if not task:

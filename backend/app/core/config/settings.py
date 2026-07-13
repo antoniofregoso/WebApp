@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     SESSION_ABSOLUTE_EXPIRE_DAYS: int = 30
     USER_LOG_STALE_TIMEOUT_SECONDS: int = 300
     USER_LOG_SWEEP_INTERVAL_SECONDS: int = 60
+    TASK_REMINDER_EARLY_MINUTES: int = 30
+    TASK_REMINDER_FINAL_MINUTES: int = 5
+    TASK_REMINDER_SWEEP_INTERVAL_SECONDS: int = 60
     JWT_ISSUER: str = "webapp-api"
     JWT_AUDIENCE: str = "webapp-client"
     REFRESH_COOKIE_NAME: str = "refresh_token"

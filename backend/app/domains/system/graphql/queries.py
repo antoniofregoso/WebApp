@@ -136,6 +136,18 @@ class SystemQuery:
         return system_notification_to_type(notification)
 
     @strawberry.field(permission_classes=[IsAuthenticated])
+    async def system_my_notifications(
+        self, info: strawberry.types.Info, limit: int = 30
+    ) -> list[SystemNotificationType]:
+        user = await get_current_user(info)
+        notifications = await SystemNotificationService.get_recent_by_user_id(
+            user.id, limit
+        )
+        return [
+            system_notification_to_type(notification) for notification in notifications
+        ]
+
+    @strawberry.field(permission_classes=[IsAuthenticated])
     async def system_tasks(self) -> list[SystemTaskType]:
         tasks = await SystemTaskService.get_all()
         return [system_task_to_type(task) for task in tasks]

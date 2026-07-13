@@ -25,6 +25,14 @@ class SystemNotificationService:
         return notification
 
     @staticmethod
+    async def get_recent_by_user_id(user_id: int, limit: int = 30):
+        return await SystemNotificationRepository.get_recent_by_user_id(user_id, limit)
+
+    @staticmethod
+    async def get_existing_dedupe_keys(keys: list[str]):
+        return await SystemNotificationRepository.get_existing_dedupe_keys(keys)
+
+    @staticmethod
     async def count_unread_by_user_id(user_id: int):
         return await SystemNotificationRepository.count_unread_by_user_id(user_id)
 
