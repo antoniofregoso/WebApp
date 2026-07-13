@@ -101,10 +101,10 @@ Diseño aprobado: [Doc/AI_SEARCH_DESIGN.md](./Doc/AI_SEARCH_DESIGN.md).
 
 ## Base de datos y pruebas
 
-- [ ] Crear el modelo y la migración para sesiones o refresh tokens.
-- [ ] Probar expiración, rotación, revocación y reutilización de tokens.
-- [ ] Probar múltiples dispositivos y sesiones concurrentes.
-- [ ] Probar cookies y flujo de renovación en producción bajo HTTPS.
+- [x] Crear el modelo y la migración para sesiones o refresh tokens.
+- [x] Probar expiración, rotación, revocación y reutilización de tokens.
+- [x] Probar múltiples dispositivos y sesiones concurrentes.
+- [x] Probar cookies y flujo de renovación con configuración de producción bajo HTTPS.
 
 ## Archivos adjuntos
 

@@ -237,3 +237,140 @@ async def test_refresh_session_detects_reused_refresh_token_and_revokes_user_ses
         await AuthService.refresh_session(reused_refresh_token)
 
     assert revoked_user_ids == [reused_session.user_id]
+
+
+@pytest.mark.asyncio
+async def test_refresh_session_rejects_expired_jwt_before_database_lookup(monkeypatch):
+    database_lookups = []
+
+    def verify_token(*args, **kwargs):
+        raise ValueError("Token expired")
+
+    async def get_active_by_refresh_token_hash(refresh_token_hash: str):
+        database_lookups.append(refresh_token_hash)
+
+    monkeypatch.setattr(
+        "app.domains.users.service.auth_service.JWTManager.verify_token",
+        verify_token,
+    )
+    monkeypatch.setattr(
+        "app.domains.users.service.auth_service.UserSessionRepository.get_active_by_refresh_token_hash",
+        get_active_by_refresh_token_hash,
+    )
+
+    with pytest.raises(AuthenticationException, match="Invalid or expired"):
+        await AuthService.refresh_session("expired-refresh-token")
+
+    assert database_lookups == []
+
+
+@pytest.mark.asyncio
+async def test_refresh_session_rejects_session_past_absolute_expiration(monkeypatch):
+    refresh_token = "absolute-expired-refresh-token"
+    expired_session = SimpleNamespace(
+        user_id=42,
+        refresh_token_hash=AuthService.hash_refresh_token(refresh_token),
+        revoked_at=None,
+        absolute_expires_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+    )
+
+    async def get_active_by_refresh_token_hash(refresh_token_hash: str):
+        assert refresh_token_hash == expired_session.refresh_token_hash
+        return None
+
+    async def get_by_refresh_token_hash(refresh_token_hash: str):
+        assert refresh_token_hash == expired_session.refresh_token_hash
+        return expired_session
+
+    monkeypatch.setattr(
+        "app.domains.users.service.auth_service.JWTManager.verify_token",
+        lambda token, expected_token_type=None: {"sub": "admin@app.com"},
+    )
+    monkeypatch.setattr(
+        "app.domains.users.service.auth_service.UserSessionRepository.get_active_by_refresh_token_hash",
+        get_active_by_refresh_token_hash,
+    )
+    monkeypatch.setattr(
+        "app.domains.users.service.auth_service.UserSessionRepository.get_by_refresh_token_hash",
+        get_by_refresh_token_hash,
+    )
+
+    with pytest.raises(AuthenticationException, match="Invalid refresh token"):
+        await AuthService.refresh_session(refresh_token)
+
+
+@pytest.mark.asyncio
+async def test_logins_from_multiple_devices_create_independent_sessions(monkeypatch):
+    refresh_tokens = iter(["laptop-refresh-token", "phone-refresh-token"])
+    stored_sessions = []
+    revoked_hashes = []
+    user = SimpleNamespace(
+        id=42,
+        email="admin@app.com",
+        password=AuthService.hash_password("changeMe123"),
+        active=True,
+    )
+
+    async def get_by_email(email: str):
+        return user
+
+    async def create(session):
+        session.id = len(stored_sessions) + 1
+        stored_sessions.append(session)
+        return session
+
+    async def get_by_refresh_token_hash(refresh_token_hash: str):
+        return next(
+            session
+            for session in stored_sessions
+            if session.refresh_token_hash == refresh_token_hash
+        )
+
+    async def revoke_by_refresh_token_hash(refresh_token_hash: str):
+        revoked_hashes.append(refresh_token_hash)
+        return True
+
+    async def close_open_for_user(user_id: int):
+        return None
+
+    monkeypatch.setattr(
+        "app.domains.users.service.auth_service.UserRepository.get_by_email",
+        get_by_email,
+    )
+    monkeypatch.setattr(
+        "app.domains.users.service.auth_service.JWTManager.generate_refresh_token",
+        lambda data: next(refresh_tokens),
+    )
+    monkeypatch.setattr(
+        "app.domains.users.service.auth_service.JWTManager.generate_access_token",
+        lambda data: "access-token",
+    )
+    monkeypatch.setattr(
+        "app.domains.users.service.auth_service.UserSessionRepository.create",
+        create,
+    )
+    monkeypatch.setattr(
+        "app.domains.users.service.auth_service.UserSessionRepository.get_by_refresh_token_hash",
+        get_by_refresh_token_hash,
+    )
+    monkeypatch.setattr(
+        "app.domains.users.service.auth_service.UserSessionRepository.revoke_by_refresh_token_hash",
+        revoke_by_refresh_token_hash,
+    )
+    monkeypatch.setattr(
+        "app.domains.users.service.auth_service.UserLogService.close_open_for_user",
+        close_open_for_user,
+    )
+
+    laptop = await AuthService.login("admin@app.com", "changeMe123")
+    phone = await AuthService.login("admin@app.com", "changeMe123")
+    await AuthService.logout(laptop.refresh_token)
+
+    assert len(stored_sessions) == 2
+    assert (
+        stored_sessions[0].refresh_token_hash != stored_sessions[1].refresh_token_hash
+    )
+    assert revoked_hashes == [stored_sessions[0].refresh_token_hash]
+    assert stored_sessions[1].refresh_token_hash == AuthService.hash_refresh_token(
+        phone.refresh_token
+    )
