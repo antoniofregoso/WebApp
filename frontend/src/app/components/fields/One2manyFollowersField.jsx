@@ -1,3 +1,4 @@
+import { AuthenticatedImage } from '../AuthenticatedImage.jsx';
 import { buildRecordUrl, rememberRecordBreadcrumb } from '../../utils/routing.js';
 import { localizedValue } from '../../utils/ux.js';
 import { isFieldReadOnly } from './fieldHelpers.js';
@@ -11,7 +12,7 @@ function userLabel(user, lang) {
 
 function userAvatar(user, label) {
     return user?.avatar
-        ? <img src={user.avatar} alt="" class="h-7 w-7 rounded-full object-cover" />
+        ? <AuthenticatedImage src={user.avatar} alt="" class="h-7 w-7 rounded-full object-cover" />
         : (
             <span class="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--dash-bg)] text-[10px] font-semibold text-[var(--dash-text-muted)]">
                 {label ? String(label).slice(0, 1).toUpperCase() : '—'}
@@ -23,13 +24,20 @@ function allowedUsers(field) {
     return (field?.options ?? []).filter((user) => user?.user_type !== 'SYSTEM');
 }
 
-export function One2manyFollowersField({ field, value, onChange, lang = 'en', readOnly = false }) {
+export function One2manyFollowersField({ field, value, onChange, lang = 'en', readOnly = false, context = {} }) {
     const followers = Array.isArray(value) ? value : [];
     const options = allowedUsers(field);
     const selectedUuids = new Set(followers.map((user) => String(user?.uuid)));
     const disabled = isFieldReadOnly(field, readOnly);
     const label = lang === 'es' ? 'Seguidores' : 'Followers';
     const emptyLabel = lang === 'es' ? 'Sin seguidores' : 'No followers';
+    const statusLabel = context.followerStatus === 'saving'
+        ? (lang === 'es' ? 'Guardando…' : 'Saving…')
+        : context.followerStatus === 'saved'
+            ? (lang === 'es' ? 'Guardado' : 'Saved')
+            : context.followerStatus === 'error'
+                ? (lang === 'es' ? 'Error al guardar' : 'Save failed')
+                : '';
 
     if (disabled) {
         return (
@@ -66,6 +74,7 @@ export function One2manyFollowersField({ field, value, onChange, lang = 'en', re
     return (
         <div class="flex items-center gap-2" aria-label={label}>
             <span class="text-xs font-semibold text-[var(--dash-text)]">{label}</span>
+            {statusLabel && <span role="status" data-follower-status class={`text-xs ${context.followerStatus === 'error' ? 'text-[var(--dash-danger)]' : 'text-[var(--dash-text-muted)]'}`}>{statusLabel}</span>}
             <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label={lang === 'es' ? 'Seleccionar seguidores' : 'Select followers'}>
                 {options.map((user) => {
                     const selected = selectedUuids.has(String(user.uuid));

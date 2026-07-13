@@ -11,9 +11,24 @@ const SYSTEM_MODEL_VIEW_QUERY = gql`
   }
 `;
 
+const SYSTEM_MODEL_BY_NAME_QUERY = gql`
+  query SystemModelByName($name: String!) {
+    systemModelByName(name: $name) {
+      uuid
+      name
+    }
+  }
+`;
+
 const UPDATE_SYSTEM_MODEL_RECORD_MUTATION = gql`
   mutation UpdateSystemModelRecord($model: String!, $recordUuid: UUID!, $values: JSON!) {
     updateSystemModelRecord(model: $model, recordUuid: $recordUuid, values: $values)
+  }
+`;
+
+const CREATE_SYSTEM_MODEL_RECORD_MUTATION = gql`
+  mutation CreateSystemModelRecord($model: String!, $values: JSON!) {
+    createSystemModelRecord(model: $model, values: $values)
   }
 `;
 
@@ -53,6 +68,15 @@ export async function fetchSystemModelView(
     }
 }
 
+export async function fetchSystemModelByName(name, fetchImpl = globalThis.fetch) {
+    const data = await requestAuthenticated(
+        SYSTEM_MODEL_BY_NAME_QUERY,
+        { name },
+        fetchImpl,
+    );
+    return data.systemModelByName;
+}
+
 export async function updateSystemModelRecord({ model, recordUuid, values }, fetchImpl = globalThis.fetch) {
     const data = await requestAuthenticated(
         UPDATE_SYSTEM_MODEL_RECORD_MUTATION,
@@ -60,6 +84,15 @@ export async function updateSystemModelRecord({ model, recordUuid, values }, fet
         fetchImpl,
     );
     return data.updateSystemModelRecord;
+}
+
+export async function createSystemModelRecord({ model, values }, fetchImpl = globalThis.fetch) {
+    const data = await requestAuthenticated(
+        CREATE_SYSTEM_MODEL_RECORD_MUTATION,
+        { model, values },
+        fetchImpl,
+    );
+    return data.createSystemModelRecord;
 }
 
 export async function deleteSystemModelRecord({ model, recordUuid }, fetchImpl = globalThis.fetch) {

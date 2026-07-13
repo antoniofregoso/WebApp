@@ -1,3 +1,4 @@
+import { AuthenticatedImage } from '../AuthenticatedImage.jsx';
 import { buildRecordUrl, rememberRecordBreadcrumb } from '../../utils/routing.js';
 import { Many2oneField } from './Many2oneField.jsx';
 import { isFieldReadOnly } from './fieldHelpers.js';
@@ -9,7 +10,7 @@ export function Many2oneAvatarField(props) {
     const name = value?.name ?? value ?? '';
     const href = value?.model && value?.uuid != null ? buildRecordUrl(value.model, value.uuid) : '';
     const avatar = value?.avatar
-        ? <img src={value.avatar} alt="" class="h-6 w-6 shrink-0 rounded-full object-cover" />
+        ? <AuthenticatedImage src={value.avatar} alt="" class="h-6 w-6 shrink-0 rounded-full object-cover" />
         : (
             <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full
                 bg-[var(--dash-bg)] text-[10px] font-semibold text-[var(--dash-text-muted)]">

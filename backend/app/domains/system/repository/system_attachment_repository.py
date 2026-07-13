@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 
 from app.core.database.session import db
 from app.domains.system.models.system_attachment import SystemAttachment
+from app.domains.users.models.user_user import UserUser
 
 
 class SystemAttachmentRepository:
@@ -33,10 +34,11 @@ class SystemAttachmentRepository:
         model_id: int,
         record_uuid: uuid_lib.UUID,
         company_id: int | None,
-    ) -> list[SystemAttachment]:
+    ) -> list:
         async with db.session() as session:
             query = (
-                select(SystemAttachment)
+                select(SystemAttachment, UserUser.uuid, UserUser.name)
+                .outerjoin(UserUser, UserUser.id == SystemAttachment.create_by)
                 .where(
                     SystemAttachment.model_id == model_id,
                     SystemAttachment.record_uuid == record_uuid,
@@ -45,7 +47,7 @@ class SystemAttachmentRepository:
                 .order_by(SystemAttachment.created_at.desc())
             )
             result = await session.execute(query)
-            return list(result.scalars().all())
+            return list(result.all())
 
     @staticmethod
     async def delete(

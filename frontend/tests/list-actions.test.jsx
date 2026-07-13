@@ -42,6 +42,46 @@ afterEach(() => {
 });
 
 describe('List actions', () => {
+    it('applies the default list order declared by the schema', () => {
+        const host = document.createElement('div');
+        document.body.appendChild(host);
+        render(<ListView data={{
+            model: {
+                name: 'system.message', label: { en: 'Messages' },
+                schema: [
+                    { name: 'subject', type: 'string', label: { en: 'Subject' }, list: { column: 1 } },
+                    { name: 'date', type: 'datetime', label: { en: 'Date' }, list: { column: 2, order: 'desc' } },
+                ],
+            },
+            records: [
+                { uuid: 'old', subject: 'Old', date: '2026-07-10T10:00:00Z' },
+                { uuid: 'new', subject: 'New', date: '2026-07-12T10:00:00Z' },
+            ],
+        }} lang="en" />, host);
+
+        expect(host.querySelector('[data-list-rows] tr').dataset.uuid).toBe('new');
+        expect(host.querySelector('[aria-label="Sort by Date"]')).not.toBeNull();
+    });
+
+    it('links a schema title field to the record detail even when it is not named name', () => {
+        const host = document.createElement('div');
+        document.body.appendChild(host);
+        render(<ListView data={{
+            model: {
+                name: 'system.message', label: { en: 'Messages' },
+                schema: [{
+                    name: 'subject', type: 'string', label: { en: 'Subject' },
+                    list: { column: 1 }, form: { header: 'title' },
+                }],
+            },
+            records: [{ uuid: 'message-1', subject: { en: 'Internal update' } }],
+        }} lang="en" />, host);
+
+        const link = host.querySelector('a');
+        expect(link.textContent).toBe('Internal update');
+        expect(link.getAttribute('href')).toContain('/system.message/message-1');
+    });
+
     it('archives selected records', async () => {
         const host = mount();
         await selectRow(host);

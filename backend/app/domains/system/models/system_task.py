@@ -60,8 +60,8 @@ class SystemTask(SystemAudit, SQLModel, table=True):
         sa_column=Column(JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")),
     )
     priority: TaskPriority = Field(
-        default=TaskPriority.medium,
-        sa_column=sa.Column(sa.String(32), nullable=False, server_default="Medium"),
+        default=TaskPriority.low,
+        sa_column=sa.Column(sa.String(32), nullable=False, server_default="Low"),
     )
     date_assign: Optional[datetime] = Field(
         default=None,

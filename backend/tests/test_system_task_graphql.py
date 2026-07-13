@@ -3,6 +3,7 @@ from sqlalchemy.orm import configure_mappers
 from sqlmodel import SQLModel
 
 from main import Mutation, Query
+from app.domains.system.models.system_task import SystemTask, TaskPriority, TaskStatus
 
 
 def test_system_task_is_registered_in_orm_and_graphql():
@@ -10,6 +11,9 @@ def test_system_task_is_registered_in_orm_and_graphql():
     schema = strawberry.Schema(query=Query, mutation=Mutation).as_str()
 
     assert "system_tasks" in SQLModel.metadata.tables
+    task = SystemTask(title={}, description={})
+    assert task.status == TaskStatus.pending
+    assert task.priority == TaskPriority.low
     assert "systemTasks" in schema
     assert "systemTask(" in schema
     assert "createSystemTask" in schema

@@ -252,7 +252,7 @@ class SystemTaskCreateInput:
     status: SystemTaskStatus = TaskStatus.pending
     color: SystemColorType = SystemColor.zinc
     sequence: Optional[int] = 10
-    priority: SystemTaskPriority = TaskPriority.medium
+    priority: SystemTaskPriority = TaskPriority.low
     date_assign: Optional[datetime] = None
     date_due: Optional[datetime] = None
     user_uuid: Optional[uuid_lib.UUID] = None

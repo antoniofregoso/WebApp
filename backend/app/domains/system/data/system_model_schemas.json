@@ -1681,7 +1681,8 @@
                     "en_US": "Date"
                 },
                 "list": {
-                    "column": 3
+                    "column": 3,
+                    "order": "desc"
                 },
                 "kanban": {
                     "leftColumn": 0
@@ -1733,6 +1734,7 @@
             {
                 "name": "to_users",
                 "type": "many2many_pills",
+                "model": "user.user",
                 "label": {
                     "es_MX": "Destinatarios",
                     "en_US": "Recipients"
@@ -2072,6 +2074,7 @@
             {
                 "name": "status",
                 "type": "status_badge",
+                "default": "Pending",
                 "label": {
                     "es_MX": "Estado",
                     "en_US": "Status"
@@ -2093,7 +2096,14 @@
             },
             {
                 "name": "priority",
-                "type": "string",
+                "type": "selection",
+                "default": "Low",
+                "selection_values": [
+                    { "value": "Low", "color": "zinc", "es_MX": "Baja", "en_US": "Low" },
+                    { "value": "Medium", "color": "blue", "es_MX": "Media", "en_US": "Medium" },
+                    { "value": "High", "color": "orange", "es_MX": "Alta", "en_US": "High" },
+                    { "value": "Urgent", "color": "red", "es_MX": "Urgente", "en_US": "Urgent" }
+                ],
                 "label": {
                     "es_MX": "Prioridad",
                     "en_US": "Priority"
@@ -2118,7 +2128,19 @@
             },
             {
                 "name": "color",
-                "type": "string",
+                "type": "color",
+                "default": "Zinc",
+                "selection_values": [
+                    { "value": "Zinc", "hex": "#71717a", "label": { "es_MX": "Zinc", "en_US": "Zinc" } },
+                    { "value": "Red", "hex": "#dc2626", "label": { "es_MX": "Rojo", "en_US": "Red" } },
+                    { "value": "Blue", "hex": "#2563eb", "label": { "es_MX": "Azul", "en_US": "Blue" } },
+                    { "value": "Purple", "hex": "#9333ea", "label": { "es_MX": "Morado", "en_US": "Purple" } },
+                    { "value": "Green", "hex": "#16a34a", "label": { "es_MX": "Verde", "en_US": "Green" } },
+                    { "value": "Orange", "hex": "#ea580c", "label": { "es_MX": "Naranja", "en_US": "Orange" } },
+                    { "value": "Yellow", "hex": "#ca8a04", "label": { "es_MX": "Amarillo", "en_US": "Yellow" } },
+                    { "value": "Cyan", "hex": "#0891b2", "label": { "es_MX": "Cian", "en_US": "Cyan" } },
+                    { "value": "Indigo", "hex": "#4f46e5", "label": { "es_MX": "Índigo", "en_US": "Indigo" } }
+                ],
                 "label": {
                     "es_MX": "Color",
                     "en_US": "Color"
@@ -3183,6 +3205,7 @@
                 },
                 "form": {
                     "rightColumn": 0,
+                    "required": true,
                     "placeholder": {
                         "es_MX": "Tipo de usuario",
                         "en_US": "User type"

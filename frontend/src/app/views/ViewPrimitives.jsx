@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'preact/hooks';
 
 import { FieldControl, FormField } from '../components/fields/index.js';
-import { icon, faFloppyDisk, faPlus, faXmark } from '../components/icon.js';
+import { icon, faFloppyDisk, faPaperPlane, faPlus, faXmark } from '../components/icon.js';
 import { createEmptyRecord, getFormLayout } from './formLayout.js';
+import { fieldLabel } from '../components/fields/fieldHelpers.js';
+import { createSystemModelRecord } from '../api/systemModel.js';
+import { dashboardActions } from '../store/actions/index.js';
+import { authSignal } from '../store/authStore.js';
+
+const EMPTY_INITIAL_VALUES = {};
 
 export function Icon({ definition, class: className = '' }) {
     return <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: icon(definition, className) }} />;
@@ -27,10 +33,10 @@ export function ViewHeader({ title = '', count = null, lang = 'en', class: class
     );
 }
 
-function FormColumns({ layout, record, setValue, lang, context, readOnly }) {
+function FormColumns({ layout, record, setValue, lang, context, readOnly, errors = {} }) {
     const renderField = ({ field }) => (
         <FormField key={field.name} field={field} value={record[field.name]} onChange={setValue}
-            lang={lang} readOnly={readOnly} context={context} />
+            lang={lang} readOnly={readOnly} context={context} error={errors[field.name]} />
     );
     return (
         <>
@@ -44,13 +50,13 @@ function FormColumns({ layout, record, setValue, lang, context, readOnly }) {
     );
 }
 
-export function SchemaFormLayout({ schema, record, setValue, lang, context, readOnly }) {
+export function SchemaFormLayout({ schema, record, setValue, lang, context, readOnly, errors = {} }) {
     const layout = getFormLayout(schema);
     const [activeTab, setActiveTab] = useState(layout.tabs[0]?.position ?? null);
     useEffect(() => setActiveTab(layout.tabs[0]?.position ?? null), [schema]);
     return (
         <>
-            <FormColumns layout={layout} record={record} setValue={setValue} lang={lang} context={context} readOnly={readOnly} />
+            <FormColumns layout={layout} record={record} setValue={setValue} lang={lang} context={context} readOnly={readOnly} errors={errors} />
             {layout.tabs.length > 0 && (
                 <div class="form-record-tabs" data-record-tabs>
                     <div class="form-record-tab-list" role="tablist">
@@ -66,7 +72,8 @@ export function SchemaFormLayout({ schema, record, setValue, lang, context, read
                         <div role="tabpanel" class="form-record-tab-panel" hidden={activeTab !== tab.position}
                             data-record-tab-panel={tab.position} key={tab.position}>
                             {tab.fields.map(({ field }) => <FormField key={field.name} field={field}
-                                value={record[field.name]} onChange={setValue} lang={lang} readOnly={readOnly} context={context} hideLabel />)}
+                                value={record[field.name]} onChange={setValue} lang={lang} readOnly={readOnly}
+                                context={context} error={errors[field.name]} hideLabel />)}
                         </div>
                     ))}
                 </div>
@@ -75,11 +82,29 @@ export function SchemaFormLayout({ schema, record, setValue, lang, context, read
     );
 }
 
-export function CreateModal({ data = {}, lang = 'en', open, onClose }) {
+export function CreateModal({ data = {}, lang = 'en', open, onClose, initialValues = EMPTY_INITIAL_VALUES }) {
     const schema = data?.model?.schema ?? [];
+    const isMessage = data?.model?.name === 'system.message';
     const context = { ...(data?.model ?? {}), tags: data?.model?.tags ?? [] };
-    const [record, setRecord] = useState(() => createEmptyRecord(schema));
-    useEffect(() => { if (open) setRecord(createEmptyRecord(schema)); }, [open, schema]);
+    const initialRecord = () => ({
+        ...createEmptyRecord(schema),
+        ...(data?.model?.name === 'system.message' ? {
+            status: 'Sent',
+            from_user_id: {
+                uuid: authSignal.value.uuid,
+                name: authSignal.value.name,
+                email: authSignal.value.email,
+                model: 'user.user',
+            },
+        } : {}),
+        ...initialValues,
+    });
+    const [record, setRecord] = useState(initialRecord);
+    const [errors, setErrors] = useState({});
+    const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState('');
+    const [dirtyFields, setDirtyFields] = useState(() => new Set());
+    useEffect(() => { if (open) { setRecord(initialRecord()); setErrors({}); setSaveError(''); setSaving(false); setDirtyFields(new Set(Object.keys(initialValues))); } }, [open, schema, initialValues]);
     useEffect(() => {
         if (!open) return undefined;
         const close = (event) => { if (event.key === 'Escape') onClose(); };
@@ -90,8 +115,56 @@ export function CreateModal({ data = {}, lang = 'en', open, onClose }) {
     const layout = getFormLayout(schema);
     const title = `${lang === 'es' ? 'Crear' : 'Create'} ${data?.model?.label?.[lang] ?? data?.model?.name ?? ''}`;
     const closeLabel = lang === 'es' ? 'Cerrar' : 'Close';
-    const saveLabel = lang === 'es' ? 'Guardar' : 'Save';
-    const setValue = (name, value) => setRecord((current) => ({ ...current, [name]: value }));
+    const saveLabel = isMessage ? (lang === 'es' ? 'Enviar' : 'Send') : (lang === 'es' ? 'Guardar' : 'Save');
+    const requiredFields = schema.filter((field) => field?.form?.required === true || field?.required === true);
+    const requiredText = lang === 'es' ? 'Campos obligatorios' : 'Required fields';
+    const requiredError = lang === 'es' ? 'Este campo es obligatorio.' : 'This field is required.';
+    const hasValue = (value) => {
+        if (value == null) return false;
+        if (typeof value === 'string') return value.trim().length > 0;
+        if (Array.isArray(value)) return value.length > 0;
+        if (typeof value === 'object') return Object.values(value).some(hasValue);
+        return true;
+    };
+    const setValue = (name, value) => {
+        setRecord((current) => ({ ...current, [name]: value }));
+        setDirtyFields((current) => new Set(current).add(name));
+        setErrors((current) => current[name] ? { ...current, [name]: undefined } : current);
+    };
+    const save = async () => {
+        const nextErrors = Object.fromEntries(requiredFields
+            .filter((field) => !hasValue(record[field.name]))
+            .map((field) => [field.name, requiredError]));
+        setErrors(nextErrors);
+        if (Object.keys(nextErrors).length) {
+            globalThis.requestAnimationFrame?.(() => document.querySelector('[data-field-error]')?.scrollIntoView?.({ block: 'center' }));
+            return;
+        }
+        setSaving(true);
+        setSaveError('');
+        try {
+            const values = Object.fromEntries(Object.entries(record).filter(([name, value]) => (
+                dirtyFields.has(name) && hasValue(value)
+            )));
+            const created = await createSystemModelRecord({ model: data?.model?.name, values });
+            dashboardActions.addModelRecord(created);
+            onClose();
+        } catch (error) {
+            console.error('Unable to create model record.', error);
+            setSaveError(lang === 'es' ? 'No se pudo crear el registro. Revisa los datos e inténtalo de nuevo.' : 'Unable to create the record. Check the data and try again.');
+        } finally {
+            setSaving(false);
+        }
+    };
+    const headerControl = (field) => field && (
+        <div class="form-field" data-form-field={field.name}>
+            <label class="form-field-label">{fieldLabel(field, lang)}
+                {(field?.form?.required === true || field?.required === true) && <span class="form-required-mark" aria-hidden="true"> *</span>}
+            </label>
+            <FieldControl field={field} value={record[field.name]} onChange={setValue} lang={lang} context={context} />
+            {errors[field.name] && <span role="alert" data-field-error={field.name} class="mt-1 block text-xs text-[var(--dash-danger)]">{errors[field.name]}</span>}
+        </div>
+    );
     return (
         <div class="form-modal" data-form-modal>
             <div class="form-modal-backdrop" onClick={onClose} />
@@ -103,21 +176,26 @@ export function CreateModal({ data = {}, lang = 'en', open, onClose }) {
                     </button>
                 </header>
                 <div class="form-modal-body" data-form-mode="edit">
+                    {requiredFields.length > 0 && <div class="border-b border-[var(--dash-border)] bg-[var(--dash-accent-soft)] px-5 py-3 text-sm text-[var(--dash-text)]" data-required-fields>
+                        <span class="font-semibold">{requiredText}:</span>{' '}
+                        {requiredFields.map((field) => fieldLabel(field, lang)).join(', ')}
+                    </div>}
                     <div class="flex gap-4 border-b border-[var(--dash-border)] px-5 py-4">
                         {layout.header.image && <div data-form-header="image"><FieldControl field={layout.header.image}
                             value={record[layout.header.image.name]} onChange={setValue} lang={lang} context={context} /></div>}
                         <div class="min-w-0 flex-1">
-                            {layout.header.title && <FieldControl field={layout.header.title} value={record[layout.header.title.name]}
-                                onChange={setValue} lang={lang} context={context} />}
-                            {layout.header.subtitle && <div class="mt-1"><FieldControl field={layout.header.subtitle}
-                                value={record[layout.header.subtitle.name]} onChange={setValue} lang={lang} context={context} /></div>}
+                            {headerControl(layout.header.title)}
+                            {layout.header.subtitle && <div class="mt-3">{headerControl(layout.header.subtitle)}</div>}
                         </div>
                     </div>
-                    <SchemaFormLayout schema={schema} record={record} setValue={setValue} lang={lang} context={context} readOnly={false} />
+                    <SchemaFormLayout schema={schema} record={record} setValue={setValue} lang={lang}
+                        context={context} readOnly={false} errors={errors} />
                 </div>
                 <footer class="form-modal-footer">
-                    <button type="button" class="topbar-action-btn topbar-action-btn--active" aria-label={saveLabel} onClick={onClose}>
-                        <Icon definition={faFloppyDisk} class="topbar-action-icon" />
+                    {saveError && <span role="alert" data-create-error class="mr-auto text-sm text-[var(--dash-danger)]">{saveError}</span>}
+                    <button type="button" class="topbar-action-btn topbar-action-btn--active" aria-label={saveLabel}
+                        disabled={saving} onClick={() => { void save(); }}>
+                        <Icon definition={isMessage ? faPaperPlane : faFloppyDisk} class="topbar-action-icon" />
                     </button>
                 </footer>
             </section>

@@ -29,9 +29,15 @@ function sortValue(field, value) {
     return String(localizedValue(value, 'en'));
 }
 
+function initialListSort(schema = []) {
+    const field = schema.find((item) => ['asc', 'desc'].includes(item?.list?.order));
+    return field ? { field: field.name, direction: field.list.order } : { field: '', direction: '' };
+}
+
 function Cell({ field, record, data, lang }) {
     const value = record[field.name];
-    if (field.name === 'name' && value) {
+    const isRecordTitle = field.name === 'name' || String(field?.form?.header ?? '').toLowerCase() === 'title';
+    if (isRecordTitle && value) {
         const href = buildRecordUrl(data?.model?.name, record.uuid);
         const label = localizedValue(value, lang);
         return <a href={href} onClick={() => rememberRecordBreadcrumb(href, label)}
@@ -53,7 +59,7 @@ export function ListView({ data = {}, lang = 'en' }) {
     const [selected, setSelected] = useState(() => new Set());
     const [recordPatches, setRecordPatches] = useState({});
     const [hiddenRecords, setHiddenRecords] = useState(() => new Set());
-    const [sort, setSort] = useState({ field: '', direction: '' });
+    const [sort, setSort] = useState(() => initialListSort(data?.model?.schema));
     const tbodyRef = useRef(null);
     const columns = useMemo(() => getListColumns(data?.model?.schema ?? []), [data?.model?.schema]);
     const records = useMemo(() => {
@@ -179,7 +185,7 @@ export function ListView({ data = {}, lang = 'en' }) {
                         const direction = sort.field === field.name ? sort.direction : '';
                         return <th class={`${align} whitespace-nowrap px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-[var(--dash-text-muted)]`} key={field.name}>
                             <span class="inline-flex items-center gap-0.5">{field.label?.[lang] ?? field.name}
-                                {field.list?.order === true && <button type="button" class="js-list-sort ml-1 inline-flex" aria-label={`Sort by ${field.label?.[lang] ?? field.name}`}
+                                {[true, 'asc', 'desc'].includes(field.list?.order) && <button type="button" class="js-list-sort ml-1 inline-flex" aria-label={`Sort by ${field.label?.[lang] ?? field.name}`}
                                     onClick={() => setSort({ field: field.name, direction: direction === 'asc' ? 'desc' : 'asc' })}><SortIcon direction={direction} /></button>}
                             </span>
                         </th>;

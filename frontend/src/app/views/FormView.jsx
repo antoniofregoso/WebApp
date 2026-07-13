@@ -1,14 +1,44 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 
 import { updateSystemModelRecord } from '../api/systemModel.js';
 import { CommunicationPanel } from '../components/communicationPanel.jsx';
 import { FieldControl } from '../components/fields/index.js';
 import { One2manyFollowersField } from '../components/fields/One2manyFollowersField.jsx';
-import { faBoxArchive, faChevronLeft, faChevronRight, faFloppyDisk, faPen, faTrash } from '../components/icon.js';
+import { faBoxArchive, faChevronLeft, faChevronRight, faFloppyDisk, faPaperPlane, faPen, faTrash } from '../components/icon.js';
 import { dashboardActions } from '../store/actions/index.js';
 import { buildRecordUrl } from '../utils/index.js';
 import { getFormLayout } from './formLayout.js';
 import { CreateModal, Icon, SchemaFormLayout, ViewHeader } from './ViewPrimitives.jsx';
+import { authSignal } from '../store/authStore.js';
+import { refreshPendingCounts } from '../api/pendingCounts.js';
+import { localizedValue } from '../utils/ux.js';
+import { formatDateTime } from '../utils/formatters.js';
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
+function replyMessage(record, lang) {
+    const original = localizedValue(record.message, lang);
+    const sender = record.from_user_id?.name || record.from_user_id?.email || '';
+    const subject = localizedValue(record.subject, lang);
+    const rawDate = record.date || record.created_at;
+    const date = rawDate ? formatDateTime(rawDate, lang === 'es' ? 'es-MX' : 'en-US') : '';
+    const labels = lang === 'es'
+        ? { heading: 'Mensaje original', from: 'De', date: 'Fecha', subject: 'Asunto' }
+        : { heading: 'Original message', from: 'From', date: 'Date', subject: 'Subject' };
+    const details = [
+        sender && `<strong>${labels.from}:</strong> ${escapeHtml(sender)}`,
+        date && `<strong>${labels.date}:</strong> ${escapeHtml(date)}`,
+        subject && `<strong>${labels.subject}:</strong> ${escapeHtml(subject)}`,
+    ].filter(Boolean).join('<br>');
+    return `<p><br></p><p>---------- ${labels.heading} ----------</p><p>${details}</p><blockquote>${original}</blockquote>`;
+}
 
 function findRelatedRecord(records, model, uuid) {
     for (const record of records) {
@@ -103,15 +133,60 @@ export function FormView({ data = {}, lang = 'en', options = {} }) {
     const dirtyValuesRef = useRef({});
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [followerStatus, setFollowerStatus] = useState('');
     const [modalOpen, setModalOpen] = useState(false);
+    const [replyOpen, setReplyOpen] = useState(false);
+    const readMessageRef = useRef('');
     useLayoutEffect(() => { setRecord(sourceRecord); dirtyValuesRef.current = {}; setEditing(false); setSaving(false); }, [sourceRecord]);
     const isMainModel = !options.recordModel || options.recordModel === data?.model?.name;
     const schema = isMainModel ? (data?.model?.schema ?? []) : inferSchema(record);
     const layout = getFormLayout(schema);
     const followerField = followersField(schema);
-    const context = { ...(data?.model ?? {}), tags: data?.model?.tags ?? [], record };
+    const context = { ...(data?.model ?? {}), modelUuid: data?.model?.uuid, tags: data?.model?.tags ?? [], record, followerStatus };
     const title = isMainModel ? (data?.model?.label?.[lang] ?? data?.model?.name ?? '') : (options.recordModel ?? record.model ?? '');
+    const modelName = options.recordModel || record.model || data?.model?.name;
+    const isMessage = modelName === 'system.message';
+    const replyInitialValues = useMemo(() => isMessage ? {
+        subject: { [lang]: `Re: ${localizedValue(record.subject, lang) || ''}` },
+        to_users: record.from_user_id ? [record.from_user_id] : [],
+        message: { [lang]: replyMessage(record, lang) },
+    } : {}, [isMessage, lang, record]);
+    useEffect(() => {
+        if (!isMessage || !record.uuid || record.status === 'Read' || readMessageRef.current === String(record.uuid)) return;
+        const isRecipient = (record.to_users ?? []).some((user) => String(user.uuid) === String(authSignal.value.uuid));
+        if (!isRecipient) return;
+        readMessageRef.current = String(record.uuid);
+        void updateSystemModelRecord({ model: 'system.message', recordUuid: record.uuid, values: { status: 'Read' } })
+            .then(() => {
+                setRecord((current) => ({ ...current, status: 'Read' }));
+                dashboardActions.updateModelRecord(record.uuid, { status: 'Read' });
+                return refreshPendingCounts();
+            })
+            .catch((error) => console.error('Unable to mark message as read.', error));
+    }, [isMessage, record.uuid, record.status, record.to_users]);
     const setValue = (name, value) => {
+        if (name === 'followers') {
+            const previous = Array.isArray(record.followers) ? record.followers : [];
+            const model = options.recordModel || record.model || data?.model?.name;
+            setRecord((current) => ({ ...current, followers: value }));
+            if (!model || record.uuid == null) return;
+            setFollowerStatus('saving');
+            void updateSystemModelRecord({ model, recordUuid: record.uuid, values: { followers: value } })
+                .then((patch) => {
+                    const followers = patch?.followers ?? value;
+                    setRecord((current) => ({ ...current, followers }));
+                    dashboardActions.updateModelRecord(record.uuid, { followers });
+                    setFollowerStatus('saved');
+                    globalThis.setTimeout(() => setFollowerStatus((current) => current === 'saved' ? '' : current), 1500);
+                })
+                .catch((error) => {
+                    setRecord((current) => ({ ...current, followers: previous }));
+                    setFollowerStatus('error');
+                    console.error('Unable to persist record followers.', error);
+                    window.alert(lang === 'es' ? 'No se pudieron guardar los seguidores.' : 'Unable to save followers.');
+                });
+            return;
+        }
         setRecord((current) => ({ ...current, [name]: value }));
         dirtyValuesRef.current = { ...dirtyValuesRef.current, [name]: value };
     };
@@ -138,8 +213,8 @@ export function FormView({ data = {}, lang = 'en', options = {} }) {
         }
     };
     const labels = lang === 'es'
-        ? { edit: 'Editar', save: 'Guardar', archive: 'Archivar', delete: 'Borrar' }
-        : { edit: 'Edit', save: 'Save', archive: 'Archive', delete: 'Delete' };
+        ? { edit: 'Editar', save: isMessage ? 'Enviar' : 'Guardar', archive: 'Archivar', delete: 'Borrar' }
+        : { edit: 'Edit', save: isMessage ? 'Send' : 'Save', archive: 'Archive', delete: 'Delete' };
     return <main id="dashboard-content" class="dash-content" role="main" aria-label="Form" data-form-root data-form-mode={editing ? 'edit' : 'readonly'}>
         <input type="hidden" data-uuid={record.uuid ?? ''} value={record.uuid ?? ''} />
         <ViewHeader title={title} lang={lang} onCreate={() => setModalOpen(true)} />
@@ -157,8 +232,10 @@ export function FormView({ data = {}, lang = 'en', options = {} }) {
                                 value={record[layout.header.subtitle.name]} onChange={setValue} lang={lang} readOnly={!editing} context={context} /></div>}
                         </div>
                         <div class="form-record-actions flex items-center gap-2">
+                            {isMessage && <Action definition={faPaperPlane} label={lang === 'es' ? 'Contestar' : 'Reply'}
+                                data-message-reply onClick={() => setReplyOpen(true)} />}
                             <Action definition={faPen} label={labels.edit} data-form-edit aria-pressed={String(editing)} onClick={() => setEditing(true)} />
-                            <Action definition={faFloppyDisk} label={labels.save} data-form-save disabled={!editing || saving} onClick={() => { void saveRecord(); }} />
+                            <Action definition={isMessage ? faPaperPlane : faFloppyDisk} label={labels.save} data-form-save disabled={!editing || saving} onClick={() => { void saveRecord(); }} />
                             <Action definition={faBoxArchive} label={labels.archive} data-form-archive />
                             <Action definition={faTrash} label={labels.delete} data-form-delete />
                         </div>
@@ -170,8 +247,12 @@ export function FormView({ data = {}, lang = 'en', options = {} }) {
                         onChange={setValue} lang={lang} readOnly={!editing} context={context} />}
                     right={<FooterFields fields={layout.footerRight} record={record} setValue={setValue} lang={lang} context={context} readOnly={!editing} />} />
             </section>
-            <CommunicationPanel lang={lang} />
+            <CommunicationPanel lang={lang}
+                modelName={options.recordModel || record.model || data?.model?.name}
+                modelUuid={isMainModel ? data?.model?.uuid : undefined} recordUuid={record.uuid}
+                users={followerField.options ?? []} />
         </div>
         <CreateModal data={data} lang={lang} open={modalOpen} onClose={() => setModalOpen(false)} />
+        {replyOpen && <CreateModal data={data} lang={lang} open onClose={() => setReplyOpen(false)} initialValues={replyInitialValues} />}
     </main>;
 }

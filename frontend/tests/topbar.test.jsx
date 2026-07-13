@@ -1,7 +1,21 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'preact';
 
+vi.mock('../src/app/api/attachments.js', () => ({
+    uploadAttachment: vi.fn().mockResolvedValue({
+        content_url: '/api/system/attachments/avatar-1/content',
+    }),
+}));
+
+vi.mock('../src/app/api/systemModel.js', () => ({
+    fetchSystemModelByName: vi.fn().mockResolvedValue({ uuid: 'model-user-1', name: 'user.user' }),
+    updateSystemModelRecord: vi.fn().mockResolvedValue({ avatar_url: '/api/system/attachments/avatar-1/content' }),
+}));
+
 import { Topbar } from '../src/app/components/topbar.jsx';
+import { uploadAttachment } from '../src/app/api/attachments.js';
+import { fetchSystemModelByName, updateSystemModelRecord } from '../src/app/api/systemModel.js';
+import { authSignal } from '../src/app/store/authStore.js';
 
 function mount(vnode) {
     const host = document.createElement('div');
@@ -11,6 +25,10 @@ function mount(vnode) {
 }
 
 afterEach(() => {
+    uploadAttachment.mockClear();
+    fetchSystemModelByName.mockClear();
+    updateSystemModelRecord.mockClear();
+    authSignal.value = { uuid: null, email: null, name: null, avatarUrl: null, isAuthenticated: false };
     document.body.innerHTML = '';
 });
 
@@ -51,21 +69,97 @@ describe('Topbar user menu', () => {
         expect(nav.className).toContain('overflow-x-auto');
     });
 
-    it('shows the user name above the theme selection when known', () => {
-        const host = mount(<Topbar lang="en" theme="light" pageTitle="" user={{ name: 'Ana Admin', email: 'ana@example.com' }} />);
-        const nameRow = host.querySelector('.topbar-user-name-row');
-        expect(nameRow.textContent).toBe('Ana Admin');
-        expect(nameRow.nextElementSibling.querySelector('.topbar-menu-label').textContent).toBe('Theme');
+    it('shows the user avatar and name above the theme selection when known', () => {
+        const host = mount(<Topbar lang="en" theme="light" pageTitle="" user={{ name: 'Ana Admin', email: 'ana@example.com', avatarUrl: '/avatar.jpg' }} />);
+        expect(host.querySelector('.topbar-user-btn img').getAttribute('src')).toBe('/avatar.jpg');
+        const profileCard = host.querySelector('.topbar-user-profile-card');
+        expect(profileCard.querySelector('.topbar-user-menu-avatar').getAttribute('src')).toBe('/avatar.jpg');
+        expect(profileCard.querySelector('.topbar-user-name').textContent).toBe('Ana Admin');
+        expect(profileCard.nextElementSibling.querySelector('.topbar-menu-label').textContent).toBe('Theme');
     });
 
-    it('omits the name row when the user has no name yet', () => {
+    it('omits the user name when the user has no name yet', () => {
         const host = mount(<Topbar lang="en" theme="light" pageTitle="" user={{ email: 'ana@example.com' }} />);
-        expect(host.querySelector('.topbar-user-name-row')).toBeNull();
+        expect(host.querySelector('.topbar-user-profile-card')).not.toBeNull();
+        expect(host.querySelector('.topbar-user-btn .topbar-user-icon')).not.toBeNull();
+        expect(host.querySelector('.topbar-user-avatar-btn .topbar-user-icon')).not.toBeNull();
+        expect(host.querySelector('.topbar-user-name')).toBeNull();
     });
 
-    it('omits the name row when no user is provided', () => {
+    it('omits the profile card when no user is provided', () => {
         const host = mount(<Topbar lang="en" theme="light" pageTitle="" />);
-        expect(host.querySelector('.topbar-user-name-row')).toBeNull();
+        expect(host.querySelector('.topbar-user-profile-card')).toBeNull();
+    });
+
+    it('uploads a new avatar from the profile card', async () => {
+        const host = mount(
+            <Topbar
+                lang="en"
+                theme="light"
+                pageTitle=""
+                user={{ uuid: 'user-1', name: 'Ana Admin', email: 'ana@example.com' }}
+            />,
+        );
+        const file = new File(['avatar'], 'ana.png', { type: 'image/png' });
+        const upload = host.querySelector('.topbar-user-avatar-btn').click();
+        const input = document.querySelector('input[type="file"]');
+        Object.defineProperty(input, 'files', { value: [file], configurable: true });
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        await upload;
+        await vi.waitFor(() => expect(updateSystemModelRecord).toHaveBeenCalled());
+
+        expect(fetchSystemModelByName).toHaveBeenCalledWith('user.user');
+        expect(uploadAttachment).toHaveBeenCalledWith({
+            modelUuid: 'model-user-1',
+            recordUuid: 'user-1',
+            file,
+        });
+        expect(updateSystemModelRecord).toHaveBeenCalledWith({
+            model: 'user.user',
+            recordUuid: 'user-1',
+            values: { avatar_url: '/api/system/attachments/avatar-1/content' },
+        });
+        expect(authSignal.value.avatarUrl).toBe('/api/system/attachments/avatar-1/content');
+    });
+
+    it('removes the avatar from the profile card and returns to the default icon', async () => {
+        authSignal.value = {
+            uuid: 'user-1',
+            name: 'Ana Admin',
+            email: 'ana@example.com',
+            avatarUrl: '/avatar.jpg',
+            isAuthenticated: true,
+        };
+        const host = mount(
+            <Topbar
+                lang="en"
+                theme="light"
+                pageTitle=""
+                user={authSignal.value}
+            />,
+        );
+
+        host.querySelector('.topbar-user-avatar-remove').click();
+        await vi.waitFor(() => expect(updateSystemModelRecord).toHaveBeenCalled());
+
+        expect(updateSystemModelRecord).toHaveBeenCalledWith({
+            model: 'user.user',
+            recordUuid: 'user-1',
+            values: { avatar_url: null },
+        });
+        expect(authSignal.value.avatarUrl).toBeNull();
+        render(
+            <Topbar
+                lang="en"
+                theme="light"
+                pageTitle=""
+                user={authSignal.value}
+            />,
+            host,
+        );
+        expect(host.querySelector('.topbar-user-btn img')).toBeNull();
+        expect(host.querySelector('.topbar-user-btn .topbar-user-icon')).not.toBeNull();
+        expect(host.querySelector('.topbar-user-avatar-btn .topbar-user-icon')).not.toBeNull();
     });
 
     it('shows dynamic pending count badges only when counts are positive', () => {

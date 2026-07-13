@@ -1,5 +1,6 @@
 import { buildRecordUrl, rememberRecordBreadcrumb } from '../../utils/routing.js';
 import { localizedValue } from '../../utils/ux.js';
+import { AuthenticatedImage } from '../AuthenticatedImage.jsx';
 import { icon, faUser, faXmark } from '../icon.js';
 import { isFieldReadOnly } from './fieldHelpers.js';
 
@@ -21,7 +22,7 @@ function itemHref(item) {
 
 function Avatar({ src, name }) {
     return src
-        ? <img src={src} alt={name} class="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-[var(--dash-border)]" />
+        ? <AuthenticatedImage src={src} alt={name} class="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-[var(--dash-border)]" />
         : (
             <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--dash-surface-hover)] text-[var(--dash-text-muted)] ring-1 ring-[var(--dash-border)]">
                 <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: icon(faUser, 'h-3.5 w-3.5') }} />

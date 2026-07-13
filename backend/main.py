@@ -20,7 +20,7 @@ from app.core.exceptions import AppException
 
 from app.domains.system.graphql.mutations import SystemMutation
 from app.domains.system.graphql.queries import SystemQuery
-from app.domains.system.api import attachment_router
+from app.domains.system.api import attachment_router, note_router
 from app.domains.users.graphql.queries import UserQuery
 from app.domains.users.graphql.mutations import UserMutation
 from app.domains.users.service.user_log_service import UserLogService
@@ -183,6 +183,7 @@ def init_app():
 
     apps.include_router(graphql_app, prefix="/graphql")
     apps.include_router(attachment_router)
+    apps.include_router(note_router)
 
     return apps
 

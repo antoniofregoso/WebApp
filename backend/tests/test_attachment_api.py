@@ -29,7 +29,13 @@ class TestAttachmentUpload:
         avatar_content = b"\xff\xd8\xffavatar-image\xff\xd9"
 
         async def current_user_override():
-            return SimpleNamespace(id=3, company_id=5, active=True)
+            return SimpleNamespace(
+                id=3,
+                uuid=uuid.uuid4(),
+                name="Ana Admin",
+                company_id=5,
+                active=True,
+            )
 
         async def create_attachment(**values):
             assert values["user_id"] == 3
@@ -67,6 +73,7 @@ class TestAttachmentUpload:
         assert data["record_uuid"] == str(record_uuid)
         assert data["content_type"] == "image/jpeg"
         assert data["original_name"] == "avatar.jpg"
+        assert data["author_name"] == "Ana Admin"
         assert data["content_url"].endswith(f"/{attachment_uuid}/content")
 
     async def test_avatar_content_is_served_inline(

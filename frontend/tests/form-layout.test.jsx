@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { updateSystemModelRecord } from '../src/app/api/systemModel.js';
-import { getFormLayout } from '../src/app/views/formLayout.js';
+import { createEmptyRecord, getFormLayout } from '../src/app/views/formLayout.js';
 import { mountForm } from './helpers/mountView.jsx';
 
 vi.mock('../src/app/api/systemModel.js', () => ({
+    createSystemModelRecord: vi.fn(),
+    deleteSystemModelRecord: vi.fn(),
+    fetchSystemModelByName: vi.fn().mockResolvedValue(null),
     updateSystemModelRecord: vi.fn().mockResolvedValue(true),
 }));
 
@@ -29,6 +32,37 @@ afterEach(() => {
 });
 
 describe('schema-driven form layout', () => {
+    it('uses defaults declared by the schema for a new record', () => {
+        expect(createEmptyRecord([
+            { name: 'status', type: 'status_badge', default: 'Pending' },
+            { name: 'priority', type: 'selection', default: 'Low' },
+            { name: 'color', type: 'color', default: 'Zinc' },
+        ])).toMatchObject({ status: 'Pending', priority: 'Low', color: 'Zinc' });
+    });
+
+    it('persists selected followers through the record update', async () => {
+        const follower = { uuid: 'user-2', name: 'Ana', user_type: 'HUMAN' };
+        const followerData = {
+            model: {
+                ...data.model,
+                schema: [...schema, {
+                    name: 'followers', type: 'one2many_followers',
+                    label: { en: 'Followers' }, form: { footer: 'left' }, options: [follower],
+                }],
+            },
+            records: [{ ...data.records[0], followers: [] }],
+        };
+        const { cleanup } = mountForm(followerData, 'en');
+        document.querySelector('[data-form-edit]').click();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        document.querySelector('button[aria-label="Ana"]').click();
+
+        await vi.waitFor(() => expect(updateSystemModelRecord).toHaveBeenCalledWith({
+            model: 'sale.order', recordUuid: '1', values: { followers: [follower] },
+        }));
+        await vi.waitFor(() => expect(document.querySelector('[data-follower-status]').textContent).toBe('Saved'));
+        cleanup();
+    });
     it('places and orders fields in the four supported areas', () => {
         const layout = getFormLayout(schema);
         expect(layout.header.image.name).toBe('avatar');

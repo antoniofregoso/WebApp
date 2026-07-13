@@ -74,6 +74,16 @@ def _remove_none(value):
 @strawberry.type
 class SystemMutation:
     @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def create_system_model_record(
+        self,
+        model: str,
+        values: JSON,
+        info: strawberry.types.Info,
+    ) -> JSON:
+        user = await get_current_user(info)
+        return await SystemModelService.create_record(model, dict(values), user.id)
+
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
     async def delete_system_model_record(
         self,
         model: str,
@@ -116,9 +126,12 @@ class SystemMutation:
 
     @strawberry.mutation(permission_classes=[IsAuthenticated])
     async def create_system_message(
-        self, message: SystemMessageCreateInput
+        self, message: SystemMessageCreateInput, info: strawberry.types.Info
     ) -> SystemMessageType:
-        system_message = await SystemMessageService.create(input_to_dict(message))
+        user = await get_current_user(info)
+        values = input_to_dict(message)
+        values["from_user_uuid"] = user.uuid
+        system_message = await SystemMessageService.create(values)
         return system_message_to_type(system_message)
 
     @strawberry.mutation(permission_classes=[IsAuthenticated])

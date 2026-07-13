@@ -104,13 +104,52 @@ Fields are ordered in descending order across the width of the Kanban card.
 
 ## List
 
+The `list` object includes a field as a column in the list view.
+
+- `column`: integer that defines the column position. Columns are rendered from
+  the lowest value to the highest value.
+- `order`: enables sorting for the column.
+  - `true`: displays the sorting control without applying an initial order.
+  - `"asc"`: displays the sorting control and initially sorts the records in
+    ascending order.
+  - `"desc"`: displays the sorting control and initially sorts the records in
+    descending order.
+
+Only one field per schema should declare an initial `"asc"` or `"desc"` order.
+The user can click the sorting control to alternate between ascending and
+descending order.
+
+Sortable column without an initial order:
+
 ```json
 {
     "list": {
-            "column":7
-        },
+        "column": 7,
+        "order": true
+    }
 }
 ```
+
+Date column with the newest records first:
+
+```json
+{
+    "name": "date",
+    "type": "datetime",
+    "label": {
+        "es_MX": "Fecha",
+        "en_US": "Date"
+    },
+    "list": {
+        "column": 3,
+        "order": "desc"
+    }
+}
+```
+
+If `list` is omitted, or its value is `false`, the field is not displayed in
+the list view.
+
 ![List](./images/list.png)
 
 ![List Dark](./images/list_dark.png)

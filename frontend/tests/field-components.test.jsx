@@ -413,6 +413,23 @@ describe('many2many_pills field', () => {
         expect(options.length).toBe(1);
         expect(options[0].textContent).toContain('VIP');
     });
+
+    it('uses relation options and user-specific copy for message recipients', async () => {
+        const users = [
+            { uuid: 'u1', name: 'App Admin', email: 'admin@app.com' },
+            { uuid: 'u2', name: 'Laslo', email: 'laslo@example.com' },
+        ];
+        const host = mount(<FieldControl field={{
+            name: 'to_users', type: 'many2many_pills', model: 'user.user', options: users,
+        }} value={[]} context={{ tags: [] }} onChange={() => {}} />);
+        host.querySelector('.form-tag-picker-control').click();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        expect(host.querySelector('.form-tag-picker-search').placeholder).toBe('Search users…');
+        expect(host.querySelectorAll('.form-tag-picker-option')).toHaveLength(2);
+        expect(host.textContent).toContain('App Admin');
+        expect(host.textContent).toContain('Laslo');
+    });
 });
 
 describe('html field', () => {

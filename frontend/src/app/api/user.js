@@ -5,6 +5,7 @@ import { requestAuthenticated } from './session.js';
 const ME_QUERY = gql`
   query Me {
     me {
+      uuid
       name
       email
       avatarUrl

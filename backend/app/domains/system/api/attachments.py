@@ -29,7 +29,12 @@ async def upload_attachment(
         user_id=user.id,
         company_id=user.company_id,
     )
-    return SystemAttachmentResponse.from_attachment(attachment, model_uuid)
+    return SystemAttachmentResponse.from_attachment(
+        attachment,
+        model_uuid,
+        author_uuid=user.uuid,
+        author_name=user.name,
+    )
 
 
 @router.get(
@@ -41,14 +46,19 @@ async def list_attachments(
     record_uuid: uuid_lib.UUID,
     user: UserUser = Depends(get_current_user),
 ) -> list[SystemAttachmentResponse]:
-    attachments = await SystemAttachmentService.get_all_for_record(
+    rows = await SystemAttachmentService.get_all_for_record(
         model_uuid,
         record_uuid,
         user.company_id,
     )
     return [
-        SystemAttachmentResponse.from_attachment(attachment, model_uuid)
-        for attachment in attachments
+        SystemAttachmentResponse.from_attachment(
+            attachment,
+            model_uuid,
+            author_uuid=author_uuid,
+            author_name=author_name,
+        )
+        for attachment, author_uuid, author_name in rows
     ]
 
 

@@ -1,3 +1,4 @@
+import uuid
 from types import SimpleNamespace
 
 import pytest
@@ -8,6 +9,51 @@ from app.domains.system.models.system_model import (
 )
 from app.domains.system.repository.system_model_repository import SystemModelRepository
 from app.domains.system.service.system_model_service import SystemModelService
+from app.domains.system.service.system_model_service import _schema_with_user_options
+
+
+FOLLOWERS_FIELD = {
+    "name": "followers",
+    "type": "one2many_followers",
+    "label": {
+        "es_MX": "Seguidores",
+        "en_US": "Followers",
+        "es": "Seguidores",
+        "en": "Followers",
+    },
+    "form": {"footer": "left"},
+    "options": [],
+}
+
+
+def test_message_recipient_field_receives_user_options():
+    options = [{"uuid": "user-1", "name": "Ana"}]
+    schema = [{"name": "to_users", "type": "many2many_pills", "form": {"leftColumn": 1}}]
+
+    enriched = _schema_with_user_options(schema, options)
+
+    assert enriched[0]["model"] == "user.user"
+    assert enriched[0]["options"] == options
+
+
+@pytest.fixture(autouse=True)
+def no_followers(monkeypatch):
+    async def fake_get_followable_users():
+        return []
+
+    async def fake_get_followers_by_record(model_id, record_uuids):
+        return {}
+
+    monkeypatch.setattr(
+        SystemModelRepository,
+        "get_followable_users",
+        fake_get_followable_users,
+    )
+    monkeypatch.setattr(
+        SystemModelRepository,
+        "get_followers_by_record",
+        fake_get_followers_by_record,
+    )
 
 
 @pytest.mark.asyncio
@@ -33,7 +79,7 @@ async def test_system_model_view_places_group_values_under_group_by(monkeypatch)
         return system_model, schema
 
     async def fake_get_records(model, field_names, relation_names=None):
-        assert field_names == ["uuid", "name", "status"]
+        assert field_names == ["uuid", "name", "followers", "status"]
         assert relation_names == []
         return [record]
 
@@ -61,7 +107,7 @@ async def test_system_model_view_places_group_values_under_group_by(monkeypatch)
     assert result["model"]["groupBy"] == "status"
     assert result["model"]["status"] == system_model.group_by_values
     assert result["records"] == [
-        {"uuid": "record-uuid", "name": "SO001", "status": "draft"}
+        {"uuid": "record-uuid", "name": "SO001", "followers": [], "status": "draft"}
     ]
 
 
@@ -85,7 +131,7 @@ async def test_system_model_view_preserves_schema_payload(monkeypatch):
         return system_model, schema
 
     async def fake_get_records(model, field_names, relation_names=None):
-        assert field_names == ["uuid", "name"]
+        assert field_names == ["uuid", "name", "followers"]
         assert relation_names == []
         return [record]
 
@@ -102,8 +148,48 @@ async def test_system_model_view_preserves_schema_payload(monkeypatch):
         "default",
     )
 
-    assert result["model"]["schema"] == schema_payload
-    assert result["records"] == [{"uuid": "user-uuid", "name": "App Admin"}]
+    assert result["model"]["schema"] == [*schema_payload, FOLLOWERS_FIELD]
+    assert result["records"] == [
+        {"uuid": "user-uuid", "name": "App Admin", "followers": []}
+    ]
+
+
+@pytest.mark.asyncio
+async def test_system_model_view_includes_model_uuid_for_attachments(monkeypatch):
+    model_uuid = uuid.uuid4()
+    system_model = SimpleNamespace(
+        id=7,
+        uuid=model_uuid,
+        name="user.user",
+        label={"en": "Users", "es": "Usuarios"},
+        group_by=None,
+        group_by_values=[],
+        tags=[],
+    )
+    schema = SimpleNamespace(view=[{"name": "uuid", "type": "string"}])
+    record = SimpleNamespace(uuid="user-uuid")
+
+    async def fake_get_view_definition(model, use, name):
+        return system_model, schema
+
+    async def fake_get_records(model, field_names, relation_names=None):
+        assert field_names == ["uuid", "followers"]
+        return [record]
+
+    monkeypatch.setattr(
+        SystemModelRepository,
+        "get_view_definition",
+        fake_get_view_definition,
+    )
+    monkeypatch.setattr(SystemModelRepository, "get_records", fake_get_records)
+
+    result = await SystemModelService.get_view(
+        "user.user",
+        SystemModelSchemaUse.view,
+        "default",
+    )
+
+    assert result["model"]["uuid"] == str(model_uuid)
 
 
 @pytest.mark.asyncio
@@ -131,7 +217,7 @@ async def test_system_model_view_ignores_pydantic_schema_method(monkeypatch):
         return system_model, schema
 
     async def fake_get_records(model, field_names, relation_names=None):
-        assert field_names == ["uuid", "name"]
+        assert field_names == ["uuid", "name", "followers"]
         assert relation_names == []
         return [record]
 
@@ -148,8 +234,10 @@ async def test_system_model_view_ignores_pydantic_schema_method(monkeypatch):
         "default",
     )
 
-    assert result["model"]["schema"] == schema_payload
-    assert result["records"] == [{"uuid": "model-uuid", "name": "system.model"}]
+    assert result["model"]["schema"] == [*schema_payload, FOLLOWERS_FIELD]
+    assert result["records"] == [
+        {"uuid": "model-uuid", "name": "system.model", "followers": []}
+    ]
 
 
 @pytest.mark.asyncio
@@ -180,7 +268,7 @@ async def test_system_model_view_serializes_related_schemas_as_schema(monkeypatc
         return system_model, schema
 
     async def fake_get_records(model, field_names, relation_names=None):
-        assert field_names == ["uuid", "schemas"]
+        assert field_names == ["uuid", "schemas", "followers"]
         assert relation_names == []
         return [record]
 
@@ -229,7 +317,7 @@ async def test_system_model_view_serializes_many2one_with_translated_name(monkey
         return system_model, schema
 
     async def fake_get_records(model, field_names, relation_names=None):
-        assert field_names == ["uuid", "company_id"]
+        assert field_names == ["uuid", "company_id", "followers"]
         assert relation_names == ["company"]
         return [record]
 
@@ -249,10 +337,12 @@ async def test_system_model_view_serializes_many2one_with_translated_name(monkey
     assert result["records"] == [
         {
             "uuid": "user-uuid",
-            "company_id": {
-                "uuid": "company-uuid",
-                "name": "Mi Empresa",
-                "model": None,
-            },
-        }
-    ]
+                "company_id": {
+                    "uuid": "company-uuid",
+                    "name": "Mi Empresa",
+                    "display_name": "Mi Empresa",
+                    "model": None,
+                },
+                "followers": [],
+            }
+        ]

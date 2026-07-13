@@ -93,3 +93,36 @@ export async function requestAuthenticated(
         return client.request(query, variables);
     }
 }
+
+export async function requestAuthenticatedFetch(
+    url,
+    options = {},
+    fetchImpl = globalThis.fetch,
+) {
+    await ensureFreshAccessToken(fetchImpl);
+    const token = getAccessToken();
+    const headers = new Headers(options.headers ?? {});
+    if (token && !headers.has('Authorization')) {
+        headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    let response = await fetchImpl(url, {
+        ...options,
+        headers,
+        credentials: options.credentials ?? 'include',
+    });
+    if (response.status !== 401) return response;
+
+    await refreshAuthSession(fetchImpl);
+    const refreshedToken = getAccessToken();
+    const retryHeaders = new Headers(options.headers ?? {});
+    if (refreshedToken && !retryHeaders.has('Authorization')) {
+        retryHeaders.set('Authorization', `Bearer ${refreshedToken}`);
+    }
+    response = await fetchImpl(url, {
+        ...options,
+        headers: retryHeaders,
+        credentials: options.credentials ?? 'include',
+    });
+    return response;
+}

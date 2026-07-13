@@ -16,6 +16,10 @@ export default defineConfig({
       '/graphql': {
         target: 'http://localhost:8000', // La URL de tu FastAPI en desarrollo
         changeOrigin: true,
+      },
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
       }
     }
   },

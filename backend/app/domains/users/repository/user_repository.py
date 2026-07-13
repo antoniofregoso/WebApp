@@ -31,6 +31,11 @@ class UserRepository:
             return result.scalar_one_or_none()
 
     @staticmethod
+    async def get_by_id(user_id: int):
+        async with db.session() as session:
+            return await session.get(UserUser, user_id)
+
+    @staticmethod
     async def update(user_uuid: uuid_lib.UUID, user_data: dict):
         async with db.session() as session:
             query = select(UserUser).where(UserUser.uuid == user_uuid)

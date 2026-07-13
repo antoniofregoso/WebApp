@@ -7,6 +7,7 @@ import {
     getAccessToken,
     isAuthenticated,
     setAuthSession,
+    setCurrentUser,
 } from '../src/app/store/authStore.js';
 
 afterEach(() => {
@@ -51,5 +52,23 @@ describe('authenticated navigation', () => {
         expect(isAuthenticated.value).toBe(false);
         expect(getAccessToken()).toBeNull();
         expect(router.goTo).toHaveBeenCalledWith('login');
+    });
+
+    it('refreshes the dashboard topbar when the current user avatar changes', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network disabled in tests')));
+        setAuthSession({ email: 'user@example.com', token: 'access-token' });
+        setCurrentUser({ uuid: 'user-1', name: 'Ana Admin', email: 'ana@example.com' });
+        document.body.innerHTML = '<div id="app"></div>';
+        window.history.replaceState({}, '', '/dashboard');
+
+        dashboard({ params: {}, pathname: '/dashboard' }, { goTo: vi.fn(), trigger404: vi.fn() });
+
+        expect(document.querySelector('.topbar-user-btn img')).toBeNull();
+
+        setCurrentUser({ avatarUrl: '/avatar-new.jpg' });
+
+        await vi.waitFor(() => {
+            expect(document.querySelector('.topbar-user-btn img')?.getAttribute('src')).toBe('/avatar-new.jpg');
+        });
     });
 });

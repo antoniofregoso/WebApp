@@ -57,7 +57,9 @@ export function getFormLayout(schema = []) {
 
 export function createEmptyRecord(schema = []) {
     return schema.reduce((record, field) => {
-        record[field.name] = field.type === 'boolean' ? false : field.type.startsWith('many2many') ? [] : '';
+        record[field.name] = Object.hasOwn(field, 'default')
+            ? field.default
+            : field.type === 'boolean' ? false : field.type.startsWith('many2many') ? [] : '';
         return record;
     }, { uuid: '', name: '' });
 }

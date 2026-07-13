@@ -36,7 +36,7 @@ function TagChip({ tag, lang, onRemove }) {
 }
 
 export function Many2manyPillsField({ field, value, onChange, lang = 'en', readOnly = false, context = {} }) {
-    const catalog = context.tags ?? [];
+    const catalog = field?.options ?? context.tags ?? [];
     const selectedTags = useMemo(() => resolveTags(value, catalog), [value, catalog]);
     const availableTags = useMemo(() => mergeTagOptions(catalog, selectedTags), [catalog, selectedTags]);
 
@@ -105,9 +105,16 @@ export function Many2manyPillsField({ field, value, onChange, lang = 'en', readO
         }
     };
 
-    const searchLabel = lang === 'es' ? 'Buscar etiquetas…' : 'Search tags…';
-    const emptyLabel = lang === 'es' ? 'No hay etiquetas que coincidan' : 'No matching tags';
-    const availableLabel = lang === 'es' ? 'Etiquetas disponibles' : 'Available tags';
+    const isUserRelation = field?.model === 'user.user' || field?.name === 'to_users';
+    const searchLabel = isUserRelation
+        ? (lang === 'es' ? 'Buscar usuarios…' : 'Search users…')
+        : (lang === 'es' ? 'Buscar etiquetas…' : 'Search tags…');
+    const emptyLabel = isUserRelation
+        ? (lang === 'es' ? 'No hay usuarios que coincidan' : 'No matching users')
+        : (lang === 'es' ? 'No hay etiquetas que coincidan' : 'No matching tags');
+    const availableLabel = isUserRelation
+        ? (lang === 'es' ? 'Usuarios disponibles' : 'Available users')
+        : (lang === 'es' ? 'Etiquetas disponibles' : 'Available tags');
     const countLabel = lang === 'es'
         ? `${selectedTags.length} de ${availableTags.length} seleccionadas`
         : `${selectedTags.length} of ${availableTags.length} selected`;

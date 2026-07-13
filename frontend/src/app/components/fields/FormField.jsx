@@ -10,7 +10,7 @@ import { fieldLabel, localizedConfig } from './fieldHelpers.js';
  * control; List and Kanban cells render the same field through `FieldControl` directly and
  * must keep their own type-based rendering.
  */
-export function FormField({ field, value, onChange, lang = 'en', readOnly = false, context = {}, class: className = '', hideLabel = false }) {
+export function FormField({ field, value, onChange, lang = 'en', readOnly = false, context = {}, class: className = '', hideLabel = false, error = '' }) {
     const help = localizedConfig(field, 'help', lang);
     const required = field?.form?.required === true;
     let control;
@@ -45,6 +45,7 @@ export function FormField({ field, value, onChange, lang = 'en', readOnly = fals
                 </div>
             )}
             <div class="form-field-control">{control}</div>
+            {error && <span role="alert" data-field-error={field.name} class="mt-1 block text-xs text-[var(--dash-danger)]">{error}</span>}
         </div>
     );
 }

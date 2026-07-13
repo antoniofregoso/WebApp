@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 
 import { updateSystemModelRecord } from '../api/systemModel.js';
+import { AuthenticatedImage } from '../components/AuthenticatedImage.jsx';
 import { FieldControl } from '../components/fields/index.js';
 import { faGripVertical, faPalette, faUser } from '../components/icon.js';
 import { COLOR_CLASS, COLOR_FALLBACK, buildRecordUrl, localizedValue } from '../utils/index.js';
@@ -85,7 +86,7 @@ function ColorPicker({ field, value, lang, onChange, onOpenChange }) {
 
 function Avatar({ src, name }) {
     return src
-        ? <img src={src} alt={name} class="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-[var(--dash-border)]" />
+        ? <AuthenticatedImage src={src} alt={name} class="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-[var(--dash-border)]" />
         : <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--dash-surface-hover)] text-[var(--dash-text-muted)] ring-1 ring-[var(--dash-border)]"><Icon definition={faUser} class="h-3.5 w-3.5" /></span>;
 }
 

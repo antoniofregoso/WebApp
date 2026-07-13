@@ -92,6 +92,25 @@ export const dashboardActions = {
             : record);
     },
 
+    addModelRecord(record) {
+        const model = appSignal.value.model;
+        if (!model?.records || !record) return;
+        model.records = [record, ...model.records];
+        if (model.model?.name === 'user.user' && record.active !== false && record.user_type !== 'SYSTEM') {
+            const followerField = model.model.schema?.find((field) => field.type === 'one2many_followers');
+            if (followerField && !followerField.options?.some((user) => String(user.uuid) === String(record.uuid))) {
+                followerField.options = [...(followerField.options ?? []), record];
+            }
+        }
+        appSignal.value = {
+            ...appSignal.value,
+            dashboard: {
+                ...appSignal.value.dashboard,
+                total: model.records.length,
+            },
+        };
+    },
+
     removeModelRecords(recordUuids) {
         const model = appSignal.value.model;
         if (!model?.records) return;

@@ -1,6 +1,6 @@
 import uuid as uuid_lib
 
-from sqlalchemy import inspect, select
+from sqlalchemy import delete, inspect, select
 from sqlalchemy.orm import selectinload
 
 from app.core.database.session import db
@@ -200,6 +200,32 @@ class SystemModelRepository:
             return record
 
     @staticmethod
+    async def create_record(model_name: str, values: dict):
+        model_class = MODEL_CLASS_BY_NAME.get(model_name)
+        if model_class is None:
+            return None
+        async with db.session() as session:
+            mapper = inspect(model_class)
+            prepared = dict(values)
+            classes_by_table = {candidate.__tablename__: candidate for candidate in MODEL_CLASS_BY_NAME.values()}
+            for name, value in list(prepared.items()):
+                column = mapper.columns.get(name)
+                if column is None or not column.foreign_keys or not isinstance(value, dict):
+                    continue
+                related_uuid = value.get("uuid")
+                target_class = classes_by_table.get(next(iter(column.foreign_keys)).column.table.name)
+                if not related_uuid or target_class is None:
+                    prepared[name] = None
+                    continue
+                related = await session.scalar(select(target_class).where(target_class.uuid == related_uuid))
+                prepared[name] = related.id if related else None
+            record = model_class(**prepared)
+            session.add(record)
+            await session.commit()
+            await session.refresh(record)
+            return record
+
+    @staticmethod
     async def get_record_by_uuid(model_name: str, record_uuid: uuid_lib.UUID):
         model_class = MODEL_CLASS_BY_NAME.get(model_name)
         if model_class is None:
@@ -260,6 +286,35 @@ class SystemModelRepository:
                     continue
                 followers.setdefault(str(follower.record_uuid), []).append(follower.user)
             return followers
+
+    @staticmethod
+    async def set_followers_for_record(
+        model_id: int,
+        record_uuid: uuid_lib.UUID,
+        user_uuids: list[uuid_lib.UUID],
+        current_user_id: int | None = None,
+    ) -> list[UserUser]:
+        async with db.session() as session:
+            users = list((await session.execute(
+                select(UserUser)
+                .where(UserUser.uuid.in_(user_uuids))
+                .where(UserUser.active.is_(True))
+                .where(UserUser.user_type != UserType.SYSTEM)
+                .order_by(UserUser.name)
+            )).scalars().all()) if user_uuids else []
+            await session.execute(delete(SystemModelFollowers).where(
+                SystemModelFollowers.model_id == model_id,
+                SystemModelFollowers.record_uuid == record_uuid,
+            ))
+            for user in users:
+                session.add(SystemModelFollowers(
+                    model_id=model_id,
+                    record_uuid=record_uuid,
+                    user_id=user.id,
+                    create_by=current_user_id,
+                ))
+            await session.commit()
+            return users
 
     @staticmethod
     async def update(model_uuid: uuid_lib.UUID, model_data: dict):

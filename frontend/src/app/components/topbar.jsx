@@ -17,13 +17,16 @@ import {
     faRectangleList,
     faCalendarDays,
 } from './icon.js';
+import { uploadAttachment } from '../api/attachments.js';
 import { contextActions, dashboardActions } from '../store/actions/index.js';
 import { stopActivityHeartbeat } from '../api/activity.js';
 import { logout } from '../api/auth.js';
 import { stopPendingCountsPolling } from '../api/pendingCounts.js';
-import { clearAuthSession } from '../store/authStore.js';
+import { fetchSystemModelByName, updateSystemModelRecord } from '../api/systemModel.js';
+import { clearAuthSession, setCurrentUser } from '../store/authStore.js';
 import { t } from '../../i18n/translations.js';
 import { normalizePagination } from '../utils';
+import { AuthenticatedImage } from './AuthenticatedImage.jsx';
 
 const THEMES = [
     { key: 'light', icon: faSun, labelEn: 'Light', labelEs: 'Claro' },
@@ -38,9 +41,41 @@ const VIEW_BUTTONS = [
     { key: 'calendar', icon: faCalendarDays },
 ];
 
+let userModelUuidPromise = null;
+
 function normalizeBadgeCount(value) {
     const count = Math.max(0, Number(value) || 0);
     return count > 99 ? '99+' : String(count);
+}
+
+function selectAvatarFile() {
+    return new Promise((resolve) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.className = 'hidden';
+        input.addEventListener('change', () => {
+            const file = input.files?.[0] ?? null;
+            input.remove();
+            resolve(file);
+        }, { once: true });
+        document.body.appendChild(input);
+        input.click();
+    });
+}
+
+async function getUserModelUuid() {
+    if (!userModelUuidPromise) {
+        userModelUuidPromise = fetchSystemModelByName('user.user').then((model) => model.uuid);
+    }
+    return userModelUuidPromise;
+}
+
+function UserAvatar({ user, class: className = '' }) {
+    if (user?.avatarUrl) {
+        return <AuthenticatedImage src={user.avatarUrl} alt={user?.name ?? ''} class={className} />;
+    }
+    return <span class={`topbar-user-avatar-fallback ${className}`} aria-hidden="true" dangerouslySetInnerHTML={{ __html: icon(faCircleUser, 'topbar-user-icon') }} />;
 }
 
 /**
@@ -55,6 +90,7 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
     const { page, totalPages } = normalizePagination(pagination);
     const pageStatus = lang === 'es' ? `Página ${page} de ${totalPages}` : `Page ${page} of ${totalPages}`;
     const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [avatarUploading, setAvatarUploading] = useState(false);
     const userMenuWrapRef = useRef(null);
     const messageCount = Math.max(0, Number(pendingCounts.messages) || 0);
     const notificationCount = Math.max(0, Number(pendingCounts.notifications) || 0);
@@ -92,6 +128,48 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
         clearAuthSession();
         setUserMenuOpen(false);
         router?.goTo('login');
+    };
+
+    const handleAvatarUpload = async () => {
+        if (!user?.uuid || avatarUploading) return;
+        const file = await selectAvatarFile();
+        if (!file) return;
+        setAvatarUploading(true);
+        try {
+            const modelUuid = await getUserModelUuid();
+            const attachment = await uploadAttachment({ modelUuid, recordUuid: user.uuid, file });
+            await updateSystemModelRecord({
+                model: 'user.user',
+                recordUuid: user.uuid,
+                values: { avatar_url: attachment.content_url },
+            });
+            setCurrentUser({ avatarUrl: attachment.content_url });
+        } catch (error) {
+            const message = error?.message ? `\n${error.message}` : '';
+            window.alert(`${lang === 'es' ? 'No se pudo cambiar el avatar.' : 'Unable to change avatar.'}${message}`);
+            console.error('Unable to update user avatar.', error);
+        } finally {
+            setAvatarUploading(false);
+        }
+    };
+
+    const handleAvatarRemove = async () => {
+        if (!user?.uuid || !user?.avatarUrl || avatarUploading) return;
+        setAvatarUploading(true);
+        try {
+            await updateSystemModelRecord({
+                model: 'user.user',
+                recordUuid: user.uuid,
+                values: { avatar_url: null },
+            });
+            setCurrentUser({ avatarUrl: null });
+        } catch (error) {
+            const message = error?.message ? `\n${error.message}` : '';
+            window.alert(`${lang === 'es' ? 'No se pudo quitar el avatar.' : 'Unable to remove avatar.'}${message}`);
+            console.error('Unable to remove user avatar.', error);
+        } finally {
+            setAvatarUploading(false);
+        }
     };
 
     return (
@@ -144,13 +222,35 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
                                 event.stopPropagation();
                                 setUserMenuOpen((open) => !open);
                             }}
-                            dangerouslySetInnerHTML={{ __html: icon(faCircleUser, 'topbar-user-icon') }}
-                        />
+                        >
+                            <UserAvatar user={user} class="topbar-user-btn-avatar" />
+                        </button>
 
                         <div class={`topbar-user-menu ${userMenuOpen ? 'topbar-user-menu--open' : ''}`} id="topbar-user-menu" role="menu" aria-labelledby="topbar-user">
-                            {user?.name && (
-                                <div class="topbar-user-name-row">
-                                    <span class="topbar-user-name">{user.name}</span>
+                            {user && (
+                                <div class="topbar-user-profile-card">
+                                    <button
+                                        type="button"
+                                        class="topbar-user-avatar-btn"
+                                        aria-label={lang === 'es' ? 'Cambiar avatar' : 'Change avatar'}
+                                        onClick={handleAvatarUpload}
+                                        disabled={!user?.uuid || avatarUploading}
+                                    >
+                                        <UserAvatar user={user} class="topbar-user-menu-avatar" />
+                                        {avatarUploading && <span class="topbar-user-avatar-loading">{lang === 'es' ? 'Subiendo...' : 'Uploading...'}</span>}
+                                    </button>
+                                    {user?.avatarUrl && (
+                                        <button
+                                            type="button"
+                                            class="topbar-user-avatar-remove"
+                                            onClick={handleAvatarRemove}
+                                            disabled={!user?.uuid || avatarUploading}
+                                        >
+                                            {lang === 'es' ? 'Quitar foto' : 'Remove photo'}
+                                        </button>
+                                    )}
+                                    {user?.name && <span class="topbar-user-name">{user.name}</span>}
+                                    {user?.email && <span class="topbar-user-email">{user.email}</span>}
                                 </div>
                             )}
 
