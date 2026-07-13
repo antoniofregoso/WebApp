@@ -8,6 +8,7 @@
         "type": "HUMAN",
         "email": "admin@app.com",
         "password":"changeMe123",
-        "lang":"es_MX"
+        "lang":"es_MX",
+        "is_admin": true
     }
 ]

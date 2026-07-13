@@ -50,6 +50,16 @@ def test_generate_refresh_token_uses_configured_days():
     assert expected_seconds - 5 <= seconds_until_expiration(payload) <= expected_seconds
 
 
+def test_generate_mcp_token_uses_configured_days():
+    token = JWTManager.generate_mcp_token({"sub": "admin@app.com"})
+    payload = decode_without_exp_validation(token)
+
+    assert payload["sub"] == "admin@app.com"
+    assert payload["token_type"] == "mcp"
+    expected_seconds = settings.MCP_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+    assert expected_seconds - 5 <= seconds_until_expiration(payload) <= expected_seconds
+
+
 def test_verify_token_rejects_unexpected_token_type():
     token = JWTManager.generate_refresh_token({"sub": "admin@app.com"})
 

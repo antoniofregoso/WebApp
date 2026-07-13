@@ -56,6 +56,13 @@ class JWTManager:
         )
 
     @staticmethod
+    def generate_mcp_token(data: dict) -> str:
+        """Genera un token de larga duración para clientes MCP (solo lectura)."""
+        return JWTManager.generate_token(
+            data, timedelta(days=settings.MCP_TOKEN_EXPIRE_DAYS), "mcp"
+        )
+
+    @staticmethod
     def verify_token(token: str, expected_token_type: str | None = None) -> dict:
         """Verifica y decodifica un token JWT. Lanza ValueError si es inválido."""
         try:

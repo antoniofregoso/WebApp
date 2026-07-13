@@ -58,6 +58,8 @@ class UserUser(SystemAudit, SQLModel, table=True):
     )
     user_type: UserType = Field(default=UserType.HUMAN)
     active: bool = Field(default=True)
+    is_admin: bool = Field(default=False)
+    mcp_access: bool = Field(default=False)
     company_id: Optional[int] = Field(
         default=None, foreign_key="system_companies.id", nullable=True
     )

@@ -23,3 +23,5 @@ The available queries are [here](./GRAPHQL_QUERIES.md).
 [AI-powered declarative search design](./AI_SEARCH_DESIGN.md).
 
 [Notifications (in-app + browser push)](./NOTIFICATIONS.md).
+
+[MCP server (read-only reports for directors)](./MCP.md).

@@ -18,6 +18,7 @@ class UserType:
     theme: str
     lang: Optional[str]
     active: bool
+    is_admin: bool
 
 
 @strawberry.type

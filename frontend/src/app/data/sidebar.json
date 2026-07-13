@@ -14,12 +14,13 @@
         "url": "#",
         "hidden": true
     },
-    { 
-        "key": "configuration", 
-        "icon": "faGear", 
-        "labelEn": "Configuration", 
-        "labelEs": "Configuración", 
+    {
+        "key": "configuration",
+        "icon": "faGear",
+        "labelEn": "Configuration",
+        "labelEs": "Configuración",
         "url": "#",
+        "adminOnly": true,
         "items": [
             {
                 "key": "users",

@@ -35,6 +35,8 @@ async def test_create_user_record_hashes_password_and_returns_safe_record(monkey
             lang_id=None,
             user_type="HUMAN",
             active=True,
+            is_admin=False,
+            mcp_access=False,
             company_id=None,
             created_at=None,
             create_by=3,

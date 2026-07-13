@@ -3307,6 +3307,50 @@
                         "en_US": "Whether the user is active"
                     }
                 }
+            },
+            {
+                "name": "is_admin",
+                "type": "boolean",
+                "label": {
+                    "es_MX": "Administrador",
+                    "en_US": "Admin"
+                },
+                "list": {
+                    "column": 6
+                },
+                "form": {
+                    "leftColumn": 3,
+                    "placeholder": {
+                        "es_MX": "Administrador",
+                        "en_US": "Admin"
+                    },
+                    "help": {
+                        "es_MX": "Los administradores pueden gestionar el acceso de otros usuarios",
+                        "en_US": "Admins can manage other users' access"
+                    }
+                }
+            },
+            {
+                "name": "mcp_access",
+                "type": "boolean",
+                "label": {
+                    "es_MX": "Acceso MCP",
+                    "en_US": "MCP access"
+                },
+                "list": {
+                    "column": 7
+                },
+                "form": {
+                    "rightColumn": 3,
+                    "placeholder": {
+                        "es_MX": "Acceso MCP",
+                        "en_US": "MCP access"
+                    },
+                    "help": {
+                        "es_MX": "Permite generar un token para conectar clientes MCP de solo lectura",
+                        "en_US": "Allows generating a token to connect read-only MCP clients"
+                    }
+                }
             }
         ],
         "model": "user.user"

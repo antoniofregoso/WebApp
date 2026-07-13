@@ -5,7 +5,12 @@ from uuid import UUID
 
 from sqlalchemy import inspect
 
-from app.core.exceptions import DuplicateEntryException, ResourceNotFoundException, ValidationException
+from app.core.exceptions import (
+    AuthorizationException,
+    DuplicateEntryException,
+    ResourceNotFoundException,
+    ValidationException,
+)
 from app.domains.users.repository.user_repository import UserRepository
 from app.domains.users.service.auth_service import AuthService
 from app.domains.system.service.system_message_service import SystemMessageService
@@ -290,6 +295,24 @@ def _belongs_to_user(model: str, record, current_user_id: int) -> bool:
     return True
 
 
+# Fields on user.user that grant privileges or bypass normal signup checks —
+# only an admin may set them through the generic model create/update endpoints.
+USER_ADMIN_ONLY_FIELDS = {"is_admin", "mcp_access", "active", "email"}
+
+
+async def _require_admin_for_user_fields(
+    values: dict, current_user_id: int | None, restricted_fields: set[str]
+) -> None:
+    touched = restricted_fields & set(values)
+    if not touched:
+        return
+    caller = await UserRepository.get_by_id(current_user_id) if current_user_id is not None else None
+    if not caller or not caller.is_admin:
+        raise AuthorizationException(
+            f"Only an admin can set: {', '.join(sorted(touched))}"
+        )
+
+
 def _serialize_record(
     record,
     field_names: list[str],
@@ -370,6 +393,9 @@ class SystemModelService:
             raise ValidationException(f"Fields cannot be created: {', '.join(sorted(invalid))}")
         prepared = {key: value for key, value in values.items() if value not in (None, "", [])}
         if model == "user.user":
+            await _require_admin_for_user_fields(
+                prepared, current_user_id, {"is_admin", "mcp_access"}
+            )
             name = str(prepared.get("name", "")).strip()
             email = AuthService.normalize_email(str(prepared.get("email", "")))
             password = str(prepared.get("password", ""))
@@ -435,6 +461,14 @@ class SystemModelService:
         invalid = set(values) - columns
         if invalid:
             raise ValidationException(f"Fields cannot be updated: {', '.join(sorted(invalid))}")
+        if model == "user.user":
+            if "password" in values:
+                raise ValidationException(
+                    "Password cannot be changed through this endpoint"
+                )
+            await _require_admin_for_user_fields(
+                values, current_user_id, USER_ADMIN_ONLY_FIELDS
+            )
         values = _coerce_temporal_strings(model_class, values)
         existing = await SystemModelRepository.get_record_by_uuid(model, record_uuid)
         if existing is None or (

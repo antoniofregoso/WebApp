@@ -46,7 +46,7 @@ function SubmenuCard({ item, lang, isOpen, cardRef, onLinkClick }) {
  * Preact attaches and tears them down automatically on every re-render and
  * on unmount — no manual init/cleanup calls are needed from the page.
  */
-export function Sidebar({ lang, expanded, activeArea }) {
+export function Sidebar({ lang, expanded, activeArea, isAdmin }) {
     const [openKey, setOpenKey] = useState(null);
     const triggerRefs = useRef(new Map());
     const cardRefs = useRef(new Map());
@@ -160,7 +160,7 @@ export function Sidebar({ lang, expanded, activeArea }) {
 
             <nav class="sidebar-nav" aria-label="Main navigation">
                 <ul class="sidebar-menu" role="list">
-                    {MENU_ITEMS.filter((item) => !item.hidden).map((item) => {
+                    {MENU_ITEMS.filter((item) => !item.hidden && (!item.adminOnly || isAdmin)).map((item) => {
                         const label = getLabel(item, lang);
                         const isActive = item.key === activeArea;
                         const hasSubmenu = Boolean(item.items?.length);

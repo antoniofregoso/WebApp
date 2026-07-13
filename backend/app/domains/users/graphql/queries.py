@@ -37,6 +37,7 @@ class UserQuery:
             theme=user.theme.value,
             lang=user.lang.name if user.lang else None,
             active=user.active,
+            is_admin=user.is_admin,
         )
 
     @strawberry.field(permission_classes=[IsAuthenticated])

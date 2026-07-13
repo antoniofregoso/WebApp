@@ -5,7 +5,9 @@ from app.core.security.session_cookies import (
     require_refresh_cookie,
     set_refresh_cookies,
 )
+from app.core.exceptions import AuthorizationException
 from app.core.security.jwt_bearer import IsAuthenticated
+from app.core.security.jwt_manager import JWTManager
 from app.domains.users.graphql.mappers import user_log_to_type
 from app.domains.users.graphql.queries import get_current_user
 from app.domains.users.graphql.types import (
@@ -70,6 +72,14 @@ class UserMutation:
         user = await get_current_user(info)
         log = await UserLogService.heartbeat(user.id)
         return user_log_to_type(log)
+
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def generate_mcp_token(self, info: strawberry.types.Info) -> str:
+        """Genera un token de larga duración para conectar clientes MCP de solo lectura."""
+        user = await get_current_user(info)
+        if not user.mcp_access:
+            raise AuthorizationException("MCP access is not enabled for this user")
+        return JWTManager.generate_mcp_token({"sub": user.email})
 
     @strawberry.mutation
     async def register(self, register: RegisterInput) -> str:

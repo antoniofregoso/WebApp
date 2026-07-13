@@ -1,5 +1,6 @@
 import uvicorn
 import asyncio
+from contextlib import AsyncExitStack
 from contextlib import asynccontextmanager
 from contextlib import suppress
 from datetime import datetime, timezone
@@ -27,6 +28,7 @@ from app.domains.users.service.user_log_service import UserLogService
 from app.domains.system.service.system_task_reminder_service import (
     SystemTaskReminderService,
 )
+from app.mcp.server import mcp, mcp_app
 
 from strawberry.fastapi import GraphQLRouter
 from app.core.logging import configure_logging, get_logger
@@ -88,17 +90,22 @@ def init_app():
         logger.info("Iniciando aplicación...")
         stale_logs_task = asyncio.create_task(close_stale_user_logs_periodically())
         task_reminders_task = asyncio.create_task(sweep_task_reminders_periodically())
-        try:
-            yield
-        finally:
-            stale_logs_task.cancel()
-            task_reminders_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await stale_logs_task
-            with suppress(asyncio.CancelledError):
-                await task_reminders_task
-            logger.info("Cerrando conexión a base de datos...")
-            await db.close()
+        async with AsyncExitStack() as stack:
+            # El servidor MCP (montado en /mcp) trae su propio lifespan
+            # (session manager de Streamable HTTP) que hay que iniciar aquí,
+            # de lo contrario las tool calls fallan al no haber un task group activo.
+            await stack.enter_async_context(mcp.session_manager.run())
+            try:
+                yield
+            finally:
+                stale_logs_task.cancel()
+                task_reminders_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await stale_logs_task
+                with suppress(asyncio.CancelledError):
+                    await task_reminders_task
+                logger.info("Cerrando conexión a base de datos...")
+                await db.close()
 
     apps = FastAPI(
         title=settings.APP_NAME,
@@ -201,6 +208,10 @@ def init_app():
     apps.include_router(graphql_app, prefix="/graphql")
     apps.include_router(attachment_router)
     apps.include_router(note_router)
+    # Mounted at root (not "/mcp") because FastMCP's own streamable_http_path
+    # already defaults to "/mcp" internally; mounting this at "/mcp" too would
+    # nest it under "/mcp/mcp" and break the documented /mcp endpoint.
+    apps.mount("/", mcp_app)
 
     return apps
 

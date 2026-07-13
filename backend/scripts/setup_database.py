@@ -269,6 +269,8 @@ async def _load_remaining_users(
                 password=_hash_password(record.get("password")),
                 user_type=UserType(record.get("type") or UserType.HUMAN.value),
                 active=_bool_or_default(record.get("active"), True),
+                is_admin=_bool_or_default(record.get("is_admin")),
+                mcp_access=_bool_or_default(record.get("mcp_access")),
                 lang_id=lang.id if lang else None,
                 company_id=company.id if company else None,
             )

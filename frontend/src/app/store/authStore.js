@@ -8,6 +8,7 @@ export const authSignal = signal({
     email: null,
     name: null,
     avatarUrl: null,
+    isAdmin: false,
     isAuthenticated: false,
 });
 
@@ -27,7 +28,7 @@ export function setAuthSession({ email, token, accessToken: nextAccessToken }) {
 
 /** Merges the authenticated user's profile (from the `me` query) into the session. */
 export function setCurrentUser(profile = {}) {
-    const { uuid, name, email, avatarUrl } = profile;
+    const { uuid, name, email, avatarUrl, isAdmin } = profile;
     const nextAvatarUrl = Object.hasOwn(profile, 'avatarUrl')
         ? avatarUrl
         : authSignal.value.avatarUrl;
@@ -37,6 +38,7 @@ export function setCurrentUser(profile = {}) {
         name: name ?? authSignal.value.name,
         email: email ?? authSignal.value.email,
         avatarUrl: nextAvatarUrl,
+        isAdmin: isAdmin ?? authSignal.value.isAdmin,
     };
 }
 
@@ -56,6 +58,7 @@ export function clearAuthSession() {
         email: null,
         name: null,
         avatarUrl: null,
+        isAdmin: false,
         isAuthenticated: false,
     };
 }
