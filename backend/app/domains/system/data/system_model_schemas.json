@@ -3368,11 +3368,15 @@
                 }
             },
             {
-                "name": "name",
-                "type": "string",
+                "name": "user_id",
+                "type": "many2one_avatar",
+                "model": "user.user",
                 "label": {
-                    "es_MX": "Usuario", 
+                    "es_MX": "Usuario",
                     "en_US": "User"
+                },
+                "list": {
+                    "column": 1
                 },
                 "kanban": {
                     "header": "subtitle"
@@ -3399,7 +3403,7 @@
                     "en_US": "Status"
                 },
                 "list": {
-                    "column": 1
+                    "column": 2
                 },
                 "kanban": {
                     "footer": 0
@@ -3425,7 +3429,7 @@
                     "en_US": "Session start"
                 },
                 "list": {
-                    "column": 2
+                    "column": 3
                 },
                 "kanban": {
                     "leftColumn": 0
@@ -3454,7 +3458,7 @@
                     "en_US": "Last seen"
                 },
                 "list": {
-                    "column": 3
+                    "column": 4
                 },
                 "form": {
                     "leftColumn": 1,
@@ -3477,7 +3481,7 @@
                     "en_US": "Session end"
                 },
                 "list": {
-                    "column": 4
+                    "column": 5
                 },
                 "kanban": {
                     "leftColumn": 1
@@ -3506,7 +3510,7 @@
                     "en_US": "Duration"
                 },
                 "list": {
-                    "column": 5
+                    "column": 6
                 },
                 "form": {
                     "rightColumn": 1,

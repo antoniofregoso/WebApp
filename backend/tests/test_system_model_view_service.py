@@ -1,4 +1,6 @@
+import json
 import uuid
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -337,12 +339,70 @@ async def test_system_model_view_serializes_many2one_with_translated_name(monkey
     assert result["records"] == [
         {
             "uuid": "user-uuid",
-                "company_id": {
-                    "uuid": "company-uuid",
-                    "name": "Mi Empresa",
-                    "display_name": "Mi Empresa",
-                    "model": None,
-                },
-                "followers": [],
-            }
-        ]
+            "company_id": {
+                "uuid": "company-uuid",
+                "name": "Mi Empresa",
+                "display_name": "Mi Empresa",
+                "model": None,
+            },
+            "followers": [],
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_user_log_view_includes_user_name_in_list_and_kanban(monkeypatch):
+    data_path = (
+        Path(__file__).resolve().parents[1]
+        / "app/domains/system/data/system_model_schemas.json"
+    )
+    schemas = json.loads(data_path.read_text(encoding="utf-8"))
+    view = next(item["view"] for item in schemas if item["model"] == "user.log")
+    user_field = next(field for field in view if field["name"] == "user_id")
+
+    assert user_field["type"] == "many2one_avatar"
+    assert user_field["model"] == "user.user"
+    assert user_field["list"] == {"column": 1}
+    assert user_field["kanban"] == {"header": "subtitle"}
+
+    system_model = SimpleNamespace(
+        name="user.log",
+        label={"en_US": "User Logs", "es_MX": "Registros de sesión"},
+        group_by="status",
+        group_by_values=[],
+        tags=[],
+    )
+    schema = SimpleNamespace(view=view)
+    user = SimpleNamespace(uuid="user-uuid", name="Ana López", avatar_url=None)
+    record = SimpleNamespace(
+        uuid="log-uuid",
+        user=user,
+        status="Offline",
+        start_date=None,
+        last_seen_at=None,
+        end_date=None,
+        duration=1000,
+    )
+
+    async def fake_get_view_definition(model, use, name):
+        return system_model, schema
+
+    async def fake_get_records(model, field_names, relation_names=None):
+        assert "user_id" in field_names
+        assert relation_names == ["user"]
+        return [record]
+
+    monkeypatch.setattr(
+        SystemModelRepository,
+        "get_view_definition",
+        fake_get_view_definition,
+    )
+    monkeypatch.setattr(SystemModelRepository, "get_records", fake_get_records)
+
+    result = await SystemModelService.get_view(
+        "user.log",
+        SystemModelSchemaUse.view,
+        "default",
+    )
+
+    assert result["records"][0]["user_id"]["name"] == "Ana López"
