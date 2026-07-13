@@ -258,6 +258,25 @@ def _serialize_follower(user) -> dict:
 USER_SCOPED_MODELS = {"system.task", "system.message"}
 
 
+def _coerce_temporal_strings(model_class, values: dict) -> dict:
+    """Parse ISO date/datetime strings into Python objects before they reach
+    the DB driver. HTML `datetime-local`/`date` inputs submit plain strings,
+    but asyncpg requires real `date`/`datetime` instances for those columns."""
+    mapper_columns = inspect(model_class).columns
+    for key, value in list(values.items()):
+        if value is None or not isinstance(value, str):
+            continue
+        try:
+            python_type = mapper_columns[key].type.python_type
+        except (AttributeError, NotImplementedError, KeyError):
+            continue
+        if python_type is datetime:
+            values[key] = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        elif python_type is date:
+            values[key] = date.fromisoformat(value)
+    return values
+
+
 def _belongs_to_user(model: str, record, current_user_id: int) -> bool:
     if model == "system.task":
         return getattr(record, "user_id", None) == current_user_id
@@ -371,6 +390,7 @@ class SystemModelService:
             )
         if current_user_id is not None:
             prepared["create_by"] = current_user_id
+        prepared = _coerce_temporal_strings(model_class, prepared)
         record = await SystemModelRepository.create_record(model, prepared)
         if record is None:
             raise ResourceNotFoundException(resource="SystemModel", resource_id=model)
@@ -415,18 +435,7 @@ class SystemModelService:
         invalid = set(values) - columns
         if invalid:
             raise ValidationException(f"Fields cannot be updated: {', '.join(sorted(invalid))}")
-        mapper_columns = inspect(model_class).columns
-        for key, value in list(values.items()):
-            if value is None or not isinstance(value, str):
-                continue
-            try:
-                python_type = mapper_columns[key].type.python_type
-            except (AttributeError, NotImplementedError):
-                continue
-            if python_type is datetime:
-                values[key] = datetime.fromisoformat(value.replace("Z", "+00:00"))
-            elif python_type is date:
-                values[key] = date.fromisoformat(value)
+        values = _coerce_temporal_strings(model_class, values)
         existing = await SystemModelRepository.get_record_by_uuid(model, record_uuid)
         if existing is None or (
             model in USER_SCOPED_MODELS
