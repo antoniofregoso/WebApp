@@ -55,11 +55,16 @@ function onVisibilityChange() {
     if (isVisible()) void refresh();
 }
 
+function onServiceWorkerMessage(event) {
+    if (event.data?.type === 'push-notification') void refresh();
+}
+
 export function startNotificationsPolling(fetchImpl = globalThis.fetch) {
     if (pollTimer || !isAuthenticated.value) return;
     void refresh(fetchImpl);
     pollTimer = globalThis.setInterval(() => void refresh(fetchImpl), POLL_INTERVAL_MS);
     globalThis.document?.addEventListener?.('visibilitychange', onVisibilityChange);
+    globalThis.navigator?.serviceWorker?.addEventListener?.('message', onServiceWorkerMessage);
 }
 
 export function stopNotificationsPolling() {
@@ -72,6 +77,7 @@ export function stopNotificationsPolling() {
     notificationsSignal.value = [];
     newAlertsSignal.value = [];
     globalThis.document?.removeEventListener?.('visibilitychange', onVisibilityChange);
+    globalThis.navigator?.serviceWorker?.removeEventListener?.('message', onServiceWorkerMessage);
 }
 
 export function refreshNotificationsNow(fetchImpl = globalThis.fetch) {

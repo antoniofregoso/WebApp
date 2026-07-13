@@ -2721,11 +2721,51 @@ body {
 }
 
 .topbar-notifications-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--dash-border);
   font-size: 0.8125rem;
   font-weight: 700;
   color: var(--dash-text);
+}
+
+.topbar-notifications-push-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--dash-border);
+  border-radius: 999px;
+  background: var(--dash-surface);
+  color: var(--dash-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.topbar-notifications-push-btn svg { width: 11px; height: 11px; }
+
+.topbar-notifications-push-btn:hover:not(:disabled) {
+  background: var(--dash-accent-soft);
+  color: var(--dash-accent);
+  border-color: var(--dash-accent);
+}
+
+.topbar-notifications-push-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.topbar-notifications-push-blocked {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--dash-text-soft);
+  text-align: right;
 }
 
 .topbar-notifications-empty {

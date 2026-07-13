@@ -4,12 +4,26 @@ from app.core.exceptions import ResourceNotFoundException
 from app.domains.system.repository.system_notification_repository import (
     SystemNotificationRepository,
 )
+from app.domains.system.service.web_push_service import WebPushService
 
 
 class SystemNotificationService:
     @staticmethod
     async def create(notification_data: dict):
-        return await SystemNotificationRepository.create(notification_data)
+        notification = await SystemNotificationRepository.create(notification_data)
+        await SystemNotificationService._send_web_push(notification)
+        return notification
+
+    @staticmethod
+    async def _send_web_push(notification):
+        recipient_ids = {user.id for user in notification.users}
+        if notification.user:
+            recipient_ids.add(notification.user.id)
+
+        title = notification.get_title("es", "en")
+        body = notification.get_message("es", "en")
+        for user_id in recipient_ids:
+            await WebPushService.send_to_user(user_id, title, body)
 
     @staticmethod
     async def get_all():

@@ -284,6 +284,14 @@ class SystemNotificationUpdateInput:
 
 
 @strawberry.input
+class SystemPushSubscriptionInput:
+    endpoint: str
+    p256dh: str
+    auth: str
+    user_agent: Optional[str] = None
+
+
+@strawberry.input
 class SystemTaskCreateInput:
     title: JSON
     description: JSON

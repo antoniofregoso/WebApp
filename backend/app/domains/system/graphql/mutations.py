@@ -29,6 +29,7 @@ from app.domains.system.graphql.types import (
     SystemNotificationCreateInput,
     SystemNotificationType,
     SystemNotificationUpdateInput,
+    SystemPushSubscriptionInput,
     SystemTaskCreateInput,
     SystemTaskType,
     SystemTaskUpdateInput,
@@ -45,6 +46,9 @@ from app.domains.system.service.system_message_service import SystemMessageServi
 from app.domains.system.service.system_model_service import SystemModelService
 from app.domains.system.service.system_notification_service import (
     SystemNotificationService,
+)
+from app.domains.system.service.system_push_subscription_service import (
+    SystemPushSubscriptionService,
 )
 from app.domains.system.service.system_task_service import SystemTaskService
 from app.domains.system.service.system_whatsapp_message_service import (
@@ -172,6 +176,26 @@ class SystemMutation:
         self, notification_uuid: uuid_lib.UUID
     ) -> bool:
         return await SystemNotificationService.delete(notification_uuid)
+
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def save_system_push_subscription(
+        self,
+        subscription: SystemPushSubscriptionInput,
+        info: strawberry.types.Info,
+    ) -> bool:
+        user = await get_current_user(info)
+        await SystemPushSubscriptionService.subscribe(
+            user.id,
+            subscription.endpoint,
+            subscription.p256dh,
+            subscription.auth,
+            subscription.user_agent,
+        )
+        return True
+
+    @strawberry.mutation(permission_classes=[IsAuthenticated])
+    async def delete_system_push_subscription(self, endpoint: str) -> bool:
+        return await SystemPushSubscriptionService.unsubscribe(endpoint)
 
     @strawberry.mutation(permission_classes=[IsAuthenticated])
     async def create_system_task(self, task: SystemTaskCreateInput) -> SystemTaskType:

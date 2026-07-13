@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from app.domains.system.models.system_message import SystemMessage
     from app.domains.system.models.system_notification import SystemNotification
     from app.domains.system.models.system_task import SystemTask
+    from app.domains.system.models.system_push_subscription import SystemPushSubscription
     from app.domains.system.models.system_company import SystemCompany
     from app.domains.system.models.system_lang import SystemLang
     from app.domains.users.models.user_log import UserLog
@@ -97,6 +98,11 @@ class UserUser(SystemAudit, SQLModel, table=True):
     tasks: List["SystemTask"] = Relationship(
         back_populates="user",
         sa_relationship_kwargs={"foreign_keys": "[SystemTask.user_id]"},
+    )
+
+    push_subscriptions: List["SystemPushSubscription"] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"foreign_keys": "[SystemPushSubscription.user_id]"},
     )
 
     logs: List["UserLog"] = Relationship(

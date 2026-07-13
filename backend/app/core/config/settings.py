@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     TASK_REMINDER_EARLY_MINUTES: int = 30
     TASK_REMINDER_FINAL_MINUTES: int = 5
     TASK_REMINDER_SWEEP_INTERVAL_SECONDS: int = 60
+
+    # Web Push (browser notifications while the app/tab is closed)
+    VAPID_PUBLIC_KEY: str = ""
+    VAPID_PRIVATE_KEY: str = ""
+    VAPID_SUBJECT: str = "mailto:admin@example.com"
     JWT_ISSUER: str = "webapp-api"
     JWT_AUDIENCE: str = "webapp-client"
     REFRESH_COOKIE_NAME: str = "refresh_token"

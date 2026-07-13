@@ -2,6 +2,7 @@ import uuid as uuid_lib
 
 import strawberry
 
+from app.core.config.settings import settings
 from app.core.exceptions import AuthorizationException
 from app.core.security.jwt_bearer import IsAuthenticated
 from app.core.security.jwt_manager import JWTManager
@@ -168,6 +169,10 @@ class SystemQuery:
             messages=messages,
             notifications=notifications,
         )
+
+    @strawberry.field(permission_classes=[IsAuthenticated])
+    async def system_push_public_key(self) -> str:
+        return settings.VAPID_PUBLIC_KEY
 
     @strawberry.field(permission_classes=[IsAuthenticated])
     async def system_whatsapp_configurations(

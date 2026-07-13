@@ -27,6 +27,7 @@ from app.domains.system.models.system_notification import (
     SystemNotification,
     NotificationStatus,
 )
+from app.domains.system.models.system_push_subscription import SystemPushSubscription
 from app.domains.system.models.system_seed_run import SystemSeedRun
 from app.domains.system.models.system_task import SystemTask, TaskPriority, TaskStatus
 from app.domains.system.models.system_timezone import SystemTimezone
@@ -65,6 +66,7 @@ __all__ = [
     "MessageStatus",
     "SystemNotification",
     "NotificationStatus",
+    "SystemPushSubscription",
     "SystemSeedRun",
     "SystemTask",
     "TaskPriority",

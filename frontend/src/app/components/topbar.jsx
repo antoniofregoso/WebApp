@@ -19,6 +19,7 @@ import {
     faCircleInfo,
     faTriangleExclamation,
     faCircleExclamation,
+    faBellSlash,
 } from './icon.js';
 import { uploadAttachment } from '../api/attachments.js';
 import { contextActions, dashboardActions } from '../store/actions/index.js';
@@ -29,6 +30,7 @@ import { markNotificationRead } from '../api/notifications.js';
 import { fetchSystemModelByName, searchSystemModels, updateSystemModelRecord } from '../api/systemModel.js';
 import { clearAuthSession, setCurrentUser } from '../store/authStore.js';
 import { markNotificationReadLocally, notificationsSignal, refreshNotificationsNow, stopNotificationsPolling } from '../store/notificationsStore.js';
+import { disableWebPush, enableWebPush, getWebPushStatus } from '../api/webPush.js';
 import { t } from '../../i18n/translations.js';
 import { normalizePagination } from '../utils';
 import { localizedValue } from '../utils/ux.js';
@@ -126,10 +128,37 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
     const [searchLoading, setSearchLoading] = useState(false);
     const [searchError, setSearchError] = useState('');
     const [notificationsOpen, setNotificationsOpen] = useState(false);
+    const [webPushStatus, setWebPushStatus] = useState('unsupported');
+    const [webPushBusy, setWebPushBusy] = useState(false);
     const userMenuWrapRef = useRef(null);
     const searchRef = useRef(null);
     const notificationsWrapRef = useRef(null);
     const notifications = notificationsSignal.value;
+
+    useEffect(() => {
+        let cancelled = false;
+        getWebPushStatus().then((status) => { if (!cancelled) setWebPushStatus(status); });
+        return () => { cancelled = true; };
+    }, [notificationsOpen]);
+
+    const toggleWebPush = async () => {
+        if (webPushBusy) return;
+        setWebPushBusy(true);
+        try {
+            if (webPushStatus === 'subscribed') {
+                await disableWebPush();
+                setWebPushStatus('not-subscribed');
+            } else {
+                await enableWebPush();
+                setWebPushStatus('subscribed');
+            }
+        } catch (error) {
+            console.error('Unable to toggle browser push notifications.', error);
+            setWebPushStatus(await getWebPushStatus());
+        } finally {
+            setWebPushBusy(false);
+        }
+    };
     const messageCount = Math.max(0, Number(pendingCounts.messages) || 0);
     const notificationCount = Math.max(0, Number(pendingCounts.notifications) || 0);
     const messageLabel = messageCount
@@ -326,7 +355,22 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
                         </button>
 
                         <div class={`topbar-notifications-menu ${notificationsOpen ? 'topbar-notifications-menu--open' : ''}`} id="topbar-notifications-menu" role="region" aria-label={t('notifications.panel_title', lang)}>
-                            <div class="topbar-notifications-header">{t('notifications.panel_title', lang)}</div>
+                            <div class="topbar-notifications-header">
+                                <span>{t('notifications.panel_title', lang)}</span>
+                                {webPushStatus === 'default' || webPushStatus === 'not-subscribed' ? (
+                                    <button type="button" class="topbar-notifications-push-btn" disabled={webPushBusy} onClick={toggleWebPush}>
+                                        <span dangerouslySetInnerHTML={{ __html: icon(faBell) }} />
+                                        {t('notifications.enable_push', lang)}
+                                    </button>
+                                ) : webPushStatus === 'subscribed' ? (
+                                    <button type="button" class="topbar-notifications-push-btn" disabled={webPushBusy} onClick={toggleWebPush}>
+                                        <span dangerouslySetInnerHTML={{ __html: icon(faBellSlash) }} />
+                                        {t('notifications.disable_push', lang)}
+                                    </button>
+                                ) : webPushStatus === 'denied' ? (
+                                    <span class="topbar-notifications-push-blocked">{t('notifications.push_blocked', lang)}</span>
+                                ) : null}
+                            </div>
                             {notifications.length === 0 ? (
                                 <p class="topbar-notifications-empty">{t('notifications.empty', lang)}</p>
                             ) : (

@@ -9,6 +9,7 @@ import { getRecordBreadcrumbs, setRecordBreadcrumbs } from '../utils/routing.js'
 import { startActivityHeartbeat } from '../api/activity.js';
 import { startPendingCountsPolling } from '../api/pendingCounts.js';
 import { startNotificationsPolling } from '../store/notificationsStore.js';
+import { registerServiceWorker } from '../api/webPush.js';
 import { fetchSystemModelView } from '../api/systemModel.js';
 
 const EMPTY_DASHBOARD_DATA = {
@@ -366,6 +367,7 @@ export function dashboard(req, router) {
     startPendingCountsPolling();
     startNotificationsPolling();
     ensureAlertStackMounted();
+    void registerServiceWorker().catch((error) => console.error('Unable to register the service worker.', error));
     _router = router;
     const areaFromUrl = req.params?.area;
     const prevSubarea = _currentSubarea;
