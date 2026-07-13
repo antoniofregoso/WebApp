@@ -39,6 +39,57 @@
 - [x] Repetir la petición original después de renovar el token.
 - [x] Cerrar la sesión y redirigir al login si la renovación falla.
 
+## Buscador global declarativo
+
+Diseño aprobado: [Doc/AI_SEARCH_DESIGN.md](./Doc/AI_SEARCH_DESIGN.md).
+
+### Primera fase implementada
+
+- [x] Agregar `SystemModel.search` y `SystemModelField.search_config` como metadatos persistentes.
+- [x] Cargar la configuración declarativa desde `system_models.json`.
+- [x] Crear y aplicar la migración Alembic del buscador.
+- [x] Implementar la búsqueda textual global solo sobre modelos y campos habilitados.
+- [x] Reutilizar el alcance de registros por usuario de las vistas actuales.
+- [x] Exponer la consulta GraphQL `systemSearch`.
+- [x] Conectar el buscador del topbar con estados de carga, error, vacío y resultados.
+- [x] Agregar enlaces directos desde los resultados hacia cada registro.
+- [x] Habilitar inicialmente tareas y mensajes.
+- [x] Documentar el formato declarativo en `Doc/DATA_FORMAT.md`.
+
+### Contrato y seguridad pendientes
+
+- [ ] Crear los modelos Pydantic `SearchPlanV1`, `ModelSearchQuery`, `FilterGroup`, `SearchFilter` y `SearchOrder` con campos extra prohibidos.
+- [ ] Implementar el registro seguro `SEARCH_MODEL_REGISTRY` con clase ORM, política de autorización y constructor de URL.
+- [ ] Crear `SearchAuthorizationPolicy` y pruebas de equivalencia entre resultados visibles en vistas y búsqueda.
+- [ ] Aplicar autorización también a modelos relacionados usados en filtros.
+- [ ] Validar modelos, campos, operadores, relaciones, límites y orden antes de ejecutar cualquier plan.
+- [ ] Implementar filtros parametrizados por tipo, incluyendo selections localizadas, fechas relativas y relaciones.
+- [ ] Resolver fechas con zona horaria IANA y convertir límites a UTC.
+- [ ] Agregar respuestas y errores GraphQL tipados: `OK`, `PARTIAL`, `NEEDS_CLARIFICATION` y `FAILED`.
+- [ ] Agregar límites de modelos, filtros, profundidad de relaciones, tiempo y cantidad de resultados.
+- [ ] Registrar auditoría de búsquedas sin conservar texto sensible por defecto.
+
+### Interpretación con IA pendiente
+
+- [ ] Definir la interfaz `SearchInterpreter` independiente del proveedor.
+- [ ] Generar `SearchableSchemaV1` únicamente con modelos y campos autorizados.
+- [ ] Implementar un adaptador de referencia configurable mediante secretos del backend.
+- [ ] Convertir preguntas naturales en `SearchPlanV1`; la IA nunca debe generar ni ejecutar SQL.
+- [ ] Validar localmente toda salida del proveedor antes de consultar PostgreSQL.
+- [ ] Implementar los modos `AUTO`, `TEXT` y `AI` con fallback explícito de IA a texto.
+- [ ] Implementar aclaraciones stateless mediante pregunta original y respuesta del usuario.
+- [ ] Agregar timeout, cancelación y manejo de proveedor no configurado o no disponible.
+- [ ] Crear evaluaciones en español e inglés para consultas, fechas, relaciones, ambigüedad y permisos.
+
+### Rendimiento y evolución pendientes
+
+- [ ] Crear un benchmark reproducible con 100 000 registros por modelo y 10 clientes concurrentes.
+- [ ] Agregar índices `pg_trgm` si la coincidencia textual actual no cumple el objetivo de latencia.
+- [ ] Implementar PostgreSQL Full Text Search con `tsvector`, ranking e índices GIN cuando las métricas lo justifiquen.
+- [ ] Crear texto normalizado e indexable para campos HTML antes de permitir buscarlos.
+- [ ] Decidir si la primera versión incluirá notas y nombres de archivos adjuntos.
+- [ ] Evaluar embeddings únicamente si filtros y texto completo no resuelven búsquedas conceptuales reales.
+
 ## Logs de actividad de usuario
 
 - [x] Crear endpoint o mutación GraphQL de heartbeat/ping para el usuario autenticado.

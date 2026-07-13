@@ -1398,6 +1398,7 @@ body {
 }
 
 .topbar-search {
+  position: relative;
   justify-self: center;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 32px;
@@ -1410,6 +1411,36 @@ body {
   background: var(--dash-surface);
   overflow: visible;
 }
+
+.topbar-search-results {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 40;
+  width: min(28rem, 80vw);
+  max-height: 24rem;
+  overflow-y: auto;
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+  background: var(--dash-surface);
+  box-shadow: var(--dash-shadow);
+}
+
+.topbar-search-result {
+  display: grid;
+  gap: 0.125rem;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--dash-border-soft);
+  color: var(--dash-text);
+  text-decoration: none;
+}
+
+.topbar-search-result:last-child { border-bottom: 0; }
+.topbar-search-result:hover { background: var(--dash-surface-hover); }
+.topbar-search-result > span:last-child { color: var(--dash-text-muted); font-size: 0.75rem; }
+.topbar-search-result-model { color: var(--dash-accent); font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; }
+.topbar-search-state { margin: 0; padding: 1rem; color: var(--dash-text-muted); text-align: center; }
+.topbar-search-state--error { color: var(--dash-danger); }
 
 .topbar-search-input {
   width: 100%;

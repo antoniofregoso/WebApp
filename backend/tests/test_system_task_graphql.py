@@ -39,6 +39,13 @@ def test_system_model_view_query_is_exposed():
     assert "type SystemModelViewType" in schema
 
 
+def test_system_search_query_is_exposed():
+    schema = strawberry.Schema(query=Query, mutation=Mutation).as_str()
+
+    assert "systemSearch(input: SystemSearchInput!)" in schema
+    assert "type SystemSearchResponseType" in schema
+
+
 def test_refresh_session_mutation_is_exposed():
     schema = strawberry.Schema(query=Query, mutation=Mutation).as_str()
 

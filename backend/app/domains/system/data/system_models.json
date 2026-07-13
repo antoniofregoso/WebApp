@@ -642,6 +642,7 @@
     },
     {
         "name":"system.message",
+        "search": true,
         "label": {
             "es_MX": "Mensajes",
             "en_US": "Messages"
@@ -714,6 +715,7 @@
             {
                 "name": "subject",
                 "type": "string",
+                "search": { "enabled": true, "text": true, "result": "title", "weight": "A" },
                 "required": true,
                 "readonly": false,
                 "placeholder": { "es_MX": "Asunto", "en_US": "Subject" },
@@ -730,6 +732,7 @@
             {
                 "name": "status",
                 "type": "status_badge",
+                "search": { "enabled": true, "text": true, "result": "subtitle", "weight": "B" },
                 "required": true,
                 "readonly": true,
                 "placeholder": { "es_MX": "Estado", "en_US": "Status" },
@@ -882,6 +885,7 @@
     },
     {
         "name":"system.task",
+        "search": true,
         "label": {
             "es_MX": "Tareas",
             "en_US": "Tasks"
@@ -930,6 +934,7 @@
             {
                 "name": "title",
                 "type": "string",
+                "search": { "enabled": true, "text": true, "result": "title", "weight": "A" },
                 "required": true,
                 "readonly": false,
                 "placeholder": { "es_MX": "Título", "en_US": "Title" },
@@ -946,6 +951,7 @@
             {
                 "name": "status",
                 "type": "status_badge",
+                "search": { "enabled": true, "text": true, "result": "subtitle", "weight": "B" },
                 "default": "Pending",
                 "required": false,
                 "readonly": false,
@@ -955,6 +961,7 @@
             {
                 "name": "priority",
                 "type": "selection",
+                "search": { "enabled": true, "text": true, "result": "subtitle", "weight": "B" },
                 "default": "Low",
                 "selection_values": [
                     { "value": "Low", "color": "zinc", "es_MX": "Baja", "en_US": "Low" },

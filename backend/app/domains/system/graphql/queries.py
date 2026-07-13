@@ -19,6 +19,9 @@ from app.domains.system.graphql.types import (
     SystemModelSchemaUseType,
     SystemModelType,
     SystemModelViewType,
+    SystemSearchInput,
+    SystemSearchResponseType,
+    SystemSearchResultType,
     SystemNotificationType,
     SystemPendingCountsType,
     SystemTaskType,
@@ -28,6 +31,7 @@ from app.domains.system.graphql.types import (
 )
 from app.domains.system.service.system_message_service import SystemMessageService
 from app.domains.system.service.system_model_service import SystemModelService
+from app.domains.system.service.system_search_service import SystemSearchService
 from app.domains.system.service.system_notification_service import (
     SystemNotificationService,
 )
@@ -89,6 +93,23 @@ class SystemQuery:
             model, use, name, current_user_id=user.id
         )
         return SystemModelViewType(model=view["model"], records=view["records"])
+
+    @strawberry.field(permission_classes=[IsAuthenticated])
+    async def system_search(
+        self, input: SystemSearchInput, info: strawberry.types.Info
+    ) -> SystemSearchResponseType:
+        user = await get_current_user(info)
+        results = await SystemSearchService.search(
+            input.query,
+            current_user_id=user.id,
+            lang=input.lang,
+            limit=input.limit,
+        )
+        return SystemSearchResponseType(
+            status="OK",
+            interpreted_query=input.query,
+            results=[SystemSearchResultType(**result.__dict__) for result in results],
+        )
 
     @strawberry.field(permission_classes=[IsAuthenticated])
     async def system_messages(self) -> list[SystemMessageType]:

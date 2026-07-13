@@ -47,6 +47,7 @@ class SystemModelFieldType:
     readonly: bool
     placeholder: JSON
     help: JSON
+    search_config: JSON
 
 
 @strawberry.type
@@ -61,6 +62,7 @@ class SystemModelSchemaType:
 class SystemModelType:
     uuid: uuid_lib.UUID
     name: str
+    search: bool
     fields: list[SystemModelFieldType]
     schemas: list[SystemModelSchemaType]
     created_at: datetime
@@ -70,6 +72,32 @@ class SystemModelType:
 class SystemModelViewType:
     model: JSON
     records: list[JSON]
+
+
+@strawberry.input
+class SystemSearchInput:
+    query: str
+    lang: str = "es"
+    limit: int = 20
+
+
+@strawberry.type
+class SystemSearchResultType:
+    model: str
+    model_label: str
+    uuid: str
+    title: str
+    subtitle: Optional[str]
+    snippet: Optional[str]
+    url: str
+    score: int
+
+
+@strawberry.type
+class SystemSearchResponseType:
+    status: str
+    interpreted_query: str
+    results: list[SystemSearchResultType]
 
 
 @strawberry.type
@@ -174,6 +202,7 @@ class SystemModelFieldInput:
     readonly: bool = False
     placeholder: Optional[JSON] = None
     help: Optional[JSON] = None
+    search_config: Optional[JSON] = None
 
 
 @strawberry.input
@@ -186,6 +215,7 @@ class SystemModelSchemaInput:
 @strawberry.input
 class SystemModelCreateInput:
     name: str
+    search: bool = False
     fields: Optional[list[SystemModelFieldInput]] = None
     schemas: Optional[list[SystemModelSchemaInput]] = None
 
@@ -193,6 +223,7 @@ class SystemModelCreateInput:
 @strawberry.input
 class SystemModelUpdateInput:
     name: Optional[str] = None
+    search: Optional[bool] = None
     fields: Optional[list[SystemModelFieldInput]] = None
     schemas: Optional[list[SystemModelSchemaInput]] = None
 

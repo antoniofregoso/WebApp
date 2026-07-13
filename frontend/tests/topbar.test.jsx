@@ -9,12 +9,13 @@ vi.mock('../src/app/api/attachments.js', () => ({
 
 vi.mock('../src/app/api/systemModel.js', () => ({
     fetchSystemModelByName: vi.fn().mockResolvedValue({ uuid: 'model-user-1', name: 'user.user' }),
+    searchSystemModels: vi.fn().mockResolvedValue({ status: 'OK', results: [] }),
     updateSystemModelRecord: vi.fn().mockResolvedValue({ avatar_url: '/api/system/attachments/avatar-1/content' }),
 }));
 
 import { Topbar } from '../src/app/components/topbar.jsx';
 import { uploadAttachment } from '../src/app/api/attachments.js';
-import { fetchSystemModelByName, updateSystemModelRecord } from '../src/app/api/systemModel.js';
+import { fetchSystemModelByName, searchSystemModels, updateSystemModelRecord } from '../src/app/api/systemModel.js';
 import { authSignal } from '../src/app/store/authStore.js';
 
 function mount(vnode) {
@@ -28,11 +29,30 @@ afterEach(() => {
     uploadAttachment.mockClear();
     fetchSystemModelByName.mockClear();
     updateSystemModelRecord.mockClear();
+    searchSystemModels.mockClear();
     authSignal.value = { uuid: null, email: null, name: null, avatarUrl: null, isAuthenticated: false };
     document.body.innerHTML = '';
 });
 
 describe('Topbar user menu', () => {
+    it('searches enabled system models and links the results', async () => {
+        searchSystemModels.mockResolvedValueOnce({
+            status: 'OK',
+            results: [{ model: 'system.task', modelLabel: 'Tasks', uuid: 'task-1', title: 'Urgent report', subtitle: 'Urgent', url: '/dashboard/user/system.task/task-1' }],
+        });
+        const host = mount(<Topbar lang="en" theme="light" pageTitle="Tasks" showTools />);
+        const input = host.querySelector('.topbar-search-input');
+        input.value = 'urgent report';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        host.querySelector('.topbar-search').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+        await vi.waitFor(() => expect(searchSystemModels).toHaveBeenCalledWith({ query: 'urgent report', lang: 'en', limit: 20 }));
+        await vi.waitFor(() => expect(host.querySelector('[data-search-results] a')).not.toBeNull());
+        expect(host.querySelector('[data-search-results] a').getAttribute('href')).toBe('/dashboard/user/system.task/task-1');
+        expect(host.querySelector('[data-search-results]').textContent).toContain('Urgent report');
+    });
+
     it('renders an ordered dynamic breadcrumb trail with smaller nested links', () => {
         const breadcrumb = [
             { label: 'Configuration', url: '/dashboard/configuration' },

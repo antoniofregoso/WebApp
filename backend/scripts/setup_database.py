@@ -226,6 +226,7 @@ async def _load_langs(
         lang = SystemLang(
             **_audit_values(bot_id, now),
             name=record["name"],
+            search=_bool_or_default(record.get("search")),
             code=record["code"],
             iso_code=record["iso_code"],
             url_code=record["url_code"],
@@ -405,6 +406,7 @@ async def _load_system_models(
                     readonly=_bool_or_default(field_record.get("readonly")),
                     placeholder=field_record.get("placeholder") or {},
                     help=field_record.get("help") or {},
+                    search_config=field_record.get("search") or {},
                     model_id=model.id,
                 )
             )

@@ -20,6 +20,25 @@ const SYSTEM_MODEL_BY_NAME_QUERY = gql`
   }
 `;
 
+const SYSTEM_SEARCH_QUERY = gql`
+  query SystemSearch($input: SystemSearchInput!) {
+    systemSearch(input: $input) {
+      status
+      interpretedQuery
+      results {
+        model
+        modelLabel
+        uuid
+        title
+        subtitle
+        snippet
+        url
+        score
+      }
+    }
+  }
+`;
+
 const UPDATE_SYSTEM_MODEL_RECORD_MUTATION = gql`
   mutation UpdateSystemModelRecord($model: String!, $recordUuid: UUID!, $values: JSON!) {
     updateSystemModelRecord(model: $model, recordUuid: $recordUuid, values: $values)
@@ -75,6 +94,11 @@ export async function fetchSystemModelByName(name, fetchImpl = globalThis.fetch)
         fetchImpl,
     );
     return data.systemModelByName;
+}
+
+export async function searchSystemModels({ query, lang = 'es', limit = 20 }, fetchImpl = globalThis.fetch) {
+    const data = await requestAuthenticated(SYSTEM_SEARCH_QUERY, { input: { query, lang, limit } }, fetchImpl);
+    return data.systemSearch;
 }
 
 export async function updateSystemModelRecord({ model, recordUuid, values }, fetchImpl = globalThis.fetch) {

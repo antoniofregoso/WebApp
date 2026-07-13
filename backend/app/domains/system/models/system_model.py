@@ -57,6 +57,7 @@ class SystemModel(SystemAudit, SQLModel, table=True):
         index=True,
     )
     name: str
+    search: bool = Field(default=False, nullable=False)
     label: dict = Field(
         default_factory=dict,
         sa_column=Column(JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")),
@@ -115,6 +116,10 @@ class SystemModelField(SystemAudit, SQLModel, table=True):
         sa_column=Column(JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")),
     )
     help: dict = Field(
+        default_factory=dict,
+        sa_column=Column(JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")),
+    )
+    search_config: dict = Field(
         default_factory=dict,
         sa_column=Column(JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")),
     )

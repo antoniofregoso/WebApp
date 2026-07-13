@@ -19,3 +19,5 @@ The available queries are [here](./GRAPHQL_QUERIES.md).
 [Database setup](./DATABASE_SETUP.md).
 
 [Session renewal](./SESSION_RENEWAL.md).
+
+[AI-powered declarative search design](./AI_SEARCH_DESIGN.md).

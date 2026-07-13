@@ -22,7 +22,7 @@ import { contextActions, dashboardActions } from '../store/actions/index.js';
 import { stopActivityHeartbeat } from '../api/activity.js';
 import { logout } from '../api/auth.js';
 import { stopPendingCountsPolling } from '../api/pendingCounts.js';
-import { fetchSystemModelByName, updateSystemModelRecord } from '../api/systemModel.js';
+import { fetchSystemModelByName, searchSystemModels, updateSystemModelRecord } from '../api/systemModel.js';
 import { clearAuthSession, setCurrentUser } from '../store/authStore.js';
 import { t } from '../../i18n/translations.js';
 import { normalizePagination } from '../utils';
@@ -91,7 +91,13 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
     const pageStatus = lang === 'es' ? `Página ${page} de ${totalPages}` : `Page ${page} of ${totalPages}`;
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [avatarUploading, setAvatarUploading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [searchError, setSearchError] = useState('');
     const userMenuWrapRef = useRef(null);
+    const searchRef = useRef(null);
     const messageCount = Math.max(0, Number(pendingCounts.messages) || 0);
     const notificationCount = Math.max(0, Number(pendingCounts.notifications) || 0);
     const messageLabel = messageCount
@@ -120,6 +126,38 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
             document.removeEventListener('keydown', closeOnEscape);
         };
     }, [userMenuOpen]);
+
+    useEffect(() => {
+        if (!searchOpen) return undefined;
+        const close = (event) => {
+            if (event.key === 'Escape' || !searchRef.current?.contains(event.target)) setSearchOpen(false);
+        };
+        document.addEventListener('click', close);
+        document.addEventListener('keydown', close);
+        return () => {
+            document.removeEventListener('click', close);
+            document.removeEventListener('keydown', close);
+        };
+    }, [searchOpen]);
+
+    const submitSearch = async (event) => {
+        event.preventDefault();
+        const query = searchQuery.trim();
+        if (!query || searchLoading) return;
+        setSearchLoading(true);
+        setSearchError('');
+        setSearchOpen(true);
+        try {
+            const response = await searchSystemModels({ query, lang, limit: 20 });
+            setSearchResults(response.results ?? []);
+        } catch (error) {
+            setSearchResults([]);
+            setSearchError(lang === 'es' ? 'No se pudo realizar la búsqueda.' : 'Unable to search.');
+            console.error('Unable to search system models.', error);
+        } finally {
+            setSearchLoading(false);
+        }
+    };
 
     const handleLogout = () => {
         stopActivityHeartbeat();
@@ -326,20 +364,34 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
                             ))}
                         </div>
 
-                        <form class="topbar-search" role="search" aria-label={t('topbar.search', lang)} onSubmit={(event) => event.preventDefault()}>
+                        <form class="topbar-search" role="search" aria-label={t('topbar.search', lang)} onSubmit={submitSearch} ref={searchRef}>
                             <input
                                 class="topbar-search-input"
                                 type="search"
+                                value={searchQuery}
                                 placeholder={t('topbar.search_placeholder', lang)}
                                 aria-label={t('topbar.search', lang)}
+                                aria-expanded={String(searchOpen)}
+                                onInput={(event) => setSearchQuery(event.currentTarget.value)}
                             />
                             <button
                                 class="topbar-search-btn"
-                                type="button"
+                                type="submit"
                                 aria-label={t('topbar.search', lang)}
                                 data-tooltip={t('topbar.search', lang)}
+                                disabled={searchLoading}
                                 dangerouslySetInnerHTML={{ __html: icon(faMagnifyingGlass, 'topbar-tool-icon') }}
                             />
+                            {searchOpen && <div class="topbar-search-results" data-search-results role="region" aria-live="polite">
+                                {searchLoading ? <p class="topbar-search-state">{lang === 'es' ? 'Buscando…' : 'Searching…'}</p>
+                                    : searchError ? <p class="topbar-search-state topbar-search-state--error">{searchError}</p>
+                                        : searchResults.length === 0 ? <p class="topbar-search-state">{lang === 'es' ? 'Sin resultados' : 'No results'}</p>
+                                            : searchResults.map((result) => <a class="topbar-search-result" href={result.url} key={`${result.model}:${result.uuid}`}>
+                                                <span class="topbar-search-result-model">{result.modelLabel}</span>
+                                                <strong>{result.title}</strong>
+                                                {result.subtitle && <span>{result.subtitle}</span>}
+                                            </a>)}
+                            </div>}
                         </form>
 
                         <div class="topbar-pagination" aria-label={t('topbar.pagination', lang)}>

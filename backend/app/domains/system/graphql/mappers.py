@@ -32,9 +32,11 @@ def system_model_to_type(system_model):
                 readonly=field.readonly,
                 placeholder=field.placeholder,
                 help=field.help,
+                search_config=field.search_config,
             )
             for field in system_model.fields
         ],
+        search=system_model.search,
         schemas=[
             SystemModelSchemaType(
                 uuid=schema.uuid,
