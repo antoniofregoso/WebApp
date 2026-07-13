@@ -388,6 +388,7 @@ async def _load_system_models(
         model = SystemModel(
             **_audit_values(bot_id, now),
             name=record["name"],
+            search=_bool_or_default(record.get("search")),
             label=record["label"],
             readonly=_bool_or_default(record.get("readonly")),
             group_by=record.get("group_by") or None,
@@ -399,6 +400,9 @@ async def _load_system_models(
         models[model.name] = model
 
         for index, field_record in enumerate(record.get("fields", []), start=1):
+            search_config = dict(field_record.get("search") or {})
+            if field_record.get("selection_values"):
+                search_config["selection_values"] = field_record["selection_values"]
             session.add(
                 SystemModelField(
                     **_audit_values(bot_id, now),
@@ -409,7 +413,7 @@ async def _load_system_models(
                     readonly=_bool_or_default(field_record.get("readonly")),
                     placeholder=field_record.get("placeholder") or {},
                     help=field_record.get("help") or {},
-                    search_config=field_record.get("search") or {},
+                    search_config=search_config,
                     model_id=model.id,
                 )
             )

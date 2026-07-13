@@ -715,7 +715,7 @@
             {
                 "name": "subject",
                 "type": "string",
-                "search": { "enabled": true, "text": true, "result": "title", "weight": "A" },
+                "search": { "enabled": true, "text": true, "filter": true, "result": "title", "weight": "A", "operators": ["eq", "contains", "starts_with"] },
                 "required": true,
                 "readonly": false,
                 "placeholder": { "es_MX": "Asunto", "en_US": "Subject" },
@@ -732,7 +732,7 @@
             {
                 "name": "status",
                 "type": "status_badge",
-                "search": { "enabled": true, "text": true, "result": "subtitle", "weight": "B" },
+                "search": { "enabled": true, "text": true, "filter": true, "result": "subtitle", "weight": "B", "operators": ["eq", "in", "not_in"] },
                 "required": true,
                 "readonly": true,
                 "placeholder": { "es_MX": "Estado", "en_US": "Status" },
@@ -741,6 +741,7 @@
             {
                 "name": "date",
                 "type": "datetime",
+                "search": { "enabled": true, "filter": true, "operators": ["eq", "before", "after", "between", "today", "this_week", "this_month"] },
                 "required": false,
                 "readonly": true,
                 "placeholder": { "es_MX": "Fecha", "en_US": "Date" },
@@ -750,6 +751,7 @@
                 "name": "from_user_id",
                 "type": "many2one",
                 "model": "user.user",
+                "search": { "enabled": true, "filter": true, "operators": ["eq", "in"], "relation_fields": ["name", "email"] },
                 "required": true,
                 "readonly": true,
                 "placeholder": { "es_MX": "Remitente", "en_US": "Sender" },
@@ -760,6 +762,7 @@
                 "sequence": 60,
                 "type": "many2many_pills",
                 "model": "user.user",
+                "search": { "enabled": true, "filter": true, "operators": ["contains_any", "contains_all"], "relation_fields": ["name", "email"] },
                 "required": true,
                 "readonly": false,
                 "placeholder": { "es_MX": "Destinatarios", "en_US": "Recipients" },
@@ -934,7 +937,7 @@
             {
                 "name": "title",
                 "type": "string",
-                "search": { "enabled": true, "text": true, "result": "title", "weight": "A" },
+                "search": { "enabled": true, "text": true, "filter": true, "result": "title", "weight": "A", "operators": ["eq", "contains", "starts_with"] },
                 "required": true,
                 "readonly": false,
                 "placeholder": { "es_MX": "Título", "en_US": "Title" },
@@ -951,7 +954,7 @@
             {
                 "name": "status",
                 "type": "status_badge",
-                "search": { "enabled": true, "text": true, "result": "subtitle", "weight": "B" },
+                "search": { "enabled": true, "text": true, "filter": true, "result": "subtitle", "weight": "B", "operators": ["eq", "in", "not_in"] },
                 "default": "Pending",
                 "required": false,
                 "readonly": false,
@@ -961,7 +964,7 @@
             {
                 "name": "priority",
                 "type": "selection",
-                "search": { "enabled": true, "text": true, "result": "subtitle", "weight": "B" },
+                "search": { "enabled": true, "text": true, "filter": true, "result": "subtitle", "weight": "B", "operators": ["eq", "in", "not_in"] },
                 "default": "Low",
                 "selection_values": [
                     { "value": "Low", "color": "zinc", "es_MX": "Baja", "en_US": "Low" },
@@ -997,6 +1000,7 @@
             {
                 "name": "date_assign",
                 "type": "datetime",
+                "search": { "enabled": true, "filter": true, "operators": ["eq", "before", "after", "between", "today", "this_week", "this_month"] },
                 "required": false,
                 "readonly": false,
                 "placeholder": { "es_MX": "Fecha de asignación", "en_US": "Assigned date" },
@@ -1005,6 +1009,7 @@
             {
                 "name": "date_due",
                 "type": "datetime",
+                "search": { "enabled": true, "filter": true, "operators": ["eq", "before", "after", "between", "today", "this_week", "this_month"] },
                 "required": false,
                 "readonly": false,
                 "placeholder": { "es_MX": "Fecha límite", "en_US": "Due date" },
@@ -1014,6 +1019,7 @@
                 "name": "user_id",
                 "type": "many2one_avatar",
                 "model": "user.user",
+                "search": { "enabled": true, "filter": true, "operators": ["eq", "in"], "relation_fields": ["name", "email"] },
                 "required": false,
                 "readonly": false,
                 "placeholder": { "es_MX": "Asignado a", "en_US": "Assigned to" },
@@ -1456,6 +1462,7 @@
             {
                 "name": "name",
                 "type": "string",
+                "search": { "enabled": true, "filter": true, "operators": ["eq", "contains", "starts_with"] },
                 "required": true,
                 "readonly": false,
                 "placeholder": { "es_MX": "Nombre completo", "en_US": "Full name" },
@@ -1464,6 +1471,7 @@
             {
                 "name": "email",
                 "type": "string",
+                "search": { "enabled": true, "filter": true, "operators": ["eq", "contains", "starts_with"] },
                 "required": true,
                 "readonly": false,
                 "placeholder": { "es_MX": "Correo electrónico", "en_US": "Email" },

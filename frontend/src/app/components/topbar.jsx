@@ -246,6 +246,13 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
         try {
             const response = await searchSystemModels({ query, lang, limit: 20 });
             setSearchResults(response.results ?? []);
+            if (response.status === 'FAILED') {
+                setSearchError(response.errors?.[0]?.message ?? (lang === 'es' ? 'No se pudo realizar la búsqueda.' : 'Unable to search.'));
+            } else if (response.needsClarification) {
+                setSearchError(response.clarificationQuestion ?? '');
+            } else if (response.status === 'PARTIAL' && response.errors?.length) {
+                setSearchError(response.errors[0].message);
+            }
         } catch (error) {
             setSearchResults([]);
             setSearchError(lang === 'es' ? 'No se pudo realizar la búsqueda.' : 'Unable to search.');

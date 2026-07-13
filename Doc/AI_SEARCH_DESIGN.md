@@ -456,8 +456,9 @@ lingüístico.
 - Todas las condiciones se construyen con SQLAlchemy y parámetros enlazados.
 - Se limita cantidad de modelos, filtros, relaciones, profundidad y resultados.
 - Se registra `request_id`, usuario, modelos, duración, estado, cantidad de
-  resultados y hash de la consulta. El texto y los valores del plan no se guardan
-  por defecto. Retención inicial: 30 días.
+  resultados y un HMAC-SHA256 de la consulta. El texto y los valores del plan no se
+  guardan por defecto. La retención configurable inicial es de 30 días y se depura
+  al escribir una nueva entrada.
 - La respuesta distingue entre cero resultados, consulta inválida, ambigüedad y
   error del proveedor.
 - El buscador será inicialmente de solo lectura.

@@ -24,6 +24,10 @@ from app.domains.system.repository.system_model_repository import (
     MODEL_CLASS_BY_NAME,
     SystemModelRepository,
 )
+from app.domains.system.search.authorization import (
+    RECORD_AUTHORIZATION_POLICIES,
+    authorization_policy_for,
+)
 
 MODEL_NAME_BY_CLASS = {cls: name for name, cls in MODEL_CLASS_BY_NAME.items()}
 MODEL_NAME_BY_TABLE = {
@@ -93,12 +97,16 @@ def _schema_with_relation_models(model: str, schema: list[dict]) -> list[dict]:
     return fields
 
 
-def _schema_with_default_followers_field(schema: list[dict], options: list[dict]) -> list[dict]:
+def _schema_with_default_followers_field(
+    schema: list[dict], options: list[dict]
+) -> list[dict]:
     if any(field.get("type") == "one2many_followers" for field in schema):
         return [
-            {**field, "options": options}
-            if field.get("type") == "one2many_followers"
-            else field
+            (
+                {**field, "options": options}
+                if field.get("type") == "one2many_followers"
+                else field
+            )
             for field in schema
         ]
     return [
@@ -115,10 +123,12 @@ def _schema_with_default_followers_field(schema: list[dict], options: list[dict]
 
 def _schema_with_user_options(schema: list[dict], options: list[dict]) -> list[dict]:
     return [
-        {**field, "model": "user.user", "options": options}
-        if field.get("name") == "to_users"
-        and field.get("type") in {"many2many", "many2many_pills"}
-        else field
+        (
+            {**field, "model": "user.user", "options": options}
+            if field.get("name") == "to_users"
+            and field.get("type") in {"many2many", "many2many_pills"}
+            else field
+        )
         for field in schema
     ]
 
@@ -260,7 +270,7 @@ def _serialize_follower(user) -> dict:
     }
 
 
-USER_SCOPED_MODELS = {"system.task", "system.message"}
+USER_SCOPED_MODELS = frozenset(RECORD_AUTHORIZATION_POLICIES)
 READ_ONLY_MODELS = {"user.log"}
 
 
@@ -289,16 +299,8 @@ def _coerce_temporal_strings(model_class, values: dict) -> dict:
 
 
 def _belongs_to_user(model: str, record, current_user_id: int) -> bool:
-    if model == "system.task":
-        return getattr(record, "user_id", None) == current_user_id
-    if model == "system.message":
-        if getattr(record, "from_user_id", None) == current_user_id:
-            return True
-        return any(
-            getattr(recipient, "id", None) == current_user_id
-            for recipient in (getattr(record, "to_users", None) or [])
-        )
-    return True
+    policy = authorization_policy_for(model)
+    return policy is None or policy.allows_record(record, current_user_id)
 
 
 # Fields on user.user that grant privileges or bypass normal signup checks —
@@ -312,7 +314,11 @@ async def _require_admin_for_user_fields(
     touched = restricted_fields & set(values)
     if not touched:
         return
-    caller = await UserRepository.get_by_id(current_user_id) if current_user_id is not None else None
+    caller = (
+        await UserRepository.get_by_id(current_user_id)
+        if current_user_id is not None
+        else None
+    )
     if not caller or not caller.is_admin:
         raise AuthorizationException(
             f"Only an admin can set: {', '.join(sorted(touched))}"
@@ -334,7 +340,9 @@ def _serialize_record(
     result = {}
     for field_name in field_names:
         if field_name == FOLLOWERS_FIELD_NAME:
-            result[field_name] = followers_lookup.get(str(getattr(record, "uuid", "")), [])
+            result[field_name] = followers_lookup.get(
+                str(getattr(record, "uuid", "")), []
+            )
             continue
         relation_attr = relation_map.get(field_name)
         if relation_attr:
@@ -362,23 +370,30 @@ class SystemModelService:
     ) -> dict:
         _require_writable_model(model)
         if model == "system.message":
-            sender = await UserRepository.get_by_id(current_user_id) if current_user_id is not None else None
+            sender = (
+                await UserRepository.get_by_id(current_user_id)
+                if current_user_id is not None
+                else None
+            )
             if sender is None:
                 raise ValidationException("Message sender is required")
             recipient_values = values.get("to_users") or []
             recipient_uuids = [
                 item.get("uuid") if isinstance(item, dict) else item
                 for item in recipient_values
-                if (isinstance(item, dict) and item.get("uuid")) or isinstance(item, str)
+                if (isinstance(item, dict) and item.get("uuid"))
+                or isinstance(item, str)
             ]
             if not recipient_uuids:
                 raise ValidationException("At least one message recipient is required")
-            message = await SystemMessageService.create({
-                "subject": values.get("subject") or {},
-                "message": values.get("message") or {},
-                "from_user_uuid": sender.uuid,
-                "to_user_uuids": recipient_uuids,
-            })
+            message = await SystemMessageService.create(
+                {
+                    "subject": values.get("subject") or {},
+                    "message": values.get("message") or {},
+                    "from_user_uuid": sender.uuid,
+                    "to_user_uuids": recipient_uuids,
+                }
+            )
             return {
                 "uuid": str(message.uuid),
                 "status": _serialize_value(message.status),
@@ -393,12 +408,23 @@ class SystemModelService:
         model_class = MODEL_CLASS_BY_NAME.get(model)
         if model_class is None:
             raise ResourceNotFoundException(resource="SystemModel", resource_id=model)
-        protected = {"id", "uuid", "created_at", "create_by", "updated_at", "updated_by"}
+        protected = {
+            "id",
+            "uuid",
+            "created_at",
+            "create_by",
+            "updated_at",
+            "updated_by",
+        }
         columns = {column.key for column in inspect(model_class).columns} - protected
         invalid = set(values) - columns
         if invalid:
-            raise ValidationException(f"Fields cannot be created: {', '.join(sorted(invalid))}")
-        prepared = {key: value for key, value in values.items() if value not in (None, "", [])}
+            raise ValidationException(
+                f"Fields cannot be created: {', '.join(sorted(invalid))}"
+            )
+        prepared = {
+            key: value for key, value in values.items() if value not in (None, "", [])
+        }
         if model == "user.user":
             await _require_admin_for_user_fields(
                 prepared, current_user_id, {"is_admin", "mcp_access"}
@@ -408,7 +434,9 @@ class SystemModelService:
             password = str(prepared.get("password", ""))
             user_type = str(prepared.get("user_type", ""))
             if not 2 <= len(name) <= 100:
-                raise ValidationException("Name must contain between 2 and 100 characters")
+                raise ValidationException(
+                    "Name must contain between 2 and 100 characters"
+                )
             if len(password) < 8:
                 raise ValidationException("Password must contain at least 8 characters")
             if user_type not in {"HUMAN", "SYSTEM", "AIAGENT"}:
@@ -432,8 +460,16 @@ class SystemModelService:
             for column in inspect(model_class).columns
             if column.key not in {"id", "password"}
         }
-        creator = await UserRepository.get_by_id(current_user_id) if current_user_id is not None else None
-        result[FOLLOWERS_FIELD_NAME] = [_serialize_follower(creator)] if creator and creator.user_type != "SYSTEM" else []
+        creator = (
+            await UserRepository.get_by_id(current_user_id)
+            if current_user_id is not None
+            else None
+        )
+        result[FOLLOWERS_FIELD_NAME] = (
+            [_serialize_follower(creator)]
+            if creator and creator.user_type != "SYSTEM"
+            else []
+        )
         return result
 
     @staticmethod
@@ -449,7 +485,9 @@ class SystemModelService:
             and current_user_id is not None
             and not _belongs_to_user(model, record, current_user_id)
         ):
-            raise ResourceNotFoundException(resource=model, resource_id=str(record_uuid))
+            raise ResourceNotFoundException(
+                resource=model, resource_id=str(record_uuid)
+            )
         return await SystemModelRepository.delete_record(model, record_uuid)
 
     @staticmethod
@@ -465,11 +503,20 @@ class SystemModelService:
         model_class = MODEL_CLASS_BY_NAME.get(model)
         if model_class is None:
             raise ResourceNotFoundException(resource="SystemModel", resource_id=model)
-        protected = {"id", "uuid", "created_at", "create_by", "updated_at", "updated_by"}
+        protected = {
+            "id",
+            "uuid",
+            "created_at",
+            "create_by",
+            "updated_at",
+            "updated_by",
+        }
         columns = {column.key for column in inspect(model_class).columns} - protected
         invalid = set(values) - columns
         if invalid:
-            raise ValidationException(f"Fields cannot be updated: {', '.join(sorted(invalid))}")
+            raise ValidationException(
+                f"Fields cannot be updated: {', '.join(sorted(invalid))}"
+            )
         if model == "user.user":
             if "password" in values:
                 raise ValidationException(
@@ -485,10 +532,14 @@ class SystemModelService:
             and current_user_id is not None
             and not _belongs_to_user(model, existing, current_user_id)
         ):
-            raise ResourceNotFoundException(resource=model, resource_id=str(record_uuid))
+            raise ResourceNotFoundException(
+                resource=model, resource_id=str(record_uuid)
+            )
         record = await SystemModelRepository.update_record(model, record_uuid, values)
         if record is None:
-            raise ResourceNotFoundException(resource=model, resource_id=str(record_uuid))
+            raise ResourceNotFoundException(
+                resource=model, resource_id=str(record_uuid)
+            )
         result = {key: _serialize_value(getattr(record, key)) for key in values}
         if follower_values is not None:
             system_model = await SystemModelRepository.get_by_name(model)
@@ -503,7 +554,9 @@ class SystemModelService:
                 follower_uuids,
                 current_user_id,
             )
-            result[FOLLOWERS_FIELD_NAME] = [_serialize_follower(user) for user in followers]
+            result[FOLLOWERS_FIELD_NAME] = [
+                _serialize_follower(user) for user in followers
+            ]
         return result
 
     @staticmethod
@@ -569,7 +622,11 @@ class SystemModelService:
         )
         field_names = _schema_field_names(schema_fields)
         model_class = MODEL_CLASS_BY_NAME.get(model)
-        if model_class is not None and "sequence" in inspect(model_class).columns and "sequence" not in field_names:
+        if (
+            model_class is not None
+            and "sequence" in inspect(model_class).columns
+            and "sequence" not in field_names
+        ):
             field_names.append("sequence")
         if system_model.group_by and system_model.group_by not in field_names:
             field_names.append(system_model.group_by)
@@ -580,7 +637,8 @@ class SystemModelService:
         )
         if model in USER_SCOPED_MODELS and current_user_id is not None:
             records = [
-                record for record in records
+                record
+                for record in records
                 if _belongs_to_user(model, record, current_user_id)
             ]
         relation_model_map = _relation_model_map(schema_fields, relation_map)
@@ -622,8 +680,7 @@ class SystemModelService:
             if creator is not None:
                 users_by_uuid.setdefault(str(creator.uuid), creator)
             followers_lookup[record_uuid] = [
-                _serialize_follower(user)
-                for user in users_by_uuid.values()
+                _serialize_follower(user) for user in users_by_uuid.values()
             ]
         model_payload = {
             "name": system_model.name,

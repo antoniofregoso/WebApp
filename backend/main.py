@@ -28,6 +28,7 @@ from app.domains.users.service.user_log_service import UserLogService
 from app.domains.system.service.system_task_reminder_service import (
     SystemTaskReminderService,
 )
+from app.domains.system.search.registry import validate_configured_search_models
 from app.mcp.server import mcp, mcp_app
 
 from strawberry.fastapi import GraphQLRouter
@@ -88,6 +89,7 @@ def init_app():
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
         logger.info("Iniciando aplicación...")
+        await validate_configured_search_models()
         stale_logs_task = asyncio.create_task(close_stale_user_logs_periodically())
         task_reminders_task = asyncio.create_task(sweep_task_reminders_periodically())
         async with AsyncExitStack() as stack:

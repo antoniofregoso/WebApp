@@ -1,366 +1,262 @@
-# Views Format 
+# Declarative View Format
 
-## Data visualization type
+The view schema controls how model fields appear in Kanban, list, form, and
+calendar views. Field definitions remain canonical in `system_models.json`;
+view placement lives in `system_model_schemas.json`.
 
-- string
-- integer
-- decimal
-- monetary
-- percentage
-- date
-- datetime
-- boolean
-- color
-- image
-- text
-- password
-- selection
-- status_badge
-- html
-- json
-- many2one
-- many2one_avatar
-- one2many
-- oney2many_kanban
-- one2many_list
-- many2many
-- many2many_pills
+## Field types
 
+| Category      | Types                                                                                                         |
+| ------------- | ------------------------------------------------------------------------------------------------------------- |
+| Text          | `string`, `text`, `password`, `html`, `json`                                                                  |
+| Numeric       | `integer`, `decimal`, `monetary`, `percentage`                                                                |
+| Date and time | `date`, `datetime`                                                                                            |
+| Visual        | `boolean`, `color`, `image`, `selection`, `status_badge`                                                      |
+| Relationships | `many2one`, `many2one_avatar`, `one2many`, `one2many_kanban`, `one2many_list`, `many2many`, `many2many_pills` |
 
-## Schema
+`many2one_avatar` renders the related record's avatar and display name. The
+backend serializes it as an object containing `uuid`, `name`, `display_name`,
+`avatar`, and `model`.
 
-The schema defines the visualization of each field in its kanban, list, form, and calendar formats.
+## Schema structure
 
 ```json
 {
-    "schema":[
-        {
-            "name": "", 
-            "type": "",
-            "label": {
-                "es": "",
-                "en": ""
-            },
-            "kanban":{}, 
-            "list":{},
-            "form":{},
-            "calendar":{}
-        }
-    ]
+  "name": "default",
+  "use": "view",
+  "model": "user.log",
+  "view": [
+    {
+      "name": "user_id",
+      "type": "many2one_avatar",
+      "model": "user.user",
+      "label": {
+        "en_US": "User",
+        "es_MX": "Usuario"
+      },
+      "kanban": { "header": "title" },
+      "list": { "column": 1 },
+      "form": {
+        "header": "title",
+        "readonly": true
+      }
+    }
+  ]
 }
 ```
 
-### name
-The name of the field that will be used in the views.
-### type
-The type of display is taken from the field definition in system.model.field
-### label
-The name that will appear as a reference to that field in the views
+Every schema field supports:
+
+- `name`: record property read by the renderer.
+- `type`: visualization component used for the value.
+- `model`: related model for relationship fields.
+- `label`: localized user-facing label.
+- `kanban`, `list`, `form`, and `calendar`: view-specific configuration.
+
+Use `en_US` and `es_MX` in canonical data. The backend adds `en` and `es`
+aliases to the view response.
+
+## Read-only models
+
+Set `readonly` on the model definition when no generic view may mutate its
+records:
+
+```json
+{
+  "name": "user.log",
+  "readonly": true,
+  "fields": []
+}
+```
+
+Read-only model views hide creation, editing, deletion, archive, drag, and
+communication controls. The backend must enforce the same restriction.
+
+Use `form.readonly` for a field that is immutable within an otherwise writable
+model:
+
+```json
+{
+  "form": {
+    "leftColumn": 0,
+    "readonly": true
+  }
+}
+```
+
 ## Kanban
 
-Grouping is configured at model level. `groupBy` contains the record field name,
-and the property with that name contains the available groups. If `groupBy` is
-omitted, cards are displayed without grouping even when group values exist.
+Kanban grouping is configured at model level. `groupBy` contains the record
+field name, while the property with that name contains the available groups.
 
 ```json
 {
-    "groupBy": "status",
-    "status": [
-        { "value": "draft", "en": "Draft", "es": "Borrador", "color": "zinc" },
-        { "value": "confirmed", "en": "Confirmed", "es": "Confirmada", "color": "green" }
-    ]
-}
-```
-
-The Kanban view consists of 4 areas:
-### Header
-It has 3 sections where only one field is allowed:
-1. image: For avatar or logo, located on the left.If the schema does not mention an image, it is not rendered.
-
-2. title: For the card title.
-
-3. subtitle: Located below the title in smaller font.
-### rightColumn
-Right column within the Kanban card body. Fields are ordered one below the other, defining their position with an integer index starting from 0.
-### leftColumn
-Left column within the Kanban card body. Fields are ordered one below the other, defining their position with an integer index starting from 0.
-### footer
-Fields are ordered in descending order across the width of the Kanban card.
-
-```json
-{
-    "kanban":{
-        "header":"image|title|subtitle",
-        "rightColumn":1,
-        "leftColumn":1,
-        "footer":1
+  "groupBy": "status",
+  "status": [
+    { "value": "draft", "en": "Draft", "es": "Borrador", "color": "zinc" },
+    {
+      "value": "confirmed",
+      "en": "Confirmed",
+      "es": "Confirmada",
+      "color": "green"
     }
+  ]
 }
 ```
+
+### Card regions
+
+| Region     | Configuration              | Behavior                   |
+| ---------- | -------------------------- | -------------------------- |
+| Image      | `{ "header": "image" }`    | Avatar or logo on the left |
+| Title      | `{ "header": "title" }`    | Primary linked card text   |
+| Subtitle   | `{ "header": "subtitle" }` | Muted text below the title |
+| Left body  | `{ "leftColumn": 0 }`      | Ordered body field         |
+| Right body | `{ "rightColumn": 0 }`     | Ordered body field         |
+| Footer     | `{ "footer": 0 }`          | Ordered footer field       |
+
+Only one field should occupy each header role. Body and footer positions are
+zero-based integers. When the title is a `many2one_avatar`, the card uses the
+related name as its title and the related avatar as its header image.
 
 ![Kanban](./images/kanban.png)
 
-![Kanban Dark](./images/kanban_dark.png)
+![Kanban dark theme](./images/kanban_dark.png)
 
 ## List
 
-The `list` object includes a field as a column in the list view.
-
-- `column`: integer that defines the column position. Columns are rendered from
-  the lowest value to the highest value.
-- `order`: enables sorting for the column.
-  - `true`: displays the sorting control without applying an initial order.
-  - `"asc"`: displays the sorting control and initially sorts the records in
-    ascending order.
-  - `"desc"`: displays the sorting control and initially sorts the records in
-    descending order.
-
-Only one field per schema should declare an initial `"asc"` or `"desc"` order.
-The user can click the sorting control to alternate between ascending and
-descending order.
-
-Sortable column without an initial order:
+Add `list` to include a field as a table column:
 
 ```json
 {
-    "list": {
-        "column": 7,
-        "order": true
-    }
+  "name": "date",
+  "type": "datetime",
+  "label": {
+    "en_US": "Date",
+    "es_MX": "Fecha"
+  },
+  "list": {
+    "column": 3,
+    "order": "desc"
+  }
 }
 ```
 
-Date column with the newest records first:
+- `column` controls placement from lowest to highest.
+- `order: true` enables interactive sorting without an initial direction.
+- `order: "asc"` or `"desc"` enables sorting and applies an initial order.
+- Only one field should declare an initial order.
+- Omit `list`, or set it to `false`, to hide the field.
 
-```json
-{
-    "name": "date",
-    "type": "datetime",
-    "label": {
-        "es_MX": "Fecha",
-        "en_US": "Date"
-    },
-    "list": {
-        "column": 3,
-        "order": "desc"
-    }
-}
-```
-
-If `list` is omitted, or its value is `false`, the field is not displayed in
-the list view.
+Relationship fields continue to use their relationship renderer in a list.
+For example, `many2one_avatar` displays both avatar and name in the same cell.
 
 ![List](./images/list.png)
 
-![List Dark](./images/list_dark.png)
+![List dark theme](./images/list_dark.png)
 
 ## Form
 
-The form view consists of four areas:
-
-1. `header`: accepts one `image`, one `title`, and one `subtitle` field. The image is always rendered on the left and is omitted completely when no schema field declares `"header": "image"`.
-2. `leftColumn`: fields in the left body column, ordered by an integer index starting at `0`.
-3. `rightColumn`: fields in the right body column, ordered by an integer index starting at `0`.
-4. `tab`: groups fields into tabs. The integer selects and orders the tab; the first field label is used as its title.
-
-Each field must declare only one placement. `required`, `readonly`, `placeholder`, and `help` can be combined with any placement.
+Forms contain a header, two body columns, optional tabs, and a footer.
 
 ```json
 {
-    "form": {
-        "header": "image|title|subtitle",
-        "rightColumn": 1,
-        "leftColumn": 1,
-        "tab": 0,
-        "required": true,
-        "readonly": true,
-        "placeholder": {
-            "en": "",
-            "es": ""
-        },
-        "help": {
-            "en": "",
-            "es": ""
-        }
-    }
-}
-```
-
-```json
-{
-    "name": "settings_ids",
-    "type": "one2many",
-    "label": {
-        "es_MX": "Configuraciones",
-        "en_US": "Settings"
+  "form": {
+    "header": "title",
+    "leftColumn": 0,
+    "rightColumn": 0,
+    "tab": 0,
+    "required": true,
+    "readonly": true,
+    "placeholder": {
+      "en_US": "Choose a value",
+      "es_MX": "Selecciona un valor"
     },
-    "form": {
-        "tab": 2,
-        "view": "one2many_list",
-        "function":[
-            {
-                "name": "description",
-                "type": "count",
-                "label": {
-                    "es_MX": "Total",
-                    "en_US": "Total"
-                }
-            }
-        ],
-        "list_view": [
-            {
-                "name": "name",
-                "type": "string",
-                "label": {
-                    "es_MX": "Clave",
-                    "en_US": "Key"
-                }
-            },
-            {
-                "name": "description",
-                "type": "string",
-                "label": {
-                    "es_MX": "Descripción",
-                    "en_US": "Description"
-                }
-            }
-        ],
-        "placeholder": {
-            "es_MX": "Configuraciones",
-            "en_US": "Settings"
-        },
-        "help": {
-            "es_MX": "Configuraciones de la aplicación",
-            "en_US": "App settings"
-        }
+    "help": {
+      "en_US": "Helpful field guidance",
+      "es_MX": "Ayuda para el campo"
     }
+  }
 }
 ```
 
-![Form](./images/form.png)
+A field should declare only one placement:
 
-![Form Dark](./images/form_dark.png)
+- `header`: `image`, `title`, or `subtitle`.
+- `leftColumn`: zero-based position in the left column.
+- `rightColumn`: zero-based position in the right column.
+- `tab`: zero-based tab position.
+
+`required`, `readonly`, `placeholder`, and `help` may accompany any placement.
 
 ### Followers
 
-Every record can be followed by users by default. Followers are not declared in
-the model schema JSON; the platform adds the followers widget automatically to
-the left side of the form footer.
+The platform adds a followers field automatically. Human and AI-agent users
+may follow a record; system users are excluded. Read-only models render this
+field without mutation controls.
 
-The widget displays human and AI-agent users only. System users are excluded.
+### Related Kanban cards
 
-### one2many_kanban
-
-Any relational field (`one2many`, `one2many_pills`, etc.) can render its related
-records as mini-kanban cards instead of its default control by setting
-`"view": "one2many_kanban"` in its `form` config. `kanban_view.header` maps each
-card slot to a property name read directly off each related record — it does
-not reference schema fields.
-
-1. `image`: URL for the avatar, shown left of the title. Omitted entirely when
-   not declared; if declared but the record has no value, an icon placeholder
-   is shown instead — same as the [Kanban](#header) header image.
-2. `title`: card title, to the right of the image.
-3. `subtitle`: shown below the title, in smaller/muted text.
-
-If a related record has a `color` property, the card border is colored using
-the same palette as the [Color](#data-visualization-type) field type — see the
-regular Kanban view's accent-border behavior.
+Use `one2many_kanban` to display related records as compact cards:
 
 ```json
 {
-    "form": {
-        "tab": 0,
-        "view": "one2many_kanban",
-        "kanban_view": {"header": {"image": "avatar_url", "title": "name", "subtitle": "email"}},
-        "placeholder": {
-            "es_MX": "Usuarios",
-            "en_US": "Users"
-        },
-        "help": {
-            "es_MX": "Usuarios asociados",
-            "en_US": "Associated users"
-        }
+  "name": "users",
+  "type": "one2many_kanban",
+  "form": {
+    "tab": 0,
+    "kanban_view": {
+      "header": {
+        "image": "avatar_url",
+        "title": "name",
+        "subtitle": "email"
+      }
     }
+  }
 }
 ```
+
+The header mapping references properties on each related record, not fields in
+the parent schema.
+
+![Form](./images/form.png)
+
+![Form dark theme](./images/form_dark.png)
 
 ## Calendar
 
-The three options are assigned to fields in the model schema. An event is
-rendered only when its `startDate` field contains a valid date. If `endDate` is
-empty or invalid, the event lasts 30 minutes. Event text starts with the start
-time followed by the configured title.
+Calendar roles are assigned to individual fields:
 
 ```json
 {
-    "calendar":{
-        "startDate":true,
-        "endDate":true,
-        "title":true
-    }
+  "calendar": {
+    "startDate": true,
+    "endDate": true,
+    "title": true
+  }
 }
 ```
+
+An event requires a valid `startDate`. When `endDate` is empty or invalid, the
+renderer uses a 30-minute duration. The event text contains its start time and
+configured title.
+
 ![Calendar](./images/calendar.png)
 
-![Calendar Dark](./images/calendar_dark.png)
+![Calendar dark theme](./images/calendar_dark.png)
 
-## Insight
+## Insights
 
-### kpis
-EWS_FORMAT.MD?
-- value: number
-- unit: any
-- trend: up|down
+Insights use a separate payload containing `kpis`, `gauges`, and `graphics`.
+Every element requires a stable `id` so values can update without rebuilding
+the entire dashboard.
 
-```json
- {
-    "id": "profit_margin",
-    "name":{
-        "en": "Profit margin",
-        "es": "Margen de beneficio"
-    },
-    "value": 25.5,
-    "unit": "%",
-    "trend": "up"
-}
-```
-![Render KPI](./images/kpi.png)
+See [Insights Format](./INSIGHTS_FORMAT.md) and the visualization references:
 
-### gauges
-
-```json
-{
-            "id": "operational_efficiency",
-            "name":{
-                "en": "Operational Efficiency",
-                "es": "Eficiencia Operativa"
-            },
-            "value": 78,
-            "unit": "%",
-            "max": 100,
-            "thresholds": {
-                "green": 80,
-                "yellow": 60,
-                "red": 0
-            }
-        }
-```
-![Render Gauge](./images/gauge.png)
-
-### graphics
-
-1. [Bar](./BAR.md).
-2. [Line](./LINE.md).
-3. [Donut](./DONUT.md).
-4. [Tree Map](./TREEMAP.md).
-5. [Radar](./RADAR.md).
-6. [Heat Map](./HEATMAP.md).
-7. [Sankey](./SANKEY.md).
-
-The Insight view renders the `kpis`, `gauges`, and `graphics` collections. Each
-element is linked to the DOM or its chart instance using the `id` defined
-in the data format. Value changes preserve the container and update
-only the corresponding element; structural changes rebuild
-the view. See [DATA_FORMAT.md](./DATA_FORMAT.md#reactive-updates)
-for the schema and available actions.
+- [Bar](./BAR.md)
+- [Line](./LINE.md)
+- [Donut](./DONUT.md)
+- [Tree map](./TREEMAP.md)
+- [Radar](./RADAR.md)
+- [Heat map](./HEATMAP.md)
+- [Sankey](./SANKEY.md)

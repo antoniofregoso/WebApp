@@ -1,5 +1,6 @@
 import uuid as uuid_lib
 from datetime import datetime
+from enum import Enum
 from typing import Optional
 
 import strawberry
@@ -86,6 +87,25 @@ class SystemSearchInput:
     limit: int = 20
 
 
+@strawberry.enum
+class SystemSearchStatus(str, Enum):
+    OK = "OK"
+    PARTIAL = "PARTIAL"
+    NEEDS_CLARIFICATION = "NEEDS_CLARIFICATION"
+    FAILED = "FAILED"
+
+
+@strawberry.enum
+class SystemSearchErrorCode(str, Enum):
+    INVALID_PLAN = "INVALID_PLAN"
+    MODEL_NOT_ALLOWED = "MODEL_NOT_ALLOWED"
+    FIELD_NOT_ALLOWED = "FIELD_NOT_ALLOWED"
+    OPERATOR_NOT_ALLOWED = "OPERATOR_NOT_ALLOWED"
+    AI_UNAVAILABLE = "AI_UNAVAILABLE"
+    TIMEOUT = "TIMEOUT"
+    INTERNAL_ERROR = "INTERNAL_ERROR"
+
+
 @strawberry.type
 class SystemSearchResultType:
     model: str
@@ -99,10 +119,22 @@ class SystemSearchResultType:
 
 
 @strawberry.type
+class SystemSearchErrorType:
+    code: SystemSearchErrorCode
+    message: str
+    model: Optional[str] = None
+    field: Optional[str] = None
+
+
+@strawberry.type
 class SystemSearchResponseType:
-    status: str
+    request_id: uuid_lib.UUID
+    status: SystemSearchStatus
     interpreted_query: str
+    needs_clarification: bool
+    clarification_question: Optional[str]
     results: list[SystemSearchResultType]
+    errors: list[SystemSearchErrorType]
 
 
 @strawberry.type

@@ -1,9 +1,11 @@
 import uuid as uuid_lib
+from time import monotonic
 
 import strawberry
 
 from app.core.config.settings import settings
 from app.core.exceptions import AuthorizationException
+from app.core.logging import get_logger
 from app.core.security.jwt_bearer import IsAuthenticated
 from app.core.security.jwt_manager import JWTManager
 from app.domains.system.graphql.mappers import (
@@ -21,8 +23,11 @@ from app.domains.system.graphql.types import (
     SystemModelType,
     SystemModelViewType,
     SystemSearchInput,
+    SystemSearchErrorCode,
+    SystemSearchErrorType,
     SystemSearchResponseType,
     SystemSearchResultType,
+    SystemSearchStatus,
     SystemNotificationType,
     SystemPendingCountsType,
     SystemTaskType,
@@ -33,6 +38,12 @@ from app.domains.system.graphql.types import (
 from app.domains.system.service.system_message_service import SystemMessageService
 from app.domains.system.service.system_model_service import SystemModelService
 from app.domains.system.service.system_search_service import SystemSearchService
+from app.domains.system.service.system_search_audit_service import (
+    SystemSearchAuditService,
+)
+from app.domains.system.search.compiler import SearchQueryCompilationError
+from app.domains.system.search.temporal import SearchTimezoneError
+from app.domains.system.search.validator import SearchPlanValidationError
 from app.domains.system.service.system_notification_service import (
     SystemNotificationService,
 )
@@ -45,6 +56,36 @@ from app.domains.system.service.system_whatsapp_template_service import (
     SystemWhatsAppTemplateService,
 )
 from app.domains.users.service.user_service import UserService
+
+logger = get_logger(__name__)
+
+
+async def _record_search_audit(
+    *,
+    request_id: uuid_lib.UUID,
+    user_id: int,
+    query: str,
+    response: SystemSearchResponseType,
+    started_at: float,
+    queried_models: list[str] | tuple[str, ...] = (),
+) -> None:
+    try:
+        await SystemSearchAuditService.record(
+            request_id=request_id,
+            user_id=user_id,
+            query=query,
+            status=response.status.value,
+            models=list(queried_models),
+            duration_ms=round((monotonic() - started_at) * 1000),
+            result_count=len(response.results),
+            error_codes=[error.code.value for error in response.errors],
+        )
+    except Exception:
+        # Auditing is best effort and must not change the search response.
+        logger.exception(
+            "Unable to persist search audit",
+            extra={"request_id": str(request_id), "user_id": user_id},
+        )
 
 
 async def get_current_user(info: strawberry.types.Info):
@@ -100,17 +141,139 @@ class SystemQuery:
         self, input: SystemSearchInput, info: strawberry.types.Info
     ) -> SystemSearchResponseType:
         user = await get_current_user(info)
-        results = await SystemSearchService.search(
-            input.query,
-            current_user_id=user.id,
-            lang=input.lang,
-            limit=input.limit,
-        )
-        return SystemSearchResponseType(
-            status="OK",
-            interpreted_query=input.query,
-            results=[SystemSearchResultType(**result.__dict__) for result in results],
-        )
+        request_id = uuid_lib.uuid4()
+        started_at = monotonic()
+        try:
+            results = await SystemSearchService.search(
+                input.query,
+                current_user_id=user.id,
+                lang=input.lang,
+                limit=input.limit,
+            )
+            response = SystemSearchResponseType(
+                request_id=request_id,
+                status=SystemSearchStatus.OK,
+                interpreted_query=input.query,
+                needs_clarification=False,
+                clarification_question=None,
+                results=[
+                    SystemSearchResultType(**result.__dict__) for result in results
+                ],
+                errors=[],
+            )
+            await _record_search_audit(
+                request_id=request_id,
+                user_id=user.id,
+                query=input.query,
+                response=response,
+                started_at=started_at,
+                queried_models=getattr(
+                    results,
+                    "queried_models",
+                    tuple(result.model for result in results),
+                ),
+            )
+            return response
+        except (
+            SearchPlanValidationError,
+            SearchQueryCompilationError,
+            SearchTimezoneError,
+        ):
+            logger.warning(
+                "Rejected invalid search plan",
+                extra={"request_id": str(request_id), "user_id": user.id},
+            )
+            message = (
+                "El plan de búsqueda no es válido."
+                if input.lang.startswith("es")
+                else "The search plan is invalid."
+            )
+            response = SystemSearchResponseType(
+                request_id=request_id,
+                status=SystemSearchStatus.FAILED,
+                interpreted_query=input.query,
+                needs_clarification=False,
+                clarification_question=None,
+                results=[],
+                errors=[
+                    SystemSearchErrorType(
+                        code=SystemSearchErrorCode.INVALID_PLAN,
+                        message=message,
+                    )
+                ],
+            )
+            await _record_search_audit(
+                request_id=request_id,
+                user_id=user.id,
+                query=input.query,
+                response=response,
+                started_at=started_at,
+            )
+            return response
+        except TimeoutError:
+            logger.warning(
+                "Search timed out",
+                extra={"request_id": str(request_id), "user_id": user.id},
+            )
+            message = (
+                "La búsqueda agotó el tiempo disponible."
+                if input.lang.startswith("es")
+                else "The search timed out."
+            )
+            response = SystemSearchResponseType(
+                request_id=request_id,
+                status=SystemSearchStatus.FAILED,
+                interpreted_query=input.query,
+                needs_clarification=False,
+                clarification_question=None,
+                results=[],
+                errors=[
+                    SystemSearchErrorType(
+                        code=SystemSearchErrorCode.TIMEOUT,
+                        message=message,
+                    )
+                ],
+            )
+            await _record_search_audit(
+                request_id=request_id,
+                user_id=user.id,
+                query=input.query,
+                response=response,
+                started_at=started_at,
+            )
+            return response
+        except Exception:
+            logger.exception(
+                "Unexpected search failure",
+                extra={"request_id": str(request_id), "user_id": user.id},
+            )
+            message = (
+                "No se pudo completar la búsqueda."
+                if input.lang.startswith("es")
+                else "The search could not be completed."
+            )
+            response = SystemSearchResponseType(
+                request_id=request_id,
+                status=SystemSearchStatus.FAILED,
+                interpreted_query=input.query,
+                needs_clarification=False,
+                clarification_question=None,
+                results=[],
+                errors=[
+                    SystemSearchErrorType(
+                        code=SystemSearchErrorCode.INTERNAL_ERROR,
+                        message=message,
+                    )
+                ],
+            )
+            await _record_search_audit(
+                request_id=request_id,
+                user_id=user.id,
+                query=input.query,
+                response=response,
+                started_at=started_at,
+            )
+            return response
 
     @strawberry.field(permission_classes=[IsAuthenticated])
     async def system_messages(self) -> list[SystemMessageType]:

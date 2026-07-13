@@ -44,6 +44,13 @@ def test_system_search_query_is_exposed():
 
     assert "systemSearch(input: SystemSearchInput!)" in schema
     assert "type SystemSearchResponseType" in schema
+    assert "enum SystemSearchStatus" in schema
+    assert "OK" in schema
+    assert "PARTIAL" in schema
+    assert "NEEDS_CLARIFICATION" in schema
+    assert "FAILED" in schema
+    assert "type SystemSearchErrorType" in schema
+    assert "errors: [SystemSearchErrorType!]!" in schema
 
 
 def test_refresh_session_mutation_is_exposed():

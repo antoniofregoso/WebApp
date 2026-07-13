@@ -10,7 +10,12 @@ from app.domains.system.service.system_search_service import SystemSearchService
 def field(name, result, weight="B"):
     return SimpleNamespace(
         name=name,
-        search_config={"enabled": True, "text": True, "result": result, "weight": weight},
+        search_config={
+            "enabled": True,
+            "text": True,
+            "result": result,
+            "weight": weight,
+        },
     )
 
 
@@ -18,11 +23,15 @@ def field(name, result, weight="B"):
 async def test_search_only_uses_enabled_models_and_user_scoped_views(monkeypatch):
     models = [
         SimpleNamespace(
-            name="system.task", search=True, label={"es_MX": "Tareas"},
+            name="system.task",
+            search=True,
+            label={"es_MX": "Tareas"},
             fields=[field("title", "title", "A"), field("priority", "subtitle")],
         ),
         SimpleNamespace(
-            name="system.company", search=False, label={"es_MX": "Empresas"},
+            name="system.company",
+            search=False,
+            label={"es_MX": "Empresas"},
             fields=[field("name", "title")],
         ),
     ]
@@ -33,10 +42,20 @@ async def test_search_only_uses_enabled_models_and_user_scoped_views(monkeypatch
     async def get_view(model, use, name, current_user_id=None):
         assert model == "system.task"
         assert current_user_id == 7
-        return {"records": [
-            {"uuid": "task-1", "title": {"es_MX": "Preparar reporte urgente"}, "priority": "Urgent"},
-            {"uuid": "task-2", "title": {"es_MX": "Comprar café"}, "priority": "Low"},
-        ]}
+        return {
+            "records": [
+                {
+                    "uuid": "task-1",
+                    "title": {"es_MX": "Preparar reporte urgente"},
+                    "priority": "Urgent",
+                },
+                {
+                    "uuid": "task-2",
+                    "title": {"es_MX": "Comprar café"},
+                    "priority": "Low",
+                },
+            ]
+        }
 
     monkeypatch.setattr(SystemModelRepository, "get_all", get_all)
     monkeypatch.setattr(SystemModelService, "get_view", get_view)
@@ -56,3 +75,21 @@ async def test_search_rejects_empty_queries(monkeypatch):
 
     monkeypatch.setattr(SystemModelRepository, "get_all", fail_if_called)
     assert await SystemSearchService.search("   ", 7) == []
+
+
+@pytest.mark.asyncio
+async def test_search_fails_closed_for_enabled_unregistered_models(monkeypatch):
+    async def get_all():
+        return [
+            SimpleNamespace(
+                name="system.company",
+                search=True,
+                label={"en_US": "Companies"},
+                fields=[field("name", "title")],
+            )
+        ]
+
+    monkeypatch.setattr(SystemModelRepository, "get_all", get_all)
+
+    with pytest.raises(ValueError, match="is not registered"):
+        await SystemSearchService.search("Acme", 7)

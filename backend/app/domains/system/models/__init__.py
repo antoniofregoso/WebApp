@@ -29,6 +29,7 @@ from app.domains.system.models.system_notification import (
 )
 from app.domains.system.models.system_push_subscription import SystemPushSubscription
 from app.domains.system.models.system_seed_run import SystemSeedRun
+from app.domains.system.models.system_search_audit import SystemSearchAudit
 from app.domains.system.models.system_task import SystemTask, TaskPriority, TaskStatus
 from app.domains.system.models.system_timezone import SystemTimezone
 from app.domains.system.models.system_whatsapp import (
@@ -68,6 +69,7 @@ __all__ = [
     "NotificationStatus",
     "SystemPushSubscription",
     "SystemSeedRun",
+    "SystemSearchAudit",
     "SystemTask",
     "TaskPriority",
     "TaskStatus",

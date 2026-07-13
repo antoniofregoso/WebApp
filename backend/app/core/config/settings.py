@@ -4,6 +4,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
+from pydantic import Field
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -14,6 +16,9 @@ class Settings(BaseSettings):
     # App Config
     APP_NAME: str = "API"
     APP_VERSION: str = "0.0.1"
+    DEFAULT_TIMEZONE: str = "UTC"
+    SEARCH_TIMEOUT_SECONDS: float = Field(default=10.0, gt=0)
+    SEARCH_AUDIT_RETENTION_DAYS: int = Field(default=30, gt=0)
 
     # Database Config
     DATABASE_URL: str

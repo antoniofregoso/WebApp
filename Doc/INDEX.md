@@ -1,27 +1,73 @@
-# WebAppp
+# WebApp Documentation
 
-WebApp is a template for generating web applications within the conceptual framework of systems theory. This means that the app is a tool for controlling and managing a system or part of a system.
+Welcome to the WebApp documentation. This project uses declarative model and
+view definitions to generate reusable business applications, operational
+screens, dashboards, and reports.
 
-The data is sent in a JSON object, which is a [Single Source of Truth](./DATA_FORMAT.md), containing all the information needed to view and modify the objects.
+## Start here
 
-Each type of object in the system has its own view where you can see all its instances with their state, variables, and location in time. Two visualization modes are available:
+| Guide                                                 | Purpose                                    |
+| ----------------------------------------------------- | ------------------------------------------ |
+| [Project README](../README.md)                        | Overview, architecture, and quick start    |
+| [Database setup](./DATABASE_SETUP.md)                 | Create a clean database and load seed data |
+| [Backend](./BACKEND.md)                               | Run and extend the FastAPI application     |
+| [Frontend](./FRONTEND.md)                             | Run and extend the Preact dashboard        |
+| [Quality and testing](./QUALITY_AND_TESTING_GUIDE.md) | Test and code-quality workflows            |
 
-1. [Object Views](./VIEWS_FORMAT.md).
-2. [Insights](./INSIGHTS_FORMAT.md).
+## Declarative application model
 
-## Backend queries
+The backend returns a single view payload containing model metadata, schema
+configuration, and records. The frontend uses that payload to render the
+selected view without model-specific page code.
 
-Web App uses GraphQL as its query tool.
-The available queries are [here](./GRAPHQL_QUERIES.md).
+| Reference                               | Covers                                   |
+| --------------------------------------- | ---------------------------------------- |
+| [Data format](./DATA_FORMAT.md)         | Model and record payloads                |
+| [View format](./VIEWS_FORMAT.md)        | Kanban, list, form, and calendar layouts |
+| [Insights format](./INSIGHTS_FORMAT.md) | KPIs, gauges, and chart definitions      |
+| [GraphQL queries](./GRAPHQL_QUERIES.md) | Queries and mutations                    |
 
-[Quick Start Guide - Backend](./BACKEND.md).
+### Canonical data files
 
-[Database setup](./DATABASE_SETUP.md).
+| File                        | Responsibility                                                     |
+| --------------------------- | ------------------------------------------------------------------ |
+| `system_models.json`        | Model definitions, field types, validation, and read-only metadata |
+| `system_model_schemas.json` | Placement and behavior of fields in each view                      |
+| `user_users.json`           | Seed users for local development                                   |
 
-[Session renewal](./SESSION_RENEWAL.md).
+These files are located in `backend/app/domains/system/data`.
 
-[AI-powered declarative search design](./AI_SEARCH_DESIGN.md).
+## Platform features
 
-[Notifications (in-app + browser push)](./NOTIFICATIONS.md).
+- [Session renewal](./SESSION_RENEWAL.md)
+- [Notifications and browser push](./NOTIFICATIONS.md)
+- [Declarative global search](./AI_SEARCH_DESIGN.md)
+- [MCP read-only reports](./MCP.md)
+- [Structured error handling](./ERROR_HANDLING_GUIDE.md)
 
-[MCP server (read-only reports for directors)](./MCP.md).
+## Insight visualizations
+
+- [Bar](./BAR.md)
+- [Donut](./DONUT.md)
+- [Heat map](./HEATMAP.md)
+- [Line](./LINE.md)
+- [Radar](./RADAR.md)
+- [Sankey](./SANKEY.md)
+- [Tree map](./TREEMAP.md)
+
+## Conventions
+
+- Documentation prose is written in English.
+- User-facing values may include both `en_US` and `es_MX` translations.
+- File paths are relative to the repository root unless stated otherwise.
+- Commands assume Bash on Linux or macOS.
+- Never use seed passwords or development secrets in production.
+
+## Keeping documentation current
+
+When changing a declarative field, update both sources when applicable:
+
+1. `system_models.json` for the field definition and visualization type.
+2. `system_model_schemas.json` for list, Kanban, form, and calendar placement.
+3. The related migration when existing databases must receive the change.
+4. The relevant reference guide and tests.

@@ -1,6 +1,6 @@
-# GraphQL queries
+# GraphQL Reference
 
-Todas las queries protegidas requieren enviar el token JWT en el header:
+Every protected operation requires a JWT in the request header:
 
 ```http
 Authorization: Bearer <token>
@@ -12,9 +12,9 @@ Endpoint:
 /graphql
 ```
 
-## Usuario actual
+## Current user
 
-Retorna el usuario autenticado a partir del token.
+Returns the user associated with the access token.
 
 ```graphql
 query Me {
@@ -31,9 +31,10 @@ query Me {
 }
 ```
 
-## Logs de actividad
+## Activity logs
 
-Retorna los logs de actividad del usuario autenticado. Es de solo lectura para el frontend: no hay mutaciones publicas para crear o modificar logs.
+Returns activity logs for the authenticated user. Activity logs are read-only;
+the public API does not expose mutations to create or modify them.
 
 ```graphql
 query UserLogs($limit: Int = 20) {
@@ -49,7 +50,7 @@ query UserLogs($limit: Int = 20) {
 }
 ```
 
-Obtiene un log por UUID, solo si pertenece al usuario autenticado.
+Returns one log by UUID when it belongs to the authenticated user.
 
 ```graphql
 query UserLog($logUuid: UUID!) {
@@ -65,23 +66,23 @@ query UserLog($logUuid: UUID!) {
 }
 ```
 
-Estados de log:
+Log statuses:
 
 ```text
 Online
 Offline
 ```
 
-Campos principales:
+Main fields:
 
-- `startDate`: inicio de la sesion/log.
-- `lastSeenAt`: ultimo ping recibido por backend.
-- `endDate`: cierre real o automatico del log.
-- `duration`: duracion calculada en milisegundos.
+- `startDate`: session start time.
+- `lastSeenAt`: most recent heartbeat received by the backend.
+- `endDate`: explicit or automatic session end time.
+- `duration`: calculated duration in milliseconds.
 
-## Contadores pendientes
+## Pending counters
 
-Retorna el numero de mensajes y alertas pendientes de leer para el usuario autenticado.
+Returns unread message and notification counts for the authenticated user.
 
 ```graphql
 query SystemPendingCounts {
@@ -92,14 +93,14 @@ query SystemPendingCounts {
 }
 ```
 
-Criterio del backend:
+Backend criteria:
 
-- `messages`: mensajes donde el usuario autenticado esta en `toUsers` y `status != Read`.
-- `notifications`: alertas directas o grupales del usuario autenticado y `status != read`.
+- `messages`: the user appears in `toUsers` and `status != Read`.
+- `notifications`: direct or group notifications for the user with `status != read`.
 
-## Modelos system
+## System models
 
-Lista los modelos declarativos disponibles.
+Lists the available declarative models.
 
 ```graphql
 query SystemModels {
@@ -127,7 +128,7 @@ query SystemModels {
 }
 ```
 
-Obtiene un modelo por UUID.
+Returns a model by UUID.
 
 ```graphql
 query SystemModel($modelUuid: UUID!) {
@@ -152,7 +153,7 @@ query SystemModel($modelUuid: UUID!) {
 }
 ```
 
-Obtiene un modelo por nombre.
+Returns a model by name.
 
 ```graphql
 query SystemModelByName($name: String!) {
@@ -174,12 +175,16 @@ query SystemModelByName($name: String!) {
 }
 ```
 
-Obtiene la definición completa de vista de un modelo y los registros necesarios
-para renderizarla. Une `system.model`, `system.model.schema` y los registros del
-objeto solicitado.
+Returns a complete model view definition and the records required to render it.
+The response combines the system model, its schema, and the requested business
+records.
 
 ```graphql
-query SystemModelView($model: String!, $use: SystemModelSchemaUse!, $name: String!) {
+query SystemModelView(
+  $model: String!
+  $use: SystemModelSchemaUse!
+  $name: String!
+) {
   systemModelView(model: $model, use: $use, name: $name) {
     model
     records
@@ -187,7 +192,7 @@ query SystemModelView($model: String!, $use: SystemModelSchemaUse!, $name: Strin
 }
 ```
 
-Ejemplo de variables:
+Example variables:
 
 ```json
 {
@@ -197,7 +202,7 @@ Ejemplo de variables:
 }
 ```
 
-La respuesta tiene esta forma:
+Response shape:
 
 ```json
 {
@@ -216,9 +221,9 @@ La respuesta tiene esta forma:
 }
 ```
 
-## Mensajes
+## Messages
 
-Lista mensajes ordenados por `date` descendente.
+Lists messages ordered by `date` descending.
 
 ```graphql
 query SystemMessages {
@@ -243,7 +248,7 @@ query SystemMessages {
 }
 ```
 
-Obtiene un mensaje por UUID.
+Returns a message by UUID.
 
 ```graphql
 query SystemMessage($messageUuid: UUID!) {
@@ -268,7 +273,7 @@ query SystemMessage($messageUuid: UUID!) {
 }
 ```
 
-Estados de mensaje:
+Message statuses:
 
 ```text
 Sent
@@ -283,9 +288,9 @@ Failed
 Draft
 ```
 
-## Alertas
+## Notifications
 
-Lista alertas ordenadas por `date` descendente.
+Lists notifications ordered by `date` descending.
 
 ```graphql
 query SystemNotifications {
@@ -314,7 +319,7 @@ query SystemNotifications {
 }
 ```
 
-Obtiene una alerta por UUID.
+Returns a notification by UUID.
 
 ```graphql
 query SystemNotification($notificationUuid: UUID!) {
@@ -343,7 +348,7 @@ query SystemNotification($notificationUuid: UUID!) {
 }
 ```
 
-Estados de alerta:
+Notification statuses:
 
 ```text
 sent
@@ -351,10 +356,9 @@ delivered
 read
 ```
 
-## Tareas
+## Tasks
 
-Lista las tareas ordenadas primero por `sequence` ascendente y despues por
-`createdAt` descendente.
+Lists tasks ordered by `sequence` ascending and then by `createdAt` descending.
 
 ```graphql
 query SystemTasks {
@@ -378,7 +382,7 @@ query SystemTasks {
 }
 ```
 
-Obtiene una tarea por UUID.
+Returns a task by UUID.
 
 ```graphql
 query SystemTask($taskUuid: UUID!) {
@@ -410,7 +414,7 @@ Variables:
 }
 ```
 
-Estados de tarea:
+Task statuses:
 
 ```text
 pending
@@ -419,7 +423,7 @@ completed
 failed
 ```
 
-Prioridades:
+Priorities:
 
 ```text
 low
@@ -428,7 +432,7 @@ high
 urgent
 ```
 
-Colores disponibles para tareas y alertas:
+Colors available for tasks and notifications:
 
 ```text
 zinc
@@ -439,7 +443,7 @@ green
 orange
 ```
 
-`title` y `description` son objetos JSON traducibles, por ejemplo:
+`title` and `description` are localizable JSON objects:
 
 ```json
 {

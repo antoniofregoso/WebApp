@@ -23,8 +23,11 @@ const SYSTEM_MODEL_BY_NAME_QUERY = gql`
 const SYSTEM_SEARCH_QUERY = gql`
   query SystemSearch($input: SystemSearchInput!) {
     systemSearch(input: $input) {
+      requestId
       status
       interpretedQuery
+      needsClarification
+      clarificationQuestion
       results {
         model
         modelLabel
@@ -34,6 +37,12 @@ const SYSTEM_SEARCH_QUERY = gql`
         snippet
         url
         score
+      }
+      errors {
+        code
+        message
+        model
+        field
       }
     }
   }

@@ -58,16 +58,16 @@ Diseño aprobado: [Doc/AI_SEARCH_DESIGN.md](./Doc/AI_SEARCH_DESIGN.md).
 
 ### Contrato y seguridad pendientes
 
-- [ ] Crear los modelos Pydantic `SearchPlanV1`, `ModelSearchQuery`, `FilterGroup`, `SearchFilter` y `SearchOrder` con campos extra prohibidos.
-- [ ] Implementar el registro seguro `SEARCH_MODEL_REGISTRY` con clase ORM, política de autorización y constructor de URL.
-- [ ] Crear `SearchAuthorizationPolicy` y pruebas de equivalencia entre resultados visibles en vistas y búsqueda.
-- [ ] Aplicar autorización también a modelos relacionados usados en filtros.
-- [ ] Validar modelos, campos, operadores, relaciones, límites y orden antes de ejecutar cualquier plan.
-- [ ] Implementar filtros parametrizados por tipo, incluyendo selections localizadas, fechas relativas y relaciones.
-- [ ] Resolver fechas con zona horaria IANA y convertir límites a UTC.
-- [ ] Agregar respuestas y errores GraphQL tipados: `OK`, `PARTIAL`, `NEEDS_CLARIFICATION` y `FAILED`.
-- [ ] Agregar límites de modelos, filtros, profundidad de relaciones, tiempo y cantidad de resultados.
-- [ ] Registrar auditoría de búsquedas sin conservar texto sensible por defecto.
+- [x] Crear los modelos Pydantic `SearchPlanV1`, `ModelSearchQuery`, `FilterGroup`, `SearchFilter` y `SearchOrder` con campos extra prohibidos.
+- [x] Implementar el registro seguro `SEARCH_MODEL_REGISTRY` con clase ORM, política de autorización y constructor de URL.
+- [x] Crear `SearchAuthorizationPolicy` y pruebas de equivalencia entre resultados visibles en vistas y búsqueda.
+- [x] Aplicar autorización también a modelos relacionados usados en filtros.
+- [x] Validar modelos, campos, operadores, relaciones, límites y orden antes de ejecutar cualquier plan.
+- [x] Implementar filtros parametrizados por tipo, incluyendo selections localizadas, fechas relativas y relaciones.
+- [x] Resolver fechas con zona horaria IANA y convertir límites a UTC.
+- [x] Agregar respuestas y errores GraphQL tipados: `OK`, `PARTIAL`, `NEEDS_CLARIFICATION` y `FAILED`.
+- [x] Agregar límites de modelos, filtros, profundidad de relaciones, tiempo y cantidad de resultados.
+- [x] Registrar auditoría de búsquedas sin conservar texto sensible por defecto.
 
 ### Interpretación con IA pendiente
 
