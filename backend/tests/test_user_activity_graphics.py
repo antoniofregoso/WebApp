@@ -54,9 +54,25 @@ async def test_user_activity_graphics_use_real_session_aggregates(monkeypatch):
     assert captured["end"] == now
     kpis = {item["id"]: item for item in result["kpis"]}
     assert kpis["kpiUsersOnline"]["value"] == 1
+    assert kpis["kpiUsersOnline"]["unit"] == {
+        "en": "Users",
+        "es": "Usuarios",
+    }
     assert kpis["kpiUsersAverageSessionTime"]["value"] == 100
+    assert kpis["kpiUsersAverageSessionTime"]["unit"] == {
+        "en": "Minutes",
+        "es": "Minutos",
+    }
     assert kpis["kpiUsersActiveUsers"]["value"] == 2
+    assert kpis["kpiUsersActiveUsers"]["unit"] == {
+        "en": "Users",
+        "es": "Usuarios",
+    }
     assert kpis["kpiRecurringUsers"]["value"] == 1
+    assert kpis["kpiRecurringUsers"]["unit"] == {
+        "en": "Users",
+        "es": "Usuarios",
+    }
 
     graphics = {item["id"]: item for item in result["graphics"]}
     heatmap = graphics["graphicUsersPerHour"]

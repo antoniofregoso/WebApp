@@ -77,8 +77,9 @@ function renderPeriodSelect(period, lang) {
 function formatKpiValue(kpi, lang) {
     const value = Number(kpi.value);
     if (!Number.isFinite(value)) return escape(kpi.value ?? '');
+    const unit = getLocalized(kpi.unit, lang);
 
-    if (kpi.unit === 'MXN') {
+    if (unit === 'MXN') {
         return escape(new Intl.NumberFormat(locale(lang), {
             style: 'currency',
             currency: 'MXN',
@@ -86,7 +87,7 @@ function formatKpiValue(kpi, lang) {
         }).format(value));
     }
 
-    if (kpi.unit === '%') {
+    if (unit === '%') {
         return `${escape(new Intl.NumberFormat(locale(lang), {
             maximumFractionDigits: 2,
         }).format(value))}%`;
@@ -94,7 +95,7 @@ function formatKpiValue(kpi, lang) {
 
     return `${escape(new Intl.NumberFormat(locale(lang), {
         maximumFractionDigits: 2,
-    }).format(value))}${kpi.unit ? ` ${escape(kpi.unit)}` : ''}`;
+    }).format(value))}${unit ? ` ${escape(unit)}` : ''}`;
 }
 
 function formatNumber(value, lang) {

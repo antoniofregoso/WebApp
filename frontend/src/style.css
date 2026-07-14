@@ -1629,6 +1629,12 @@ body {
   font-size: 0.75rem;
 }
 
+.topbar-lang-flag {
+  font-size: 1.125rem;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
 /* ── User button ────────────────────────────────────────────────────────── */
 
 .topbar-action-btn {

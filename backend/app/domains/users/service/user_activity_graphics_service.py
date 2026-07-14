@@ -219,7 +219,7 @@ class UserActivityGraphicsService:
                     "id": "kpiUsersOnline",
                     "name": {"en": "Online Users", "es": "Usuarios en línea"},
                     "value": len(online_users),
-                    "unit": "Users",
+                    "unit": {"en": "Users", "es": "Usuarios"},
                     "trend": _trend(len(online_users), len(previous_online)),
                 },
                 {
@@ -229,7 +229,7 @@ class UserActivityGraphicsService:
                         "es": "Tiempo promedio de sesión",
                     },
                     "value": current["average_minutes"],
-                    "unit": "Min",
+                    "unit": {"en": "Minutes", "es": "Minutos"},
                     "trend": _trend(
                         current["average_minutes"], previous["average_minutes"]
                     ),
@@ -238,7 +238,7 @@ class UserActivityGraphicsService:
                     "id": "kpiUsersActiveUsers",
                     "name": {"en": "Active Users", "es": "Usuarios activos"},
                     "value": current["active"],
-                    "unit": "Users",
+                    "unit": {"en": "Users", "es": "Usuarios"},
                     "trend": _trend(current["active"], previous["active"]),
                 },
                 {
@@ -248,7 +248,7 @@ class UserActivityGraphicsService:
                         "es": "Usuarios recurrentes",
                     },
                     "value": current["recurring"],
-                    "unit": "Users",
+                    "unit": {"en": "Users", "es": "Usuarios"},
                     "trend": _trend(current["recurring"], previous["recurring"]),
                 },
             ],

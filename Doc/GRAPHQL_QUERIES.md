@@ -50,21 +50,22 @@ annual
 
 The JSON response contains these items under `kpis`:
 
-| ID                               | Value                                              |
-| -------------------------------- | -------------------------------------------------- |
-| `kpiUsersOnline`                 | Users with a current, non-stale online session     |
-| `kpiUsersAverageSessionTime`     | Average session duration in minutes                |
-| `kpiUsersActiveUsers`            | Distinct users active during the selected period   |
-| `kpiRecurringUsers`              | Users with at least two sessions during the period |
+| ID                               | Value                                              | Unit (`en` / `es`)    |
+| -------------------------------- | -------------------------------------------------- | --------------------- |
+| `kpiUsersOnline`                 | Users with a current, non-stale online session     | Users / Usuarios      |
+| `kpiUsersAverageSessionTime`     | Average session duration in minutes                | Minutes / Minutos     |
+| `kpiUsersActiveUsers`            | Distinct users active during the selected period   | Users / Usuarios      |
+| `kpiRecurringUsers`              | Users with at least two sessions during the period | Users / Usuarios      |
 
-Each KPI follows this shape:
+Each KPI follows this shape. Both `name` and `unit` are localized objects with
+`en` and `es` values:
 
 ```json
 {
   "id": "kpiUsersOnline",
   "name": { "en": "Online Users", "es": "Usuarios en línea" },
   "value": 0,
-  "unit": "Users",
+  "unit": { "en": "Users", "es": "Usuarios" },
   "trend": "up"
 }
 ```

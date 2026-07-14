@@ -27,7 +27,7 @@ import { stopActivityHeartbeat } from '../api/activity.js';
 import { logout } from '../api/auth.js';
 import { refreshPendingCounts, stopPendingCountsPolling } from '../api/pendingCounts.js';
 import { markNotificationRead } from '../api/notifications.js';
-import { fetchSystemModelByName, searchSystemModels, updateSystemModelRecord } from '../api/systemModel.js';
+import { fetchSystemModelByName, fetchSystemModelView, searchSystemModels, updateSystemModelRecord } from '../api/systemModel.js';
 import { clearAuthSession, setCurrentUser } from '../store/authStore.js';
 import { markNotificationReadLocally, notificationsSignal, refreshNotificationsNow, stopNotificationsPolling } from '../store/notificationsStore.js';
 import { disableWebPush, enableWebPush, getWebPushStatus } from '../api/webPush.js';
@@ -72,11 +72,31 @@ const VIEW_BUTTONS = [
     { key: 'calendar', icon: faCalendarDays },
 ];
 
+const DEFAULT_LANGUAGE_OPTIONS = [
+    { key: 'en', label: 'English', flag: 'EN' },
+    { key: 'es', label: 'Español', flag: 'ES' },
+];
+
 let userModelUuidPromise = null;
 
 function normalizeBadgeCount(value) {
     const count = Math.max(0, Number(value) || 0);
     return count > 99 ? '99+' : String(count);
+}
+
+function activeLanguageOptions(records = []) {
+    const options = new Map();
+    records.forEach((record) => {
+        if (record?.active !== true) return;
+        const key = String(record.url_code ?? record.iso_code ?? record.code ?? '').trim();
+        if (!key || options.has(key)) return;
+        options.set(key, {
+            key,
+            label: String(record.name ?? key),
+            flag: String(record.flag || key.slice(0, 2).toUpperCase()),
+        });
+    });
+    return [...options.values()];
 }
 
 function selectAvatarFile() {
@@ -130,10 +150,25 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [webPushStatus, setWebPushStatus] = useState('unsupported');
     const [webPushBusy, setWebPushBusy] = useState(false);
+    const [languageOptions, setLanguageOptions] = useState(DEFAULT_LANGUAGE_OPTIONS);
     const userMenuWrapRef = useRef(null);
     const searchRef = useRef(null);
     const notificationsWrapRef = useRef(null);
     const notifications = notificationsSignal.value;
+
+    useEffect(() => {
+        let cancelled = false;
+        fetchSystemModelView({ model: 'system.lang', use: 'view', name: 'default' })
+            .then((view) => {
+                if (cancelled) return;
+                const activeOptions = activeLanguageOptions(view?.records);
+                setLanguageOptions(activeOptions.length ? activeOptions : DEFAULT_LANGUAGE_OPTIONS);
+            })
+            .catch(() => {
+                if (!cancelled) setLanguageOptions(DEFAULT_LANGUAGE_OPTIONS);
+            });
+        return () => { cancelled = true; };
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -474,20 +509,20 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
                             <div class="topbar-menu-section">
                                 <span class="topbar-menu-label">{t('topbar.lang', lang)}</span>
                                 <div class="topbar-lang-group" role="group" aria-label={t('topbar.lang', lang)}>
-                                    <button
-                                        class={`topbar-lang-btn ${lang === 'en' ? 'topbar-lang-btn--active' : ''}`}
-                                        data-lang="en"
-                                        aria-label="English"
-                                        aria-pressed={String(lang === 'en')}
-                                        onClick={() => contextActions.setLang('en')}
-                                    >EN</button>
-                                    <button
-                                        class={`topbar-lang-btn ${lang === 'es' ? 'topbar-lang-btn--active' : ''}`}
-                                        data-lang="es"
-                                        aria-label="Español"
-                                        aria-pressed={String(lang === 'es')}
-                                        onClick={() => contextActions.setLang('es')}
-                                    >ES</button>
+                                    {languageOptions.map((option) => (
+                                        <button
+                                            key={option.key}
+                                            class={`topbar-lang-btn ${lang === option.key ? 'topbar-lang-btn--active' : ''}`}
+                                            data-lang={option.key}
+                                            aria-label={option.label}
+                                            aria-pressed={String(lang === option.key)}
+                                            onClick={() => contextActions.setLang(option.key)}
+                                        >
+                                            <span class="topbar-lang-flag" aria-hidden="true">
+                                                {option.flag}
+                                            </span>
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
 

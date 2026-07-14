@@ -91,6 +91,27 @@ describe('dashboard insight actions', () => {
 });
 
 describe('differential insight rendering', () => {
+    it('renders localized KPI units instead of coercing them to object strings', () => {
+        const insights = {
+            ...initialInsights,
+            kpis: [{
+                id: 'active-users',
+                name: { en: 'Active Users', es: 'Usuarios activos' },
+                value: 12,
+                unit: { en: 'Users', es: 'Usuarios' },
+                trend: 'up',
+            }],
+        };
+
+        document.body.innerHTML = renderInsights(insights, 'en');
+        expect(document.querySelector('.insight-kpi-value')?.textContent)
+            .toBe('12 Users');
+
+        document.body.innerHTML = renderInsights(insights, 'es');
+        expect(document.querySelector('.insight-kpi-value')?.textContent)
+            .toBe('12 Usuarios');
+    });
+
     it('patches a KPI without replacing the insights container', () => {
         const previous = structuredClone(initialInsights);
         const next = {

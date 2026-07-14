@@ -10,7 +10,7 @@ Each KPI, gauge, and chart must have a unique and stable `id` within the dashboa
             "id":"profit_margin",
             "name":{"en":"Profit margin", "es":"Margen de beneficio"},
             "value":25.5,
-            "unit":"%",
+            "unit":{"en":"Percent", "es":"Porcentaje"},
             "trend":"up"
         }
     ],
@@ -168,8 +168,9 @@ and must not change when the component is reused by another dashboard.
 
 #### KPI format
 
-Every KPI must contain `id`, localized `name`, calculated `value`, `unit`, and
-`trend`. The supported trend values are `up` and `down`.
+Every KPI must contain `id`, localized `name`, calculated `value`, localized
+`unit`, and `trend`. Both localized fields use an object with `en` and `es`
+values. The supported trend values are `up` and `down`.
 
 ```json
 {
@@ -179,7 +180,7 @@ Every KPI must contain `id`, localized `name`, calculated `value`, `unit`, and
     "es": "Usuarios en línea"
   },
   "value": 0,
-  "unit": "Users",
+  "unit": { "en": "Users", "es": "Usuarios" },
   "trend": "up"
 }
 ```
@@ -235,6 +236,15 @@ chronologically and cover the months included in the selected period.
   period.
 - `graphicUsersPerHour`: distinct active users grouped by weekday and hour.
 - `graphicUsersMAU`: distinct monthly active users.
+
+The four user-activity KPIs localize their units as follows:
+
+| KPI                              | English unit | Spanish unit |
+| -------------------------------- | ------------ | ------------ |
+| `kpiUsersOnline`                 | Users        | Usuarios     |
+| `kpiUsersAverageSessionTime`     | Minutes      | Minutos      |
+| `kpiUsersActiveUsers`            | Users        | Usuarios     |
+| `kpiRecurringUsers`              | Users        | Usuarios     |
 
 #### Data and security
 

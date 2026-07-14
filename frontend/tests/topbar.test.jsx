@@ -9,13 +9,20 @@ vi.mock('../src/app/api/attachments.js', () => ({
 
 vi.mock('../src/app/api/systemModel.js', () => ({
     fetchSystemModelByName: vi.fn().mockResolvedValue({ uuid: 'model-user-1', name: 'user.user' }),
+    fetchSystemModelView: vi.fn().mockResolvedValue({
+        records: [
+            { code: 'en_US', url_code: 'en', flag: '🇺🇸', active: true },
+            { code: 'es_MX', url_code: 'es', flag: '🇲🇽', active: true },
+            { name: 'French / Français', code: 'fr_FR', url_code: 'fr', flag: '🇫🇷', active: true },
+        ],
+    }),
     searchSystemModels: vi.fn().mockResolvedValue({ status: 'OK', results: [] }),
     updateSystemModelRecord: vi.fn().mockResolvedValue({ avatar_url: '/api/system/attachments/avatar-1/content' }),
 }));
 
 import { Topbar } from '../src/app/components/topbar.jsx';
 import { uploadAttachment } from '../src/app/api/attachments.js';
-import { fetchSystemModelByName, searchSystemModels, updateSystemModelRecord } from '../src/app/api/systemModel.js';
+import { fetchSystemModelByName, fetchSystemModelView, searchSystemModels, updateSystemModelRecord } from '../src/app/api/systemModel.js';
 import { authSignal } from '../src/app/store/authStore.js';
 
 function mount(vnode) {
@@ -28,6 +35,7 @@ function mount(vnode) {
 afterEach(() => {
     uploadAttachment.mockClear();
     fetchSystemModelByName.mockClear();
+    fetchSystemModelView.mockClear();
     updateSystemModelRecord.mockClear();
     searchSystemModels.mockClear();
     authSignal.value = { uuid: null, email: null, name: null, avatarUrl: null, isAuthenticated: false };
@@ -35,6 +43,26 @@ afterEach(() => {
 });
 
 describe('Topbar user menu', () => {
+    it('renders every active system.lang flag in the user card', async () => {
+        const host = mount(<Topbar lang="en" theme="light" pageTitle="" />);
+
+        await vi.waitFor(() => {
+            expect(host.querySelector('[data-lang="en"] .topbar-lang-flag').textContent)
+                .toBe('🇺🇸');
+            expect(host.querySelector('[data-lang="es"] .topbar-lang-flag').textContent)
+                .toBe('🇲🇽');
+            expect(host.querySelector('[data-lang="fr"] .topbar-lang-flag').textContent)
+                .toBe('🇫🇷');
+        });
+        expect(host.querySelector('[data-lang="fr"]').getAttribute('aria-label'))
+            .toBe('French / Français');
+        expect(fetchSystemModelView).toHaveBeenCalledWith({
+            model: 'system.lang',
+            use: 'view',
+            name: 'default',
+        });
+    });
+
     it('searches enabled system models and links the results', async () => {
         searchSystemModels.mockResolvedValueOnce({
             status: 'OK',
