@@ -1397,9 +1397,17 @@ body {
   justify-self: end;
 }
 
-.topbar-search {
+.topbar-search-wrap {
   position: relative;
   justify-self: center;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.topbar-search {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 32px;
   align-items: center;
@@ -1410,6 +1418,85 @@ body {
   border-radius: 9px;
   background: var(--dash-surface);
   overflow: visible;
+}
+
+.topbar-search-help-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  background: var(--dash-surface);
+  color: var(--dash-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.topbar-search-help-btn:hover {
+  background: var(--dash-surface-hover);
+  color: var(--dash-text);
+}
+
+.topbar-search-help-panel {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  right: 0;
+  width: 320px;
+  max-width: 88vw;
+  padding: 0.875rem 1rem;
+  background: var(--dash-topbar-bg);
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+  box-shadow: var(--dash-shadow-md);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.15s, transform 0.15s;
+  z-index: 130;
+  font-size: 0.8125rem;
+  color: var(--dash-text-muted);
+}
+
+.topbar-search-help-panel--open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.topbar-search-help-title {
+  margin: 0 0 0.375rem;
+  color: var(--dash-text);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.topbar-search-help-panel p {
+  margin: 0 0 0.625rem;
+}
+
+.topbar-search-help-examples-title {
+  color: var(--dash-text);
+  font-weight: 600;
+}
+
+.topbar-search-help-examples {
+  margin: 0 0 0.625rem;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.topbar-search-help-examples li {
+  color: var(--dash-text);
+}
+
+.topbar-search-help-note {
+  margin-bottom: 0;
 }
 
 .topbar-search-results {

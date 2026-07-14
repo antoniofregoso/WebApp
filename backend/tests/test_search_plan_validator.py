@@ -266,3 +266,20 @@ def test_status_selection_uses_model_group_by_values():
     )
 
     assert validated.queries[0].filters[0].value == "Pending"
+
+
+def test_enabled_text_html_field_is_resolved_as_a_text_field():
+    metadata = models()
+    description = next(f for f in metadata[0].fields if f.name == "description")
+    assert description.type == "html"
+    # The shared fixture only sets `enabled=True`; text search on html fields
+    # is opt-in and previously impossible regardless of this flag.
+    description.search_config = {"enabled": True, "text": True}
+
+    validated = SearchPlanValidator.validate_with_models(
+        plan(text="hola"),
+        metadata,
+    )
+
+    text_field_names = [f.field.name for f in validated.queries[0].text_fields]
+    assert "description" in text_field_names

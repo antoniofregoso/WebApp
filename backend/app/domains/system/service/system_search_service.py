@@ -47,6 +47,23 @@ def _search_text(value: Any, lang: str) -> str:
     return _localized(value, lang)
 
 
+_HTML_TAG_RE = re.compile(r"<[^>]*>")
+
+
+def _strip_html(value: str) -> str:
+    return re.sub(r"\s+", " ", _HTML_TAG_RE.sub(" ", value)).strip()
+
+
+def _field_type(field: Any) -> str:
+    value = getattr(field, "type", "")
+    return str(getattr(value, "value", value))
+
+
+def _field_text(record: Any, field: Any, language: str) -> str:
+    text = _search_text(getattr(record, field.name, None), language)
+    return _strip_html(text) if _field_type(field) == "html" else text
+
+
 @dataclass(frozen=True)
 class SearchResult:
     model: str
@@ -406,7 +423,7 @@ class SystemSearchService:
         for record in records:
             record_uuid = str(getattr(record, "uuid", ""))
             title = (
-                _search_text(getattr(record, title_field.name, None), language)
+                _field_text(record, title_field, language)
                 if title_field
                 else record_uuid
             )
@@ -415,7 +432,7 @@ class SystemSearchService:
                     filter(
                         None,
                         (
-                            _search_text(getattr(record, field.name, None), language)
+                            _field_text(record, field, language)
                             for field in subtitle_fields
                         ),
                     )
@@ -423,7 +440,7 @@ class SystemSearchService:
                 or None
             )
             snippet = (
-                _search_text(getattr(record, snippet_field.name, None), language)[:240]
+                _field_text(record, snippet_field, language)[:240]
                 if snippet_field
                 else None
             )

@@ -16,6 +16,22 @@ Usage (from backend/, with the venv active):
 the benchmark user before inserting fresh rows, so re-running `seed` does not
 accumulate duplicates. `cleanup` removes the benchmark user and all of its
 tasks/messages.
+
+`run` drives `SystemSearchService.search` in-process, in the same single
+Python process/event loop as the benchmark script itself — it does not
+measure how a real multi-worker deployment spreads concurrent requests across
+processes. `run-http` fills that gap: it fires the same query mix as real
+`systemSearch` GraphQL requests (mode=TEXT, same code path) over HTTP against
+an already-running server, so concurrent clients are actually served by
+however many worker processes that server was started with. Start the server
+separately first, e.g.:
+
+    uvicorn main:app --host 127.0.0.1 --port 8000 --workers 4
+
+then:
+
+    python scripts/benchmark_search.py run-http --base-url http://127.0.0.1:8000 \
+        --concurrency 10 --requests 60
 """
 
 import argparse
@@ -30,13 +46,18 @@ from pathlib import Path
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND_DIR))
 
+import httpx  # noqa: E402
 from sqlalchemy import delete, insert, select  # noqa: E402
 
 from app.core.database.session import db  # noqa: E402
+from app.core.security.jwt_manager import JWTManager  # noqa: E402
 from app.domains.system.models.system_colors import SystemColor  # noqa: E402
 from app.domains.system.models.system_message import (  # noqa: E402
     MessageStatus,
     SystemMessage,
+)
+from app.domains.system.models.system_search_audit import (  # noqa: E402
+    SystemSearchAudit,
 )
 from app.domains.system.models.system_task import (  # noqa: E402
     SystemTask,
@@ -154,6 +175,9 @@ async def cleanup(user_id: int | None = None) -> None:
         await session.execute(
             delete(SystemMessage).where(SystemMessage.from_user_id == user_id)
         )
+        await session.execute(
+            delete(SystemSearchAudit).where(SystemSearchAudit.user_id == user_id)
+        )
         await session.execute(delete(UserUser).where(UserUser.id == user_id))
         await session.commit()
     print(f"Removed benchmark user {user_id} and its tasks/messages.")
@@ -263,6 +287,107 @@ async def run(concurrency: int, requests: int, user_id: int) -> None:
     print(f"\nSLO check: p95 < {slo_ms}ms -> {verdict} (measured {p95_ms:.0f}ms)")
 
 
+SYSTEM_SEARCH_GRAPHQL = """
+query SystemSearch($query: String!, $lang: String!, $limit: Int!) {
+  systemSearch(input: {query: $query, lang: $lang, limit: $limit, mode: TEXT}) {
+    status
+    results { uuid }
+    errors { code message }
+  }
+}
+"""
+
+
+async def _mint_access_token(user_id: int) -> str:
+    async with db.session() as session:
+        result = await session.execute(
+            select(UserUser.email).where(UserUser.id == user_id)
+        )
+        email = result.scalar_one()
+    return JWTManager.generate_access_token({"sub": email})
+
+
+async def _timed_http_search(
+    client: httpx.AsyncClient, headers: dict, query: str
+) -> tuple[float, str]:
+    started = time.monotonic()
+    try:
+        response = await client.post(
+            "/graphql",
+            json={
+                "query": SYSTEM_SEARCH_GRAPHQL,
+                "variables": {"query": query, "lang": "es", "limit": 20},
+            },
+            headers=headers,
+        )
+        elapsed = time.monotonic() - started
+        payload = response.json()
+        if response.status_code != 200 or payload.get("errors"):
+            return elapsed, f"error:HTTP{response.status_code}:{payload.get('errors')}"
+        status = payload["data"]["systemSearch"]["status"]
+        count = len(payload["data"]["systemSearch"]["results"])
+        return elapsed, f"ok:{status}:{count}"
+    except Exception as exc:  # noqa: BLE001 - benchmark must keep going
+        elapsed = time.monotonic() - started
+        return elapsed, f"error:{type(exc).__name__}:{exc}"
+
+
+async def run_http(
+    base_url: str, concurrency: int, requests: int, user_id: int
+) -> None:
+    token = await _mint_access_token(user_id)
+    headers = {"Authorization": f"Bearer {token}"}
+    semaphore = asyncio.Semaphore(concurrency)
+    plan = [QUERY_SET[i % len(QUERY_SET)] for i in range(requests)]
+
+    async with httpx.AsyncClient(base_url=base_url, timeout=30.0) as client:
+
+        async def worker(label: str, query: str):
+            async with semaphore:
+                elapsed, outcome = await _timed_http_search(client, headers, query)
+                return label, query, elapsed, outcome
+
+        started = time.monotonic()
+        results = await asyncio.gather(*(worker(label, q) for label, q in plan))
+        total_elapsed = time.monotonic() - started
+
+    by_label: dict[str, list[float]] = {}
+    outcomes: dict[str, int] = {}
+    for label, _query, elapsed, outcome in results:
+        by_label.setdefault(label, []).append(elapsed)
+        kind = outcome.split(":", 1)[0]
+        outcomes[kind] = outcomes.get(kind, 0) + 1
+        if kind == "error":
+            print(f"  {label}: {outcome}")
+
+    all_latencies = [elapsed for _label, _q, elapsed, _o in results]
+
+    print(f"\n=== HTTP benchmark: {base_url} concurrency={concurrency} requests={requests} ===")
+    print(f"Wall time: {total_elapsed:.2f}s  |  throughput: {requests / total_elapsed:.2f} req/s")
+    print(f"Outcomes: {outcomes}")
+    print(
+        f"\nAll queries combined: "
+        f"p50={_percentile(all_latencies, 50) * 1000:.0f}ms "
+        f"p95={_percentile(all_latencies, 95) * 1000:.0f}ms "
+        f"p99={_percentile(all_latencies, 99) * 1000:.0f}ms "
+        f"max={max(all_latencies) * 1000:.0f}ms "
+        f"mean={statistics.mean(all_latencies) * 1000:.0f}ms"
+    )
+    print("\nBy query type:")
+    for label, values in by_label.items():
+        print(
+            f"  {label:20s} n={len(values):3d}  "
+            f"p50={_percentile(values, 50) * 1000:8.0f}ms  "
+            f"p95={_percentile(values, 95) * 1000:8.0f}ms  "
+            f"max={max(values) * 1000:8.0f}ms"
+        )
+
+    slo_ms = 300
+    p95_ms = _percentile(all_latencies, 95) * 1000
+    verdict = "PASS" if p95_ms < slo_ms else "FAIL"
+    print(f"\nSLO check: p95 < {slo_ms}ms -> {verdict} (measured {p95_ms:.0f}ms)")
+
+
 async def _resolve_user_id() -> int:
     async with db.session() as session:
         result = await session.execute(
@@ -287,6 +412,14 @@ async def main() -> None:
     run_parser.add_argument("--concurrency", type=int, default=10)
     run_parser.add_argument("--requests", type=int, default=60)
 
+    run_http_parser = subparsers.add_parser(
+        "run-http",
+        help="Run the concurrent load test over HTTP against a running server",
+    )
+    run_http_parser.add_argument("--base-url", default="http://127.0.0.1:8000")
+    run_http_parser.add_argument("--concurrency", type=int, default=10)
+    run_http_parser.add_argument("--requests", type=int, default=60)
+
     subparsers.add_parser("cleanup", help="Delete benchmark user, tasks, and messages")
 
     args = parser.parse_args()
@@ -297,6 +430,9 @@ async def main() -> None:
         elif args.command == "run":
             user_id = await _resolve_user_id()
             await run(args.concurrency, args.requests, user_id)
+        elif args.command == "run-http":
+            user_id = await _resolve_user_id()
+            await run_http(args.base_url, args.concurrency, args.requests, user_id)
         elif args.command == "cleanup":
             await cleanup()
     finally:

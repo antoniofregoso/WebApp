@@ -148,12 +148,14 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
     const [searchLoading, setSearchLoading] = useState(false);
     const [searchError, setSearchError] = useState('');
     const [searchClarification, setSearchClarification] = useState(null);
+    const [searchHelpOpen, setSearchHelpOpen] = useState(false);
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [webPushStatus, setWebPushStatus] = useState('unsupported');
     const [webPushBusy, setWebPushBusy] = useState(false);
     const [languageOptions, setLanguageOptions] = useState(DEFAULT_LANGUAGE_OPTIONS);
     const userMenuWrapRef = useRef(null);
     const searchRef = useRef(null);
+    const searchHelpWrapRef = useRef(null);
     const notificationsWrapRef = useRef(null);
     const searchRequestRef = useRef(0);
     const notifications = notificationsSignal.value;
@@ -241,6 +243,22 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
             document.removeEventListener('keydown', close);
         };
     }, [searchOpen]);
+
+    useEffect(() => {
+        if (!searchHelpOpen) return undefined;
+        const closeOnOutsideClick = (event) => {
+            if (!searchHelpWrapRef.current?.contains(event.target)) setSearchHelpOpen(false);
+        };
+        const closeOnEscape = (event) => {
+            if (event.key === 'Escape') setSearchHelpOpen(false);
+        };
+        document.addEventListener('click', closeOnOutsideClick);
+        document.addEventListener('keydown', closeOnEscape);
+        return () => {
+            document.removeEventListener('click', closeOnOutsideClick);
+            document.removeEventListener('keydown', closeOnEscape);
+        };
+    }, [searchHelpOpen]);
 
     useEffect(() => {
         if (!notificationsOpen) return undefined;
@@ -582,35 +600,65 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
                             ))}
                         </div>
 
-                        <form class="topbar-search" role="search" aria-label={t('topbar.search', lang)} onSubmit={submitSearch} ref={searchRef}>
-                            <input
-                                class="topbar-search-input"
-                                type="search"
-                                value={searchQuery}
-                                placeholder={t('topbar.search_placeholder', lang)}
-                                aria-label={t('topbar.search', lang)}
-                                aria-expanded={String(searchOpen)}
-                                onInput={(event) => setSearchQuery(event.currentTarget.value)}
-                            />
+                        <div class="topbar-search-wrap" ref={searchHelpWrapRef}>
+                            <form class="topbar-search" role="search" aria-label={t('topbar.search', lang)} onSubmit={submitSearch} ref={searchRef}>
+                                <input
+                                    class="topbar-search-input"
+                                    type="search"
+                                    value={searchQuery}
+                                    placeholder={t('topbar.search_placeholder', lang)}
+                                    aria-label={t('topbar.search', lang)}
+                                    aria-expanded={String(searchOpen)}
+                                    onInput={(event) => setSearchQuery(event.currentTarget.value)}
+                                />
+                                <button
+                                    class="topbar-search-btn"
+                                    type="submit"
+                                    aria-label={t('topbar.search', lang)}
+                                    data-tooltip={t('topbar.search', lang)}
+                                    disabled={searchLoading}
+                                    dangerouslySetInnerHTML={{ __html: icon(faMagnifyingGlass, 'topbar-tool-icon') }}
+                                />
+                                {searchOpen && <div class="topbar-search-results" data-search-results role="region" aria-live="polite">
+                                    {searchLoading ? <p class="topbar-search-state">{lang === 'es' ? 'Buscando…' : 'Searching…'}</p>
+                                        : searchError ? <p class="topbar-search-state topbar-search-state--error">{searchError}</p>
+                                            : searchResults.length === 0 ? <p class="topbar-search-state">{lang === 'es' ? 'Sin resultados' : 'No results'}</p>
+                                                : searchResults.map((result) => <a class="topbar-search-result" href={result.url} key={`${result.model}:${result.uuid}`}>
+                                                    <span class="topbar-search-result-model">{result.modelLabel}</span>
+                                                    <strong>{result.title}</strong>
+                                                    {result.subtitle && <span>{result.subtitle}</span>}
+                                                </a>)}
+                                </div>}
+                            </form>
                             <button
-                                class="topbar-search-btn"
-                                type="submit"
-                                aria-label={t('topbar.search', lang)}
-                                data-tooltip={t('topbar.search', lang)}
-                                disabled={searchLoading}
-                                dangerouslySetInnerHTML={{ __html: icon(faMagnifyingGlass, 'topbar-tool-icon') }}
+                                type="button"
+                                class="topbar-search-help-btn"
+                                aria-label={t('topbar.search_help', lang)}
+                                aria-expanded={String(searchHelpOpen)}
+                                aria-controls="topbar-search-help-panel"
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    setSearchHelpOpen((open) => !open);
+                                }}
+                                dangerouslySetInnerHTML={{ __html: icon(faCircleInfo, 'topbar-tool-icon') }}
                             />
-                            {searchOpen && <div class="topbar-search-results" data-search-results role="region" aria-live="polite">
-                                {searchLoading ? <p class="topbar-search-state">{lang === 'es' ? 'Buscando…' : 'Searching…'}</p>
-                                    : searchError ? <p class="topbar-search-state topbar-search-state--error">{searchError}</p>
-                                        : searchResults.length === 0 ? <p class="topbar-search-state">{lang === 'es' ? 'Sin resultados' : 'No results'}</p>
-                                            : searchResults.map((result) => <a class="topbar-search-result" href={result.url} key={`${result.model}:${result.uuid}`}>
-                                                <span class="topbar-search-result-model">{result.modelLabel}</span>
-                                                <strong>{result.title}</strong>
-                                                {result.subtitle && <span>{result.subtitle}</span>}
-                                            </a>)}
-                            </div>}
-                        </form>
+                            <div
+                                class={`topbar-search-help-panel ${searchHelpOpen ? 'topbar-search-help-panel--open' : ''}`}
+                                id="topbar-search-help-panel"
+                                role="region"
+                                aria-label={t('topbar.search_help', lang)}
+                            >
+                                <p class="topbar-search-help-title">{t('topbar.search_help_title', lang)}</p>
+                                <p>{t('topbar.search_help_intro', lang)}</p>
+                                <p class="topbar-search-help-examples-title">{t('topbar.search_help_examples_title', lang)}</p>
+                                <ul class="topbar-search-help-examples">
+                                    <li>{t('topbar.search_help_example_1', lang)}</li>
+                                    <li>{t('topbar.search_help_example_2', lang)}</li>
+                                    <li>{t('topbar.search_help_example_3', lang)}</li>
+                                </ul>
+                                <p class="topbar-search-help-note">{t('topbar.search_help_note', lang)}</p>
+                            </div>
+                        </div>
 
                         <div class="topbar-pagination" aria-label={t('topbar.pagination', lang)}>
                             <button

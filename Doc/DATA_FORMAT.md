@@ -50,8 +50,13 @@ included only when they declare an enabled `search` object.
 
 - `enabled`: permits the field to participate in search.
 - `text`: includes the field in textual matching.
-- `result`: accepts `title` or `subtitle` for result rendering.
+- `result`: accepts `title`, `subtitle`, or `snippet` for result rendering.
 - `weight`: accepts `A`, `B`, `C`, or `D` to describe relevance priority.
+
+`type: html` fields may declare `text: true` too. Their markup is stripped
+(both when indexed and when displayed) before matching or ranking, so results
+never leak raw tags — see "Full Text Search" in
+[AI_SEARCH_DESIGN.md](./AI_SEARCH_DESIGN.md) for how.
 
 Models and fields without this configuration remain private from global search.
 The complete natural-language search design is documented in

@@ -1,7 +1,7 @@
 # Design: Declarative Natural-Language Search
 
 Date: 2026-07-12
-Status: IMPLEMENTED (Phases 0, 1, and 2)
+Status: IMPLEMENTED (Phases 0, 1, 2, and 3)
 Mode: Builder
 Approved decision: declarative search compiler
 
@@ -22,14 +22,21 @@ Implemented between 2026-07-12 and 2026-07-13:
 - `AUTO`, `TEXT`, and `AI` modes, timeout, and explicit fallback.
 - Stateless clarifications in GraphQL and the topbar search.
 - Spanish and English evaluations for dates, relations, ambiguity, and permissions.
+- PostgreSQL Full Text Search (`tsvector`, `ts_rank`, GIN indexes) for the
+  free-text predicate, replacing per-model `ORDER BY uuid LIMIT n` with true
+  relevance ranking in SQL — see "Full Text Search" below.
+- Normalized, indexable text for `html` fields (`system.task.description`,
+  `system.message.message`), so they can join the free-text predicate without
+  raw markup polluting matching, ranking, or displayed snippets — see
+  "Normalized HTML search text" below.
 
 Pending:
 
-- The remaining p95 gap under concurrency (719 ms vs. the 300 ms SLO) is now
-  in-process event-loop/connection contention specific to this single-process
-  benchmark, not a specific fixable query — see "Reducing per-request overhead"
-  below for what was tried, what worked, and what didn't.
-- PostgreSQL Full Text Search, subject to metrics.
+- Common-word queries got measurably slower under FTS (true ranking requires
+  evaluating every match, not just the first N) — see "Full Text Search"
+  below; accepted as a documented trade-off rather than solved.
+- PostgreSQL Full Text Search stemming (`'spanish'`/`'english'` configs
+  instead of `'simple'`) — deferred, see "Full Text Search" below.
 
 ## Problem
 
@@ -426,26 +433,39 @@ This keeps one contract for the frontend, permissions, and navigation.
 ### Phase 1 TEXT algorithm
 
 1. Normalize whitespace and limit the query to 500 characters.
-2. Split into terms and escape `ILIKE` wildcards.
-3. For each enabled model, apply every term with `AND`; within each term, search with
-   `OR` across every `search.text: true` field.
-4. In Phase 1, `html` fields cannot declare `search.text: true`. They may contribute
-   snippets after another field finds the record. Searching their content requires
-   a normalized column that is updated on write and indexed; HTML is never cleaned
-   during every query.
-5. Score within each model: exact title match `100`, title prefix `70`, title
-   contains `50`, other-field contains by A/B/C/D weight `40/30/20/10`. Sum and sort
-   by descending score, then title and UUID.
+2. For each enabled model, match with PostgreSQL Full Text Search: every
+   `search.text: true` field gets its own `'simple'`-config `tsvector` (see
+   "Full Text Search" below), matched with `@@ plainto_tsquery('simple', ...)`
+   and OR'd across the model's text fields — `plainto_tsquery` already ANDs
+   every word in the query, so the net effect is the same "AND across terms,
+   OR across fields" semantics the original ILIKE implementation used.
+3. Each per-model SQL query is ordered by `ts_rank(...) DESC` (summed across
+   matching fields), then `uuid ASC` as a tiebreak, before the
+   `LIMIT`/`max_results_per_query` cutoff — so the rows that reach step 4
+   below are the model's actual top matches by relevance, not an arbitrary
+   uuid-ordered slice.
+4. `html` fields may declare `search.text: true`. Their markup is stripped via
+   a `regexp_replace` SQL expression before indexing/matching (not a
+   normalized, write-synced column — see "Full Text Search" below for why),
+   and stripped again in Python before being shown as a `title`/`subtitle`/
+   `snippet` so raw tags never reach a result.
+5. Score within each model (Python, unchanged by the FTS work below — a
+   deliberately scoped decision, see "Full Text Search"): exact title match
+   `100`, title prefix `70`, title contains `50`, fallback `10`. Sum and sort
+   by descending score, then title and UUID. `search_config["weight"]`
+   (A/B/C/D) is not read here — it now drives SQL-side `ts_rank`/`setweight`
+   instead (step 3), which is what motivated that vocabulary in the first
+   place.
 6. Group results by model. Scores are never compared across models.
+
+Structured filter operators (`contains`, `starts_with` on a specific field, used
+by the AI-plan path) are unaffected — they still use `ILIKE` against the
+`pg_trgm` indexes described below.
 
 For multiple models, the effective limit is
 `min(SearchInput.limit, ModelSearchQuery.limit, 20)`. The global maximum of 50 is
 allocated in `queries` order; each subplan consumes up to its limit and the final one
 is truncated when the budget is exhausted. Subplan order is part of the plan.
-
-The initial implementation uses parameterized expressions. The benchmark records
-PostgreSQL, CPU, RAM, concurrency, and field count and size. If it misses the SLO,
-Phase 1 may use `pg_trgm` indexes; FTS remains the path for linguistic ranking.
 
 ## Security
 
@@ -838,3 +858,230 @@ remaining tail. Confirming that is future work, not something to assume without
 measuring: the next step, if this SLO is still worth chasing, is re-running this
 benchmark against a multi-worker deployment rather than adding more per-request
 optimizations in-process.
+
+### Multi-worker re-measurement (2026-07-14)
+
+Added `run-http` to `backend/scripts/benchmark_search.py`: unlike `run`, which
+calls `SystemSearchService.search` in-process (one Python process/event loop,
+same as the process driving the load), `run-http` fires real `systemSearch`
+GraphQL requests (mode `TEXT`, same `_search` code path) over HTTP with a
+minted JWT, against a separately-running server. This lets concurrent clients
+actually be served by however many worker processes that server has, which is
+what the note above said needed confirming.
+
+Setup: same seeded data as above (100,000 rows/model), server started with
+`uvicorn main:app --workers 4` (4 physical cores on this dev machine — one
+worker per core), same query mix, 10 concurrent clients.
+
+| Run | Requests | p50 | p95 | Verdict |
+|---|---:|---:|---:|---|
+| Single-process baseline (`run`, previous section) | 60 | 164 ms | 719 ms | FAIL |
+| HTTP, 4 workers, trial 1 | 200 | ~133 ms | 217 ms | PASS |
+| HTTP, 4 workers, trial 2 | 200 | ~213 ms | 329 ms | FAIL |
+| HTTP, 4 workers, trial 3 | 200 | ~144 ms | 220 ms | PASS |
+| HTTP, 4 workers, unloaded (concurrency=1) | 20 | 77 ms | 85 ms | PASS |
+
+This confirms the hypothesis: spreading the same 10 concurrent clients across
+4 worker processes cuts p95 by roughly 2.5–3x (719 ms → ~220–330 ms) instead
+of adding more in-process optimizations. It is not a clean, stable pass,
+though — p95 sits right on top of the 300 ms line and one of three trials
+exceeded it, on a 4-core dev box that was also running other local processes
+during the benchmark (`uptime` load average ~1.0–1.5 throughout). Two things
+to weigh before calling the SLO met:
+
+- **Worker count tracks CPU cores.** This machine has 4 cores; a real
+  deployment host will likely have more, which should push p95 further below
+  the line the same way going from 1 to 4 workers did here. This needs
+  re-measuring on the actual deployment target, not assumed from a 4-core
+  laptop.
+- **The HTTP path has fixed overhead the in-process benchmark didn't
+  capture.** Unloaded single-request latency is ~77–108 ms over HTTP
+  (JSON/GraphQL parsing, JWT verification, loopback round-trip) vs ~22–43 ms
+  calling `SystemSearchService.search()` directly — a real cost, but not one
+  that scales with concurrency, so it mostly shifts the whole distribution up
+  rather than explaining the remaining tail risk.
+
+Conclusion: multi-worker deployment absorbs most, but not all, of the
+concurrency tail measured in-process. Given the remaining margin is thin and
+sensitive to how many cores/workers the deployment target actually has, the
+next lever with a *deterministic* margin (rather than more concurrency
+tuning) is the `tsvector`/GIN full-text search item below — `pg_trgm`
+`ILIKE` scans are still the per-query cost being amplified under load.
+
+### Full Text Search (2026-07-14)
+
+Implemented PostgreSQL Full Text Search for the free-text predicate in
+`SearchQueryCompiler.compile` (`app/domains/system/search/compiler.py`),
+replacing the per-term `ILIKE` `OR`-across-fields match with `tsvector`/
+`ts_rank`/GIN, per the design decisions below. Scope was deliberately
+bounded: SQL now decides *which* rows each model's query returns and in what
+order (fixing a real correctness gap — see below); the Python-side `score`
+field and final cross-model ordering keep the existing title-only heuristic
+unchanged.
+
+**The correctness problem this fixes.** Before this change, each per-model
+`TEXT` query was `ORDER BY uuid ASC LIMIT 20` (fast, since Postgres can stop
+after the first 20 matches), then only those 20 rows were scored/reranked in
+Python. Any true best match beyond that arbitrary uuid-ordered slice was
+invisible — a real bug for any model with more than ~20 matches for a given
+term. FTS moves the ranking into SQL (`ORDER BY ts_rank(...) DESC`), so the
+20 rows that reach Python are the model's actual top matches by relevance.
+
+**Design decisions:**
+
+- **One GIN index per text field, not one combined document per model.**
+  Each field gets its own `to_tsvector('simple', ...)` expression and its own
+  index (`ix_system_tasks_title_fts`, `_status_fts`, `_priority_fts`,
+  `ix_system_messages_subject_fts`, `_status_fts` — migration
+  `20260714_0836_86c64ea5062c_add_search_fts_indexes.py`), matching the
+  `pg_trgm` migration's proven pattern instead of concatenating fields into
+  one per-model vector, which would have made index-expression identity
+  depend on an undocumented field-ordering assumption. The compiler still
+  `OR`s across fields (same semantics as the old `ILIKE`), and PostgreSQL
+  `BitmapOr`s the individual GIN indexes for that `OR` — confirmed via
+  `EXPLAIN ANALYZE`.
+- **`'simple'` text search config, not `'spanish'`/`'english'` stemming.**
+  Verified locally: a bilingual combined-text vector with `'simple'` matches
+  both `"renovar"` and `"renew"` against the same row. Real stemming would
+  need two separately-configured `tsquery` objects `OR`'d together (query
+  language isn't reliably known) and two stemmed indexes per field kept in
+  sync — meaningfully more complexity/drift risk for a first pass. Deferred;
+  `'simple'` still delivers tokenized matching, weighted ranking, and
+  GIN-backed performance.
+- **Both locales folded into one vector per field**, language-independent
+  (`to_tsvector('simple', es_text || ' ' || en_text)`), unlike the `ILIKE`
+  path's `_localized_column` (which picks one locale via `COALESCE` based on
+  request language). One index per field instead of an es-first/en-first
+  pair like `pg_trgm`, and a user searching in either language matches either
+  translation.
+- **Free-text matching only.** Structured filter operators (`contains`,
+  `starts_with` on a specific field, AI-plan path) are untouched, still
+  `ILIKE` against the existing `pg_trgm` indexes.
+- **`search_config["weight"]` (A/B/C/D)** — previously declared in the
+  schema but dead in Python — now drives `setweight()` directly. It has to be
+  embedded as a SQL literal rather than a bound parameter: `setweight`'s
+  second argument is PostgreSQL's internal `"char"` type, and asyncpg's
+  prepared-statement protocol has no implicit cast from a bound `VARCHAR`
+  parameter into it (`UndefinedFunctionError: setweight(tsvector, character
+  varying) does not exist`) — caught by running the benchmark against a real
+  server, not just the compiled-SQL-string unit tests. The weight is
+  validated against a 4-value whitelist (`A`/`B`/`C`/`D`, default `D`) before
+  being embedded, so this isn't a literal-injection risk.
+
+**Benchmark results — this is the important, non-obvious part.** Same setup
+as before (100,000 rows/model, 10 concurrent clients), compared against the
+last documented `pg_trgm` numbers (p95 719 ms single-process / ~217–330 ms
+across 3 trials with 4 uvicorn workers):
+
+| Query type | Old (`pg_trgm`, 4 workers) p50/p95 | New (FTS, 4 workers) p50/p95 |
+|---|---:|---:|
+| `needle_exact` (rare, full-string match) | ~130–210 / ~210–335 ms | ~155–228 / ~345–428 ms |
+| `no_match` | ~130–214 / ~205–556 ms | ~155–212 / ~346–478 ms |
+| `common_task_word` (~12,700/100k rows match) | ~135–210 / ~214–547 ms | ~393–544 / ~655–797 ms |
+| `common_message_word` | ~130–218 / ~216–546 ms | ~559–693 / ~887–1,377 ms |
+| Combined p95 (3 trials) | 217 / 329 / 220 ms | 878 / 692 / 896 ms |
+
+**Common-word queries got measurably slower, not faster.** `EXPLAIN ANALYZE`
+on the `system.task` "revisar" query (matches ~12,742/100,000 rows) shows
+why: the `Bitmap Heap Scan` + `Sort` for `ts_rank` has to visit and rank
+every one of those ~12,700 matching rows before it can return the top 20 —
+79 ms of real, unavoidable execution time for a single unloaded query,
+versus sub-millisecond for the `needle_exact` case (2 matching rows). The old
+`ORDER BY uuid LIMIT 20` never had this cost: it could stop scanning as soon
+as it found 20 matches, regardless of how many existed in total. This is the
+direct, expected cost of the correctness fix above — true top-K ranking is
+inherently more expensive than an early-exit arbitrary slice when a term
+matches a large fraction of the table — not a bug or a regression to chase
+away.
+
+**Decision: accept this trade-off, don't build a workaround.** A bounded
+hybrid (pre-filter to a fixed-size candidate window via a fast scan, then
+rank only within it) was considered and explicitly rejected for this round —
+it would reintroduce the same "might miss the true best match" correctness
+gap this work set out to fix, just with a bigger, still-arbitrary window.
+Correct ranking for common terms costing more than an arbitrary slice is
+expected and acceptable; revisit only if production metrics show common-word
+searches are a real user-facing latency problem, not from a benchmark
+worst-case alone.
+
+Verified relevance correctness end-to-end (not just latency): the
+`zeta-vector-77321-unico` needle query returns the exact-match row first via
+`SystemSearchService.search()` against the seeded data, and `EXPLAIN
+ANALYZE` confirms PostgreSQL uses the new GIN indexes (`BitmapOr` across
+`ix_system_tasks_title_fts`/`_status_fts`/`_priority_fts`) rather than a
+sequential scan.
+
+### Normalized HTML search text (2026-07-14)
+
+Extended the FTS work above to `type: html` fields, closing the last item in
+"Performance and future work pending": `system.task.description` and
+`system.message.message` (the only two `html` fields on the two
+search-registered models — `system.app.description` and
+`system.notification.message` are also `html` but neither model is in
+`SEARCH_MODEL_REGISTRY`, so they're unreachable regardless;
+`system.note.content_html` isn't declared in `system_models.json` at all —
+both out of scope here, covered by the separate "notes and attachment
+filenames" TODO item).
+
+**Why this needed a decision, not just enabling the flag.** `SearchPlanValidator`
+previously hard-excluded `html` fields from `text_fields` no matter what
+`search_config` said — searching raw markup would let tag names/attributes
+(`<strong>`, `href="..."`) pollute matching and `ts_rank`. Two ways to get
+normalized text: a stored plain-text column kept in sync on every write (via
+a SQLAlchemy `before_insert`/`before_update` listener — there's precedent for
+this exact pattern in `app/domains/users/models/user_log.py`), or a SQL
+expression that strips tags at query/index time with no new column at all.
+
+**Chose the SQL-expression route**, confirmed with the user. Verified locally
+that `regexp_replace(html, '<[^>]*>', ' ', 'g')` produces clean,
+accent-preserving, tokenizable text, and that `regexp_replace` is
+`IMMUTABLE` (`pg_proc.provolatile = 'i'`) — safe inside a GIN expression
+index. This means:
+
+- No new column, no backfill migration, no write-path event listener to keep
+  in sync across every html-bearing model — the normalized text is always
+  freshly derived from whatever HTML is currently stored, so it can never
+  drift stale.
+- No new dependency — nothing in `requirements.txt` parses HTML today; a real
+  parser would have added one. The tradeoff: no entity decoding and no
+  `<script>`/`<style>` content removal. Accepted because this content only
+  ever comes from the app's allowlisted Quill editor (see `HtmlField.jsx`),
+  not arbitrary raw HTML, and accented characters (á, é, í, ó, ú, ñ) are
+  serialized as literal UTF-8 by `innerHTML`, not HTML entities, so Spanish
+  text strips cleanly — confirmed: `regexp_replace('<p>Reunión
+  <strong>urgente</strong></p>', '<[^>]*>', ' ', 'g')` →
+  `" Reunión  urgente  "`.
+
+**Mechanism**, mirroring the field-per-index FTS pattern:
+
+- `_fts_source_text` (`compiler.py`) now takes the resolved field's type; for
+  `html` fields it wraps the already-built (JSONB-locale-concatenated or
+  plain-column) source in `regexp_replace(source, '<[^>]*>', ' ', 'g')`
+  before `to_tsvector`. Non-html fields are unaffected — same code path as
+  before.
+- Two new GIN indexes, `ix_system_tasks_description_fts` and
+  `ix_system_messages_message_fts` (migration
+  `20260714_0909_5fb991178534_add_search_fts_html_indexes.py`), each matching
+  the compiler's expression exactly.
+- `search_config` for both fields (`system_models.json`, seeded into the DB
+  by migration `20260714_0908_24d8babba860_configure_html_search_fields.py`):
+  `{"enabled": true, "text": true, "result": "snippet", "weight": "C"}` — one
+  tier below the metadata fields (`status`/`priority` at `"B"`) and two below
+  title/subject (`"A"`); body text is real signal but shouldn't outrank a
+  title/subject match. `result: "snippet"` is the first field to actually use
+  that role — previously configured in the schema/docs but never populated.
+- `system_search_service._map_plan_records` gained a parallel Python-side
+  `_strip_html` (regex tag-strip + whitespace collapse) applied to any
+  `html`-typed field regardless of its `result` role (`title`/`subtitle`/
+  `snippet`), so raw markup can never leak into a displayed result. This also
+  finally implements what `AI_SEARCH_DESIGN.md` had aspirationally claimed
+  since Phase 1 ("HTML is converted to text...") but no field had ever
+  exercised, since `result: "snippet"` was unused until now.
+
+**Verified end-to-end against real data**, not just compiled SQL: seeded
+100,000 `system.task` rows, set one row's `description` to `<p>Contiene la
+palabra <strong>zeta-marcador-88214</strong> escondida en HTML</p>` (a word
+absent from its title), and confirmed `SystemSearchService.search()` finds
+it with a clean, tag-free snippet. `EXPLAIN ANALYZE` on the equivalent raw
+query confirms `Bitmap Index Scan on ix_system_tasks_description_fts`
+(0.22 ms), not a sequential scan.

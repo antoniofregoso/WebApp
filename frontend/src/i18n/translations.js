@@ -42,6 +42,20 @@ const translations = {
     'topbar.view.calendar': { en: 'Calendar',      es: 'Calendario' },
     'topbar.search':        { en: 'Search',        es: 'Buscar' },
     'topbar.search_placeholder': { en: 'Search...', es: 'Buscar...' },
+    'topbar.search_help':   { en: 'How search works', es: 'Cómo funciona la búsqueda' },
+    'topbar.search_help_title': { en: 'How search works', es: 'Cómo funciona la búsqueda' },
+    'topbar.search_help_intro': {
+        en: 'Search tasks and messages by keyword. When AI interpretation is available, it also understands natural-language questions about dates, statuses, and priorities.',
+        es: 'Busca tareas y mensajes por palabra clave. Cuando la interpretación con IA está disponible, también entiende preguntas en lenguaje natural sobre fechas, estados y prioridades.'
+    },
+    'topbar.search_help_examples_title': { en: 'Try queries like:', es: 'Prueba con búsquedas como:' },
+    'topbar.search_help_example_1': { en: 'urgent tasks this week', es: 'tareas urgentes de esta semana' },
+    'topbar.search_help_example_2': { en: 'pending messages from Antonio', es: 'mensajes pendientes de Antonio' },
+    'topbar.search_help_example_3': { en: 'budget meeting', es: 'reunión presupuesto' },
+    'topbar.search_help_note': {
+        en: "If search needs more information to understand your question, it will ask a follow-up — just type your answer and search again.",
+        es: 'Si la búsqueda necesita más información para entender tu pregunta, te hará una pregunta de seguimiento — solo escribe tu respuesta y vuelve a buscar.'
+    },
     'topbar.pagination':    { en: 'Pagination',    es: 'Paginación' },
     'topbar.page_prev':     { en: 'Previous page', es: 'Página anterior' },
     'topbar.page_next':     { en: 'Next page',     es: 'Página siguiente' },

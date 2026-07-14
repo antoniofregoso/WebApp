@@ -8,9 +8,10 @@ from app.domains.system.search.repository import SearchQueryRepository
 from app.domains.system.service.system_search_service import SystemSearchService
 
 
-def field(name, result, weight="B"):
+def field(name, result, weight="B", field_type=None):
     return SimpleNamespace(
         name=name,
+        type=field_type,
         search_config={
             "enabled": True,
             "text": True,
@@ -64,15 +65,15 @@ async def test_search_only_uses_enabled_models_and_user_scoped_views(monkeypatch
 
     # Only the enabled model (system.task) is queried, and its authorization
     # policy (scoping to the requesting user) is baked into the compiled SQL.
+    # (Not compiled with `literal_binds=True`: the FTS predicate's `'simple'`
+    # regconfig argument has no literal renderer in this SQLAlchemy version —
+    # bound params are asserted directly instead.)
     assert len(captured_statements) == 1
-    compiled = str(
-        captured_statements[0].compile(
-            dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True}
-        )
-    )
-    assert "system_tasks" in compiled
-    assert "user_id" in compiled
-    assert "= 7" in compiled
+    compiled = captured_statements[0].compile(dialect=postgresql.dialect())
+    sql = str(compiled)
+    assert "system_tasks" in sql
+    assert "user_id" in sql
+    assert 7 in compiled.params.values()
 
 
 @pytest.mark.asyncio
@@ -100,3 +101,27 @@ async def test_search_fails_closed_for_enabled_unregistered_models(monkeypatch):
 
     with pytest.raises(ValueError, match="is not registered"):
         await SystemSearchService.search("Acme", 7)
+
+
+def test_map_plan_records_strips_html_tags_from_snippet():
+    model = SimpleNamespace(
+        name="system.task",
+        label={"es_MX": "Tareas"},
+        fields=[
+            field("title", "title", "A"),
+            field("description", "snippet", "C", field_type="html"),
+        ],
+    )
+    record = SimpleNamespace(
+        uuid="task-1",
+        title={"es_MX": "Renovar contrato"},
+        description={
+            "es_MX": "<p>Revisar <strong>cláusulas</strong> con el cliente</p>"
+        },
+    )
+
+    mapped = SystemSearchService._map_plan_records([record], model, "es")
+
+    assert mapped[0].snippet == "Revisar cláusulas con el cliente"
+    assert "<" not in mapped[0].snippet
+    assert mapped[0].title == "Renovar contrato"

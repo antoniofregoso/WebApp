@@ -9,7 +9,7 @@ from app.domains.system.search.compiler import SearchQueryCompiler
 from app.domains.system.search.registry import SearchModelRegistration
 from app.domains.system.search.validator import SearchPlanValidator
 from app.domains.users.models.user_user import UserUser
-from tests.test_search_plan_validator import models, plan
+from tests.test_search_plan_validator import field, models, plan
 
 
 class TrackingRelatedPolicy(SearchAuthorizationPolicy):
@@ -169,3 +169,99 @@ def test_localized_selection_and_relative_date_compile_to_bound_values():
     assert "Urgent" in compiled.params.values()
     assert datetime(2026, 7, 13, 6, 0, tzinfo=timezone.utc) in compiled.params.values()
     assert datetime(2026, 7, 20, 6, 0, tzinfo=timezone.utc) in compiled.params.values()
+
+
+def test_free_text_query_compiles_to_ranked_fts_match():
+    validated = SearchPlanValidator.validate_with_models(
+        plan(text="urgent report"),
+        models(),
+    ).queries[0]
+
+    compiled = _compiled(SearchQueryCompiler.compile(validated, 7))
+    sql = str(compiled)
+
+    assert "to_tsvector" in sql
+    assert "plainto_tsquery" in sql
+    assert "@@" in sql
+    assert "ts_rank" in sql
+    assert "ORDER BY" in sql
+    assert sql.index("ts_rank") < sql.index("system_tasks.uuid ASC")
+    # The query text is bound, not inlined.
+    assert "urgent report" not in sql
+    assert "urgent report" in compiled.params.values()
+
+
+def test_free_text_field_weight_defaults_to_d_and_honors_configured_weight():
+    metadata = models()
+    metadata[0].fields.append(
+        field("status", "string", enabled=True, text=True, weight="A")
+    )
+    validated = SearchPlanValidator.validate_with_models(
+        plan(text="urgent"),
+        metadata,
+    ).queries[0]
+
+    compiled = _compiled(SearchQueryCompiler.compile(validated, 7))
+    sql = str(compiled)
+
+    # `title` has no configured weight in the shared `models()` fixture and
+    # falls back to 'D'; the appended `status` field is explicitly 'A'. The
+    # weight label is a literal (not a bound param — see `_fts_field_vector`),
+    # so it's asserted directly in the compiled SQL text.
+    assert "setweight(to_tsvector(%(to_tsvector_1)s, coalesce(CAST" in sql
+    assert "), 'D')" in sql
+    assert "), 'A')" in sql
+
+
+def test_free_text_predicate_ors_across_text_fields():
+    metadata = models()
+    metadata[0].fields.append(
+        field("status", "string", enabled=True, text=True, weight="B")
+    )
+    validated = SearchPlanValidator.validate_with_models(
+        plan(text="urgent"),
+        metadata,
+    ).queries[0]
+
+    compiled = _compiled(SearchQueryCompiler.compile(validated, 7))
+    sql = str(compiled)
+
+    # One `@@` use per field (WHERE) and one `ts_rank` use per field (ORDER BY).
+    assert sql.count("plainto_tsquery(") == len(validated.text_fields) * 2
+    assert " OR " in sql
+
+
+def test_html_field_is_included_and_strips_tags_in_fts_vector():
+    metadata = models()
+    description = next(f for f in metadata[0].fields if f.name == "description")
+    assert description.type == "html"
+    description.search_config = {"enabled": True, "text": True, "weight": "C"}
+
+    validated = SearchPlanValidator.validate_with_models(
+        plan(text="urgent"),
+        metadata,
+    ).queries[0]
+
+    # The html exclusion is gone: an enabled+text html field is now resolved.
+    assert any(f.field.name == "description" for f in validated.text_fields)
+
+    compiled = _compiled(SearchQueryCompiler.compile(validated, 7))
+    sql = str(compiled)
+
+    assert "regexp_replace" in sql
+    assert "<[^>]*>" in compiled.params.values()
+
+
+def test_non_html_field_does_not_get_regexp_replace():
+    validated = SearchPlanValidator.validate_with_models(
+        plan(text="urgent"),
+        models(),
+    ).queries[0]
+
+    # `models()`'s only enabled+text field is `title` (type "string").
+    assert [f.field.name for f in validated.text_fields] == ["title"]
+
+    compiled = _compiled(SearchQueryCompiler.compile(validated, 7))
+    sql = str(compiled)
+
+    assert "regexp_replace" not in sql

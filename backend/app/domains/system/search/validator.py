@@ -402,14 +402,6 @@ class SearchPlanValidator:
                 if _search_config(field).get("enabled")
                 and _search_config(field).get("text")
                 and not _is_sensitive(field)
-                and str(
-                    getattr(
-                        getattr(field, "type", ""),
-                        "value",
-                        getattr(field, "type", ""),
-                    )
-                )
-                != "html"
             )
 
             if query.text is not None and not text_fields:

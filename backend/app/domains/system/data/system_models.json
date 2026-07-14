@@ -724,6 +724,7 @@
             {
                 "name": "message",
                 "type": "html",
+                "search": { "enabled": true, "text": true, "result": "snippet", "weight": "C" },
                 "required": true,
                 "readonly": false,
                 "placeholder": { "es_MX": "Escribe el mensaje...", "en_US": "Write the message..." },
@@ -946,6 +947,7 @@
             {
                 "name": "description",
                 "type": "html",
+                "search": { "enabled": true, "text": true, "result": "snippet", "weight": "C" },
                 "required": true,
                 "readonly": false,
                 "placeholder": { "es_MX": "Descripción", "en_US": "Description" },
