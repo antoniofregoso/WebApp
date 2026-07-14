@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { SystemModelError, fetchSystemModelByName } from '../src/app/api/systemModel.js';
+import {
+    SystemModelError,
+    fetchSystemModelByName,
+    fetchSystemModelView,
+} from '../src/app/api/systemModel.js';
 import { mapSystemModelToViewModel } from '../src/app/utils/systemModelSchema.js';
 
 const SYSTEM_MODEL_RESPONSE = {
@@ -74,5 +78,37 @@ describe('fetchSystemModelByName', () => {
         await expect(fetchSystemModelByName('sale.order', fetchImpl)).rejects.toThrow(
             SystemModelError,
         );
+    });
+});
+
+describe('fetchSystemModelView', () => {
+    it('requests a named insight schema with its selected period', async () => {
+        let requestBody;
+        const payload = {
+            model: { name: 'system.insight', schema: { period: 'weekly' } },
+            records: [],
+        };
+        const fetchImpl = async (_url, options) => {
+            requestBody = JSON.parse(options.body);
+            return new Response(JSON.stringify({ data: { systemModelView: payload } }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        };
+
+        const result = await fetchSystemModelView({
+            model: 'system.insight',
+            use: 'insight',
+            name: 'userLogs',
+            period: 'weekly',
+        }, fetchImpl);
+
+        expect(result).toEqual(payload);
+        expect(requestBody.variables).toEqual({
+            model: 'system.insight',
+            use: 'insight',
+            name: 'userLogs',
+            period: 'weekly',
+        });
     });
 });

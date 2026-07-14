@@ -36,7 +36,218 @@ Each KPI, gauge, and chart must have a unique and stable `id` within the dashboa
 }
 ```
 
-### Actualizaciones reactivas
+### Virtual insight model
+
+`system.insight` is the declarative container for named dashboards. It is a
+virtual model: it exists in `system_models.json` and PostgreSQL metadata so that
+`SystemModelSchema` can reference it, but it has no business ORM class, record
+table, fields, or CRUD operations. It is read-only and excluded from search.
+
+Insight schemas belong to `system.insight` instead of the business model that
+supplies their values. This allows one dashboard to combine reusable components
+from users, sales, tasks, or other authorized providers without pretending that
+the dashboard itself belongs to one of those objects.
+
+```json
+{
+  "name": "system.insight",
+  "label": {
+    "es_MX": "Paneles de información",
+    "en_US": "Insights"
+  },
+  "search": false,
+  "readonly": true,
+  "group_by": false,
+  "group_by_values": [],
+  "tags": [],
+  "fields": []
+}
+```
+
+### Named insight schemas
+
+Each dashboard is stored in `system_model_schemas.json` with a stable `name`,
+`use: "insight"`, and `model: "system.insight"`. The schema selects reusable
+component IDs and controls their order and layout; it does not contain calculated
+values.
+
+```json
+{
+  "name": "userLogs",
+  "use": "insight",
+  "view": {
+    "period": "today",
+    "layout": {
+      "graphics": 2
+    },
+    "kpis": [
+      "kpiUsersOnline",
+      "kpiUsersAverageSessionTime",
+      "kpiUsersActiveUsers",
+      "kpiRecurringUsers"
+    ],
+    "gauges": [],
+    "graphics": [
+      "graphicUsersPerHour",
+      "graphicUsersMAU"
+    ]
+  },
+  "model": "system.insight"
+}
+```
+
+The URL name is only a frontend selector:
+
+```text
+/dashboard/configuration/insights?v=userLogs
+```
+
+It is not an authorization mechanism. The frontend resolves it through a closed
+allowlist, and the backend independently requires a matching registered
+generator, authentication, administrator access, and company scope. Unknown
+names are rejected.
+
+The canonical GraphQL request is:
+
+```graphql
+query NamedInsight($period: String = "today") {
+  systemModelView(
+    model: "system.insight"
+    use: insight
+    name: "userLogs"
+    period: $period
+  ) {
+    model
+    records
+  }
+}
+```
+
+For an insight response, `model.schema` contains the hydrated dashboard and
+`records` is empty. The backend replaces every configured component ID with its
+complete generated object while preserving collection order.
+
+### Adding a named dashboard
+
+1. Add the schema under `system.insight` in `system_model_schemas.json`.
+2. Use stable `kpi`, `gauge`, and `graphic` IDs that have trusted outputs.
+3. Register the named generator in the backend; never load a callable from JSON.
+4. Apply authorization and company scope inside every data provider.
+5. Add the frontend route name to the closed insight allowlist.
+6. Add a migration for databases that already exist.
+7. Test schema hydration, unauthorized access, route rejection, period refresh,
+   and rendering.
+
+### Component generation rules
+
+KPIs, gauges, and graphics are reusable named components. Dashboard schemas
+reference their stable IDs and define only selection, order, period, and layout.
+The backend resolves those IDs through a trusted generator and returns complete
+component objects with authorized, real values.
+
+#### Periods
+
+- The supported periods are `today`, `weekly`, `monthly`, `yearly`, and
+  `annual`.
+- The default period is `today`.
+- Components must be recalculated when the user changes the period.
+- Period boundaries must be resolved in the configured application time zone.
+- A component must return `0` or an empty data series when no records match; it
+  must never substitute demonstration values.
+
+#### Naming
+
+Component IDs use a type prefix followed by a stable PascalCase name:
+
+- KPI: `kpi<Name>`, for example `kpiUsersOnline`.
+- Gauge: `gauge<Name>`, for example `gaugeOperationalEfficiency`.
+- Graphic: `graphic<Name>`, for example `graphicUsersPerHour`.
+
+IDs must be unique within their catalog, must not depend on language or period,
+and must not change when the component is reused by another dashboard.
+
+#### KPI format
+
+Every KPI must contain `id`, localized `name`, calculated `value`, `unit`, and
+`trend`. The supported trend values are `up` and `down`.
+
+```json
+{
+  "id": "kpiUsersOnline",
+  "name": {
+    "en": "Online Users",
+    "es": "Usuarios en línea"
+  },
+  "value": 0,
+  "unit": "Users",
+  "trend": "up"
+}
+```
+
+The numeric value in documentation examples describes the response type only.
+Production values must be calculated from authorized domain records.
+
+#### Gauge format
+
+Every gauge must contain `id`, localized `name`, calculated `value`, `unit`,
+`max`, and its display `thresholds`. Thresholds are presentation metadata;
+only the value is calculated for each request.
+
+```json
+{
+  "id": "gaugeOperationalEfficiency",
+  "name": {
+    "en": "Operational Efficiency",
+    "es": "Eficiencia operativa"
+  },
+  "value": 0,
+  "unit": "%",
+  "max": 100,
+  "thresholds": {
+    "green": 80,
+    "yellow": 60,
+    "red": 0
+  }
+}
+```
+
+#### Graphic format
+
+Every graphic must contain `id`, `type`, localized `title`, and data compatible
+with that type. Optional properties such as `mode`, `categories`, `series`, and
+`labels` must follow the corresponding visualization reference.
+
+The user-activity heat map uses `graphicUsersPerHour`, seven localized weekday
+rows, and 24 localized hour points per row. Each `y` value is calculated from
+real user activity for the selected period.
+
+The monthly active-user bar chart uses `graphicUsersMAU`, `type: "bar"`, and
+`mode: "vertical"`. Its values and localized month categories are ordered
+chronologically and cover the months included in the selected period.
+
+#### User activity definitions
+
+- `kpiUsersOnline`: distinct users with a current, non-stale online session.
+- `kpiUsersAverageSessionTime`: average session duration in minutes during the
+  selected period.
+- `kpiUsersActiveUsers`: distinct users active during the selected period.
+- `kpiRecurringUsers`: users with at least two sessions during the selected
+  period.
+- `graphicUsersPerHour`: distinct active users grouped by weekday and hour.
+- `graphicUsersMAU`: distinct monthly active users.
+
+#### Data and security
+
+- Values are generated in the backend and exposed through authenticated GraphQL
+  queries.
+- Authorization and company scope must be applied before aggregation.
+- Declarative JSON must not contain arbitrary SQL, importable Python paths,
+  secrets, or production metric values.
+- The frontend may select and render components, but it must never be trusted to
+  authorize an insight or calculate protected aggregates.
+- Sample JSON values are examples only and must not be used as application data.
+
+### Reactive updates
 
 Insights data resides in `appSignal.value.insights` and is modified via `dashboardActions`. Actions accept either a partial object or a function that receives the current value.
 
@@ -74,7 +285,7 @@ dashboardActions.updateGraphic('monthly_sales', {
 dashboardActions.setInsightPeriod('monthly');
 ```
 
-También está disponible la forma genérica:
+The generic form is also available:
 
 ```js
 dashboardActions.updateInsight('graphics', 'monthly_sales', {

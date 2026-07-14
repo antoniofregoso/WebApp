@@ -23,6 +23,12 @@
         "adminOnly": true,
         "items": [
             {
+                "key": "insights",
+                "labelEn": "Insights",
+                "labelEs": "Perspectivas",
+                "url": "/dashboard/configuration/insights?v=userLogs"
+            },
+            {
                 "key": "users",
                 "labelEn": "Users",
                 "labelEs": "Usuarios",

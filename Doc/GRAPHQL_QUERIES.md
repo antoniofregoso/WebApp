@@ -12,7 +12,100 @@ Endpoint:
 /graphql
 ```
 
-## Current user
+## Queries
+
+### 1. KPIs
+
+The named `userLogs` insight calculates user activity indicators from persisted
+`user_logs`. It does not use seed values or static JSON. The query is restricted
+to administrators and scopes human users to the administrator's company.
+
+```graphql
+query UserLogsInsight($period: String = "today") {
+  systemModelView(
+    model: "system.insight"
+    use: insight
+    name: "userLogs"
+    period: $period
+  ) {
+    model
+    records
+  }
+}
+```
+
+The hydrated insight is returned in `model.schema`. Its `kpis`, `gauges`, and
+`graphics` arrays contain complete output objects in the order declared by
+`system_model_schemas.json`; `records` is empty for insight schemas.
+
+Allowed periods:
+
+```text
+today
+weekly
+monthly
+yearly
+annual
+```
+
+The JSON response contains these items under `kpis`:
+
+| ID                               | Value                                              |
+| -------------------------------- | -------------------------------------------------- |
+| `kpiUsersOnline`                 | Users with a current, non-stale online session     |
+| `kpiUsersAverageSessionTime`     | Average session duration in minutes                |
+| `kpiUsersActiveUsers`            | Distinct users active during the selected period   |
+| `kpiRecurringUsers`              | Users with at least two sessions during the period |
+
+Each KPI follows this shape:
+
+```json
+{
+  "id": "kpiUsersOnline",
+  "name": { "en": "Online Users", "es": "Usuarios en línea" },
+  "value": 0,
+  "unit": "Users",
+  "trend": "up"
+}
+```
+
+`value` and `trend` are calculated at request time. The numeric value above only
+documents the response type.
+
+### 2. Gauges
+
+The user activity query does not currently generate gauges. When gauges are
+added, they must be returned under `gauges` and use IDs beginning with `gauge`.
+
+```json
+{
+  "id": "gaugeName",
+  "name": { "en": "Gauge name", "es": "Nombre del indicador" },
+  "value": 0,
+  "unit": "%",
+  "max": 100,
+  "thresholds": { "green": 80, "yellow": 60, "red": 0 }
+}
+```
+
+### 3. Graphics
+
+The same `systemModelView` query returns these items under
+`model.schema.graphics`:
+
+| ID                      | Type      | Value                                              |
+| ----------------------- | --------- | -------------------------------------------------- |
+| `graphicUsersPerHour`   | `heatmap` | Distinct active users grouped by weekday and hour  |
+| `graphicUsersMAU`       | `bar`     | Monthly active users within the selected period    |
+
+The heat map contains seven localized weekday rows and 24 localized hour
+points per row. The MAU chart contains calculated values and matching localized
+month categories. Both structures conform to
+[Insights format](./INSIGHTS_FORMAT.md).
+
+### Other platform queries
+
+#### Current user
 
 Returns the user associated with the access token.
 
@@ -31,7 +124,7 @@ query Me {
 }
 ```
 
-## Activity logs
+#### Activity logs
 
 Returns activity logs for the authenticated user. Activity logs are read-only;
 the public API does not expose mutations to create or modify them.
@@ -80,7 +173,7 @@ Main fields:
 - `endDate`: explicit or automatic session end time.
 - `duration`: calculated duration in milliseconds.
 
-## Pending counters
+#### Pending counters
 
 Returns unread message and notification counts for the authenticated user.
 
@@ -98,7 +191,7 @@ Backend criteria:
 - `messages`: the user appears in `toUsers` and `status != Read`.
 - `notifications`: direct or group notifications for the user with `status != read`.
 
-## System models
+#### System models
 
 Lists the available declarative models.
 
@@ -221,7 +314,7 @@ Response shape:
 }
 ```
 
-## Messages
+#### Messages
 
 Lists messages ordered by `date` descending.
 
@@ -288,7 +381,7 @@ Failed
 Draft
 ```
 
-## Notifications
+#### Notifications
 
 Lists notifications ordered by `date` descending.
 
@@ -356,7 +449,7 @@ delivered
 read
 ```
 
-## Tasks
+#### Tasks
 
 Lists tasks ordered by `sequence` ascending and then by `createdAt` descending.
 

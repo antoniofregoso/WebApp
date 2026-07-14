@@ -251,6 +251,12 @@ Insights use a separate payload containing `kpis`, `gauges`, and `graphics`.
 Every element requires a stable `id` so values can update without rebuilding
 the entire dashboard.
 
+Named dashboards are `SystemModelSchema` records with `use: "insight"` attached
+to the read-only virtual model `system.insight`. The schema stores component IDs
+and layout only. `systemModelView` hydrates those IDs with authorized values and
+returns the complete insight under `model.schema`; insight responses have no
+business `records`.
+
 See [Insights Format](./INSIGHTS_FORMAT.md) and the visualization references:
 
 - [Bar](./BAR.md)

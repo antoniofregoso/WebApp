@@ -1,11 +1,21 @@
 import strawberry
 import uuid as uuid_lib
 from datetime import datetime
+from enum import Enum
 from typing import Optional
 
 from app.domains.users.models.user_log import UserLogStatus
 
 UserLogStatusType = strawberry.enum(UserLogStatus)
+
+
+@strawberry.enum
+class UserActivityPeriod(str, Enum):
+    today = "today"
+    weekly = "weekly"
+    monthly = "monthly"
+    yearly = "yearly"
+    annual = "annual"
 
 
 @strawberry.type

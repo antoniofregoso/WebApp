@@ -60,7 +60,7 @@ function getPeriodLabel(period, lang) {
 }
 
 function renderPeriodSelect(period, lang) {
-    const selected = PERIOD_OPTIONS.includes(period) ? period : 'monthly';
+    const selected = PERIOD_OPTIONS.includes(period) ? period : 'today';
 
     return `
     <label class="insight-period-control">

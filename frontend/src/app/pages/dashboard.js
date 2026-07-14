@@ -24,6 +24,16 @@ const EMPTY_DASHBOARD_DATA = {
 };
 
 let _modelViewRequestKey = null;
+let _insightViewRequestKey = null;
+let _currentInsightView = null;
+
+const INSIGHT_VIEWS = Object.freeze({
+    userLogs: Object.freeze({
+        model: 'system.insight',
+        use: 'insight',
+        name: 'userLogs',
+    }),
+});
 
 function getDashboardData(state = appSignal.value) {
     return state.model ?? EMPTY_DASHBOARD_DATA;
@@ -39,6 +49,34 @@ function getModelViewOptions() {
         name: params.get('view_name') || params.get('name') || 'default',
         use: (params.get('mode') || params.get('use') || 'view').toLowerCase(),
     };
+}
+
+export function getInsightViewOptions(name = getRouteSearchParams().get('v')) {
+    return name ? INSIGHT_VIEWS[name] ?? null : null;
+}
+
+function ensureInsightViewLoaded(options, period) {
+    if (!options) {
+        _insightViewRequestKey = null;
+        return;
+    }
+    const requestKey = `${options.model}:${options.use}:${options.name}:${period}`;
+    if (_insightViewRequestKey === requestKey) return;
+    _insightViewRequestKey = requestKey;
+
+    fetchSystemModelView({ ...options, period })
+        .then((modelView) => {
+            if (_insightViewRequestKey !== requestKey) return;
+            const insight = modelView?.model?.schema;
+            if (!insight || Array.isArray(insight)) {
+                throw new Error(`Insight "${options.name}" returned an invalid schema`);
+            }
+            dashboardActions.setInsights(insight);
+        })
+        .catch((error) => {
+            if (_insightViewRequestKey !== requestKey) return;
+            console.error(`Unable to load insight "${options.name}".`, error);
+        });
 }
 
 function ensureModelViewLoaded(modelName, options) {
@@ -378,7 +416,9 @@ export function dashboard(req, router) {
     const hadRecordRoute = _currentRecordModel && _currentRecordUuid != null;
     _currentRecordUuid = req.params?.uuid ?? null;
     _currentSubarea = req.params?.model ?? null;
-    _currentRecordModel = req.params?.model ?? null;
+    _currentRecordModel = _currentSubarea === 'insights'
+        ? null
+        : req.params?.model ?? null;
     const isRecordRoute = hasRecordRoute();
     if (!MENU_ITEMS.some(item => item.key === areaFromUrl)) {
         if (areaFromUrl!=undefined) {return router.trigger404(req.pathname);}
@@ -386,7 +426,19 @@ export function dashboard(req, router) {
     const areaChanged = areaFromUrl !== appSignal.value.context.active_area;
     const subareaChanged = _currentSubarea !== prevSubarea;
     const modelViewOptions = getModelViewOptions();
-    ensureModelViewLoaded(_currentRecordModel, modelViewOptions);
+    if (_currentSubarea === 'insights') {
+        _currentInsightView = getInsightViewOptions();
+        if (!_currentInsightView) return router.trigger404(req.pathname);
+        ensureModelViewLoaded(null, modelViewOptions);
+        ensureInsightViewLoaded(
+            _currentInsightView,
+            appSignal.value.insights?.period ?? 'today',
+        );
+    } else {
+        _currentInsightView = null;
+        ensureInsightViewLoaded(null, 'today');
+        ensureModelViewLoaded(_currentRecordModel, modelViewOptions);
+    }
     if (areaFromUrl && areaChanged) {
         contextActions.setActiveArea(areaFromUrl);
     }
@@ -456,6 +508,16 @@ export function dashboard(req, router) {
         const newModel = s.model;
         const newPendingCounts = s.pendingCounts;
         const auth = authSignal.value;
+
+        if (
+            _currentInsightView &&
+            newInsights?.period !== _lastInsights?.period
+        ) {
+            ensureInsightViewLoaded(
+                _currentInsightView,
+                newInsights?.period ?? 'today',
+            );
+        }
 
         const changed =
             newLang !== _lastLang ||

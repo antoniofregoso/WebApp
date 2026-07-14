@@ -3,8 +3,8 @@ import { ClientError, gql } from 'graphql-request';
 import { requestAuthenticated } from './session.js';
 
 const SYSTEM_MODEL_VIEW_QUERY = gql`
-  query SystemModelView($model: String!, $use: SystemModelSchemaUse!, $name: String!) {
-    systemModelView(model: $model, use: $use, name: $name) {
+  query SystemModelView($model: String!, $use: SystemModelSchemaUse!, $name: String!, $period: String) {
+    systemModelView(model: $model, use: $use, name: $name, period: $period) {
       model
       records
     }
@@ -78,13 +78,13 @@ export class SystemModelError extends Error {
  * schema, and records.
  */
 export async function fetchSystemModelView(
-    { model, use = 'view', name = 'default' },
+    { model, use = 'view', name = 'default', period = null },
     fetchImpl = globalThis.fetch,
 ) {
     try {
         const data = await requestAuthenticated(
             SYSTEM_MODEL_VIEW_QUERY,
-            { model, use, name },
+            { model, use, name, period },
             fetchImpl,
         );
         return data.systemModelView;

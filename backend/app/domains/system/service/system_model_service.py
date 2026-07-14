@@ -13,6 +13,10 @@ from app.core.exceptions import (
 )
 from app.domains.users.repository.user_repository import UserRepository
 from app.domains.users.service.auth_service import AuthService
+from app.domains.users.service.user_activity_graphics_service import (
+    PERIODS as USER_ACTIVITY_PERIODS,
+    UserActivityGraphicsService,
+)
 from app.domains.system.service.system_message_service import SystemMessageService
 from app.domains.system.models.system_model import (
     SystemModel,
@@ -272,6 +276,76 @@ def _serialize_follower(user) -> dict:
 
 USER_SCOPED_MODELS = frozenset(RECORD_AUTHORIZATION_POLICIES)
 READ_ONLY_MODELS = {"user.log"}
+INSIGHT_GENERATORS = {
+    ("system.insight", "userLogs"): UserActivityGraphicsService.get,
+}
+
+
+def _hydrate_insight_collection(
+    configured: list, generated: list[dict], collection: str
+) -> list[dict]:
+    generated_by_id = {item.get("id"): item for item in generated}
+    hydrated: list[dict] = []
+    for configured_item in configured:
+        item_id = (
+            configured_item
+            if isinstance(configured_item, str)
+            else configured_item.get("id")
+        )
+        item = generated_by_id.get(item_id)
+        if item is None:
+            raise ValidationException(
+                f"Insight {collection} item '{item_id}' has no registered output"
+            )
+        hydrated.append(item)
+    return hydrated
+
+
+async def _build_insight_view(
+    system_model,
+    schema,
+    current_user,
+    requested_period: str | None,
+) -> dict:
+    if current_user is None or not current_user.is_admin:
+        raise AuthorizationException("Administrator access is required")
+
+    generator = INSIGHT_GENERATORS.get((system_model.name, schema.name))
+    if generator is None:
+        raise ResourceNotFoundException(
+            resource="InsightGenerator",
+            resource_id=f"{system_model.name}/{schema.name}",
+        )
+
+    configured = dict(schema.view or {})
+    period = requested_period or configured.get("period") or "today"
+    if period not in USER_ACTIVITY_PERIODS:
+        raise ValidationException(f"Unsupported insight period: {period}")
+    generated = await generator(period, current_user.company_id)
+    insight = {
+        **configured,
+        "period": period,
+        "kpis": _hydrate_insight_collection(
+            configured.get("kpis", []), generated.get("kpis", []), "kpis"
+        ),
+        "gauges": _hydrate_insight_collection(
+            configured.get("gauges", []), generated.get("gauges", []), "gauges"
+        ),
+        "graphics": _hydrate_insight_collection(
+            configured.get("graphics", []),
+            generated.get("graphics", []),
+            "graphics",
+        ),
+    }
+    return {
+        "model": {
+            "name": system_model.name,
+            "label": _with_locale_aliases(system_model.label),
+            "readonly": True,
+            "schema": insight,
+        },
+        "records": [],
+    }
 
 
 def _require_writable_model(model: str) -> None:
@@ -598,6 +672,8 @@ class SystemModelService:
         use: SystemModelSchemaUse,
         name: str,
         current_user_id: int | None = None,
+        current_user=None,
+        period: str | None = None,
     ):
         system_model, schema = await SystemModelRepository.get_view_definition(
             model, use, name
@@ -608,6 +684,14 @@ class SystemModelService:
             raise ResourceNotFoundException(
                 resource="SystemModelSchema",
                 resource_id=f"{model}/{use.value}/{name}",
+            )
+
+        if use == SystemModelSchemaUse.insight:
+            return await _build_insight_view(
+                system_model,
+                schema,
+                current_user,
+                period,
             )
 
         followable_users = await SystemModelRepository.get_followable_users()

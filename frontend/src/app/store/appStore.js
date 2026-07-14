@@ -2,7 +2,7 @@ import { signal, effect, computed } from '@preact/signals';
 import initialStateJson from './state.json';
 
 const EMPTY_INSIGHTS = {
-    period: 'monthly',
+    period: 'today',
     kpis: [],
     gauges: [],
     graphics: [],

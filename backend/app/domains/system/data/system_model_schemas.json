@@ -3527,5 +3527,27 @@
             }
         ],
         "model": "user.log"
+    },
+    {
+        "name": "userLogs",
+        "use": "insight",
+        "view": {
+            "period": "today",
+            "layout": {
+                "graphics": 2
+            },
+            "kpis": [
+                "kpiUsersOnline",
+                "kpiUsersAverageSessionTime",
+                "kpiUsersActiveUsers",
+                "kpiRecurringUsers"
+            ],
+            "gauges": [],
+            "graphics": [
+                "graphicUsersPerHour",
+                "graphicUsersMAU"
+            ]
+        },
+        "model": "system.insight"
     }
 ]

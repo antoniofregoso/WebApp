@@ -5,9 +5,33 @@ from sqlalchemy import select
 
 from app.core.database.session import db
 from app.domains.users.models.user_log import UserLog, UserLogStatus
+from app.domains.users.models.user_user import UserType, UserUser
 
 
 class UserLogRepository:
+    @staticmethod
+    async def get_human_activity_between(
+        start: datetime,
+        end: datetime,
+        company_id: int | None,
+    ) -> list[UserLog]:
+        async with db.session() as session:
+            query = (
+                select(UserLog)
+                .join(UserUser, UserUser.id == UserLog.user_id)
+                .where(
+                    UserUser.user_type == UserType.HUMAN,
+                    UserLog.start_date < end,
+                    UserLog.last_seen_at.is_not(None),
+                    UserLog.last_seen_at >= start,
+                )
+                .order_by(UserLog.start_date.asc())
+            )
+            if company_id is not None:
+                query = query.where(UserUser.company_id == company_id)
+            result = await session.execute(query)
+            return list(result.scalars().all())
+
     @staticmethod
     async def get_by_user_id(user_id: int, limit: int = 50):
         async with db.session() as session:

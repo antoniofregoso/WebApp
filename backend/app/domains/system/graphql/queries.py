@@ -129,10 +129,16 @@ class SystemQuery:
         use: SystemModelSchemaUseType,
         name: str,
         info: strawberry.types.Info,
+        period: str | None = None,
     ) -> SystemModelViewType:
         user = await get_current_user(info)
         view = await SystemModelService.get_view(
-            model, use, name, current_user_id=user.id
+            model,
+            use,
+            name,
+            current_user_id=user.id,
+            current_user=user,
+            period=period,
         )
         return SystemModelViewType(model=view["model"], records=view["records"])
 

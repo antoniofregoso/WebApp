@@ -74,20 +74,18 @@ The complete natural-language search design is documented in
 
 ## Insights
 
+Insights are named schemas attached to the virtual `system.insight` model. The
+declarative source stores component IDs; the GraphQL response replaces them with
+complete KPI, gauge, and graphic objects generated from authorized data.
+
 ```json
 {
-    "period":"",
-    "kpis":[],
-    "gauges":[ ],
-    "graphics":[]
+    "period": "today",
+    "kpis": [],
+    "gauges": [],
+    "graphics": []
 }
 ```
-### period
 
-
-### kpis
-
-### gauges
-
-### graphics
-
+See [Insights Format](./INSIGHTS_FORMAT.md) for virtual-model registration,
+named schema rules, component formats, GraphQL loading, and security.

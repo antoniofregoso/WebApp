@@ -1622,5 +1622,18 @@
                 "help": { "es_MX": "Duración de la sesión en milisegundos", "en_US": "Session duration in milliseconds" }
             }
         ]
+    },
+    {
+        "name": "system.insight",
+        "label": {
+            "es_MX": "Paneles de información",
+            "en_US": "Insights"
+        },
+        "search": false,
+        "readonly": true,
+        "group_by": false,
+        "group_by_values": [],
+        "tags": [],
+        "fields": []
     }
 ]

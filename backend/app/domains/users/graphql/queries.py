@@ -1,13 +1,17 @@
 import uuid as uuid_lib
 
 import strawberry
+from strawberry.scalars import JSON
 
 from app.domains.users.graphql.mappers import user_log_to_type
-from app.domains.users.graphql.types import UserLogType, UserType
+from app.domains.users.graphql.types import UserActivityPeriod, UserLogType, UserType
 from app.core.security.jwt_bearer import IsAuthenticated
 from app.core.security.jwt_manager import JWTManager
 from app.core.exceptions import AuthorizationException
 from app.domains.users.service.user_log_service import UserLogService
+from app.domains.users.service.user_activity_graphics_service import (
+    UserActivityGraphicsService,
+)
 from app.domains.users.service.user_service import UserService
 
 
@@ -23,6 +27,18 @@ async def get_current_user(info: strawberry.types.Info):
 
 @strawberry.type
 class UserQuery:
+
+    @strawberry.field(permission_classes=[IsAuthenticated])
+    async def user_activity_graphics(
+        self,
+        info: strawberry.types.Info,
+        period: UserActivityPeriod = UserActivityPeriod.today,
+    ) -> JSON:
+        """Builds real user-activity KPI and chart data without mounting a view."""
+        user = await get_current_user(info)
+        if not user.is_admin:
+            raise AuthorizationException("Administrator access is required")
+        return await UserActivityGraphicsService.get(period.value, user.company_id)
 
     @strawberry.field(permission_classes=[IsAuthenticated])
     async def me(self, info: strawberry.types.Info) -> UserType:
