@@ -1,21 +1,50 @@
 # WebApp
 
+![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)
+![Backend](https://img.shields.io/badge/backend-FastAPI%20%7C%20GraphQL%20%7C%20PostgreSQL-009688)
+![Frontend](https://img.shields.io/badge/frontend-Preact%20%7C%20Vite%20%7C%20Tailwind-673ab8)
+
 WebApp is a schema-driven application template for building internal tools,
 operational dashboards, and reporting systems. Models, fields, views, and
 insights are declared as data, allowing the same frontend and backend to adapt
 to different business domains with minimal custom code.
 
+## Contents
+
+- [Highlights](#highlights)
+- [Architecture](#architecture)
+- [Quick start](#quick-start)
+- [Development commands](#development-commands)
+- [Documentation](#documentation)
+- [Security note](#security-note)
+- [License](#license)
+
 ## Highlights
 
+**Declarative core**
 - Declarative Kanban, list, form, and calendar views
 - Reusable field components, relationships, avatars, and localized labels
-- FastAPI, GraphQL, SQLModel, PostgreSQL, and Alembic
-- Preact, Signals, Tailwind CSS, Vite, and CJ Router
-- In-app and browser push notifications
+- Insights dashboards: KPIs, gauges, and charts from declarative definitions
+
+**Search**
+- Natural-language global search: an AI interpreter turns questions into
+  validated, typed search plans, with automatic fallback to plain text when
+  no provider is configured
+- PostgreSQL full-text search (`tsvector`/`ts_rank`) and trigram (`pg_trgm`)
+  indexes, tuned to stay fast at 100,000+ records per model
+- Contextual, in-app help for the search bar
+
+**Security and accounts**
+- Access/refresh token session renewal with rotation and reuse detection
+- Step-up re-authentication (password/MFA) for critical operations
 - Session activity tracking and read-only user log reporting
-- Natural-language global search with declarative field metadata
+
+**Platform**
+- In-app and browser push notifications
 - Read-only MCP reports for authorized users
 - Attachment storage with authenticated previews
+- FastAPI, GraphQL, SQLModel, PostgreSQL, and Alembic
+- Preact, Signals, Tailwind CSS, Vite, and CJ Router
 
 ## Architecture
 
@@ -94,7 +123,10 @@ Start with the [documentation index](./Doc/INDEX.md), or jump directly to:
 - [Backend guide](./Doc/BACKEND.md)
 - [GraphQL reference](./Doc/GRAPHQL_QUERIES.md)
 - [Insights format](./Doc/INSIGHTS_FORMAT.md)
+- [Global search design](./Doc/AI_SEARCH_DESIGN.md)
 - [MCP reports](./Doc/MCP.md)
+- [Error handling guide](./Doc/ERROR_HANDLING_GUIDE.md)
+- [Quality and testing guide](./Doc/QUALITY_AND_TESTING_GUIDE.md)
 
 ## Security note
 

@@ -28,26 +28,32 @@ class SearchModelRegistration:
         return self.url_builder(str(record_uuid))
 
 
-def _record_url(model: str) -> RecordUrlBuilder:
-    return lambda record_uuid: f"/dashboard/user/{model}/{record_uuid}"
+def _record_url(area: str, model: str) -> RecordUrlBuilder:
+    return lambda record_uuid: f"/dashboard/{area}/{model}/{record_uuid}"
 
 
 SEARCH_MODEL_REGISTRY: Mapping[str, SearchModelRegistration] = MappingProxyType(
     {
+        # `area` mirrors each model's sidebar/topbar entry point — see
+        # `frontend/src/app/data/sidebar.json` (user.user -> "configuration")
+        # and `frontend/src/app/components/topbar.jsx` (system.task/
+        # system.message -> "user"). There's no model->area field in
+        # `system_models.json`, so this stays a per-registration constant
+        # like the frontend's own hardcoded hrefs.
         "system.task": SearchModelRegistration(
             orm_class=SystemTask,
             authorization_policy=TASK_AUTHORIZATION_POLICY,
-            url_builder=_record_url("system.task"),
+            url_builder=_record_url("user", "system.task"),
         ),
         "system.message": SearchModelRegistration(
             orm_class=SystemMessage,
             authorization_policy=MESSAGE_AUTHORIZATION_POLICY,
-            url_builder=_record_url("system.message"),
+            url_builder=_record_url("user", "system.message"),
         ),
         "user.user": SearchModelRegistration(
             orm_class=UserUser,
             authorization_policy=USER_AUTHORIZATION_POLICY,
-            url_builder=_record_url("user.user"),
+            url_builder=_record_url("configuration", "user.user"),
         ),
     }
 )

@@ -602,7 +602,9 @@ structured search is insufficient. It remains a possible future evolution.
 
 ## Open questions
 
-- Should the first phase allow searches over notes and attachment names?
+- ~~Should the first phase allow searches over notes and attachment
+  names?~~ Resolved 2026-07-14 — no. See "Notes and attachment search
+  deferred (2026-07-14)" below.
 
 ## Dependencies
 
@@ -633,8 +635,11 @@ continues to work with text search.
    pool: p95 841 ms → 719 ms. Concurrent per-model fan-out was tried and reverted
    (made p95 worse in-process). Still above the 300 ms SLO; re-measure against a
    multi-worker deployment before optimizing further in-process.
-5. Add PostgreSQL Full Text Search only when metrics justify it beyond `pg_trgm`.
-6. Evaluate notes and attachment names without exposing unauthorized content.
+5. ~~Add PostgreSQL Full Text Search only when metrics justify it beyond
+   `pg_trgm`.~~ Done 2026-07-14 — see "Full Text Search (2026-07-14)" above.
+6. ~~Evaluate notes and attachment names without exposing unauthorized
+   content.~~ Deferred 2026-07-14 — see "Notes and attachment search
+   deferred (2026-07-14)" below.
 
 ## References
 
@@ -919,6 +924,63 @@ order (fixing a real correctness gap — see below); the Python-side `score`
 field and final cross-model ordering keep the existing title-only heuristic
 unchanged.
 
+#### Request flow (end-to-end)
+
+```
+User types "reunión urgente" in the topbar search
+        │
+        ▼
+Frontend: topbar.jsx  ──▶  GraphQL `systemSearch` query
+        │
+        ▼
+SystemSearchService.search()        mode: AUTO | TEXT | AI
+        │
+        ├─ AI mode only ─▶ SearchInterpreter ─▶ SearchPlanV1
+        │                  (natural language → structured SearchFilters;
+        │                   any leftover free text becomes query.text)
+        │
+        ▼
+SearchQueryCompiler.compile(validated_query)      (per registered model)
+        │
+        ├─ structured filters (status =, assigned_to =, priority =, ...)
+        │     → ordinary indexed WHERE predicates — no tsvector involved
+        │
+        └─ query.text present?
+                │
+                ▼
+           for each `search.text: true` field on the model:
+             tsvector = setweight(to_tsvector('simple', field_text), weight)
+             · JSONB fields (title/subject): es_MX + en_US folded into one
+               vector, so one index matches either language
+             · html fields (description/message): tags stripped first via
+               regexp_replace('<[^>]*>', ' ', 'g')
+                │
+                ▼
+           predicate:  OR( tsvector @@ plainto_tsquery('simple', query.text) )
+           rank:       SUM( ts_rank(tsvector, tsquery) )  across fields
+        │
+        ▼
+PostgreSQL — one GIN index per field (ix_system_tasks_title_fts, ..._status_fts, ...)
+  BitmapOr across the matching fields  →  ORDER BY rank DESC LIMIT 20
+        │
+        ▼
+SystemSearchService._map_plan_records()
+  strips HTML from any html-typed result field, builds title/subtitle/snippet
+        │
+        ▼
+Results ──▶ topbar.jsx inline dropdown
+  each row links to _record_url(model) → /dashboard/user/<model>/<uuid>
+```
+
+To make an additional field participate in this flow: mark it
+`search_config: {"enabled": true, "text": true, "weight": "A"|"B"|"C"|"D"}`
+in `system_models.json`, then add a migration with a `CREATE INDEX ...
+USING gin (<expression>)` whose expression is character-for-character what
+`_fts_field_vector`/`_fts_source_text` (`compiler.py`) build for that field —
+PostgreSQL only uses an expression index when the query's parse tree matches
+it exactly, so a mismatched cast or argument order makes the planner silently
+fall back to a sequential scan.
+
 **The correctness problem this fixes.** Before this change, each per-model
 `TEXT` query was `ORDER BY uuid ASC LIMIT 20` (fast, since Postgres can stop
 after the first 20 matches), then only those 20 rows were scored/reranked in
@@ -1085,3 +1147,94 @@ absent from its title), and confirmed `SystemSearchService.search()` finds
 it with a clean, tag-free snippet. `EXPLAIN ANALYZE` on the equivalent raw
 query confirms `Bitmap Index Scan on ix_system_tasks_description_fts`
 (0.22 ms), not a sequential scan.
+
+### Notes and attachment search deferred (2026-07-14)
+
+Closes the last item in "Performance and future work pending" that isn't a
+performance item: whether `system_notes` and `system_attachments` should be
+searchable in this first version. Decision: **not in v1.**
+
+**Why this is more than a config flag.** Every model in
+`SEARCH_MODEL_REGISTRY` (`backend/app/domains/system/search/registry.py`)
+maps to exactly one fixed `SearchAuthorizationPolicy`
+(`backend/app/domains/system/search/authorization.py`) — e.g.
+`AssignedTaskAuthorizationPolicy` checks `SystemTask.user_id`,
+`MessageParticipantAuthorizationPolicy` checks message participants — and to
+exactly one static result URL via `_record_url(model)`. `system_notes` and
+`system_attachments`
+(`backend/app/domains/system/models/system_note.py`,
+`system_attachment.py`) don't fit that shape: they're polymorphic, attached
+to *any* record through `model_id` + `record_uuid` rather than to a single
+owning model. Making them searchable would need:
+
+- A dynamic authorization policy that resolves `model_id` to the owning
+  `system_models.name`, then applies *that* model's own policy (join back to
+  `system_tasks`/`system_messages`/whatever) — no such dispatch mechanism
+  exists today, since the registry assumes one static policy per registered
+  model.
+- A result URL that points at the *owning* record, not at the note/
+  attachment itself — neither has a standalone page in the frontend, so
+  `_record_url(model)`'s one-static-URL-per-model shape doesn't apply.
+- A `SystemModel` entry in `system_models.json` to register them at all;
+  neither `system.note` nor `system.attachment` exists there today — they're
+  infrastructure tables, not declarative business models.
+
+None of that is a small addition — it's new authorization infrastructure the
+rest of the search feature doesn't need yet, for two fields (`content_html`,
+`original_name`) whose value is unproven. Revisit if/when polymorphic search
+authorization is generalized for another reason, or if there's concrete
+evidence users need to find records by note/attachment content rather than
+by the task/message fields already searchable.
+
+### Embeddings evaluation (2026-07-14)
+
+Closes the last "future work" item: whether semantic embeddings are needed
+because filters and full-text search can't handle real conceptual queries.
+Conclusion: **not justified yet** — reasoned from what's already shipped and
+verified, without a new benchmark.
+
+Search today covers three distinct query shapes, each already measured or
+verified above:
+
+1. **Structured/relational queries** — "urgent tasks assigned to Antonio" is
+   not a text-matching problem at all: `SearchInterpreter` turns it into a
+   `SearchPlanV1` with real `SearchFilter`s (`priority = urgent`,
+   `assigned_to = Antonio`), which `SearchQueryCompiler` executes as ordinary
+   indexed `WHERE` predicates. No embedding could make this either more
+   correct or faster — the query has nothing to do with free-text semantics.
+2. **Exact/rare free text** — PostgreSQL FTS (`to_tsvector`/`ts_rank`, one
+   GIN index per field) verified to find an exact-match needle first and use
+   `Bitmap Index Scan` rather than a sequential scan (see "Full Text Search
+   (2026-07-14)" above), p50 ~150-230 ms.
+3. **Prefix/substring/`contains`/`starts_with`** — `pg_trgm`-backed
+   expression indexes (see "`pg_trgm` indexes (2026-07-13)" above) cover
+   partial-string matches FTS tokenization wouldn't, e.g. matching mid-word.
+
+The gap embeddings would actually close is narrower than "conceptual
+queries" suggests: **pure semantic matching with zero lexical overlap and no
+structured field to filter on** — e.g. "problemas de rendimiento" matching a
+task titled "la app va lenta," where neither FTS nor `pg_trgm` nor any
+`SearchFilter` can bridge the gap because the words share no root and
+nothing about "performance problem" is a structured attribute of the task.
+That is a real limitation, but there's no evidence yet that it's a limitation
+users actually hit: the AI interpreter already redirects anything with an
+identifiable intent (who/what/when/status) into structured filters rather
+than free text, which is precisely the class of query most likely to look
+"conceptual" on the surface. Building embedding infrastructure (model
+choice, vector storage/index, hybrid ranking against FTS scores) has real
+ongoing cost — worth paying once there's a concrete corpus of queries that
+demonstrably fail today, not ahead of that evidence.
+
+**Not a closed door.** This is a deferral, not a rejection: nothing here
+rules out adding embeddings later if a project built on this template
+actually needs them. The trigger to revisit is evidence-based, not
+time-based — a real, recurring set of queries where FTS/`pg_trgm`/structured
+filters all return no relevant result but a human would recognize the
+match conceptually. If that shows up, the natural entry point is additive,
+not a rewrite: add a `vector` column (`pgvector`) per searchable text field
+alongside the existing `tsvector` GIN indexes, populate it via the same
+per-field mechanism `_fts_source_text` already uses, and blend its
+similarity score with `ts_rank` in `SearchQueryCompiler` rather than
+replacing FTS outright — matching the "declarative, per-field opt-in"
+design this whole search feature already follows (`search_config` on
+`SystemModelField`).
