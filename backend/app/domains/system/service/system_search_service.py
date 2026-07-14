@@ -5,9 +5,9 @@ from enum import Enum
 from typing import Any
 
 from app.core.config.settings import settings
-from app.domains.system.models.system_model import SystemModelSchemaUse
 from app.domains.system.repository.system_model_repository import SystemModelRepository
 from app.domains.system.search.compiler import SearchQueryCompiler
+from app.domains.system.search.contracts import ModelSearchQuery, SearchPlanV1
 from app.domains.system.search.interpreter import (
     SearchContext,
     SearchInterpreterInvalidPlan,
@@ -22,7 +22,6 @@ from app.domains.system.search.validator import (
     SearchPlanValidationError,
     SearchPlanValidator,
 )
-from app.domains.system.service.system_model_service import SystemModelService
 
 
 def _localized(value: Any, lang: str) -> str:
@@ -209,7 +208,7 @@ class SystemSearchService:
                 ),
             )
 
-        models = list(await SystemModelRepository.get_all())
+        models = list(await SystemModelRepository.get_all_with_fields())
         timezone_name = timezone_name or settings.DEFAULT_TIMEZONE
         try:
             schema = SearchSchemaService.build_with_models(
@@ -292,18 +291,13 @@ class SystemSearchService:
             model_name = validated_query.query.model
             queried_models.append(model_name)
             try:
-                statement = SearchQueryCompiler.compile(
-                    validated_query,
-                    current_user_id,
-                    language=lang,
-                    timezone_name=timezone_name,
-                )
-                records = await SearchQueryRepository.execute(statement)
                 results.extend(
-                    SystemSearchService._map_plan_records(
-                        records,
-                        models_by_name[model_name],
+                    await SystemSearchService._execute_validated_query(
+                        validated_query,
+                        current_user_id,
                         lang,
+                        models_by_name[model_name],
+                        timezone_name=timezone_name,
                     )
                 )
             except Exception:
@@ -356,8 +350,29 @@ class SystemSearchService:
         return SearchExecution("PARTIAL", query, False, None, results, (issue,))
 
     @staticmethod
+    async def _execute_validated_query(
+        validated_query: Any,
+        current_user_id: int,
+        lang: str,
+        model: Any,
+        timezone_name: str | None = None,
+        terms: tuple[str, ...] | None = None,
+    ) -> list[SearchResult]:
+        statement = SearchQueryCompiler.compile(
+            validated_query,
+            current_user_id,
+            language=lang,
+            timezone_name=timezone_name,
+        )
+        records = await SearchQueryRepository.execute(statement)
+        return SystemSearchService._map_plan_records(records, model, lang, terms)
+
+    @staticmethod
     def _map_plan_records(
-        records: list[Any], model: Any, language: str
+        records: list[Any],
+        model: Any,
+        language: str,
+        terms: tuple[str, ...] | None = None,
     ) -> list[SearchResult]:
         searchable = [
             field
@@ -412,80 +427,9 @@ class SystemSearchService:
                 if snippet_field
                 else None
             )
-            mapped.append(
-                SearchResult(
-                    model=model.name,
-                    model_label=_localized(model.label, language),
-                    uuid=record_uuid,
-                    title=title or record_uuid,
-                    subtitle=subtitle,
-                    snippet=snippet,
-                    url=registration.build_url(record_uuid),
-                    score=0,
-                )
-            )
-        return mapped
-
-    @staticmethod
-    async def _search(
-        query: str, current_user_id: int, lang: str = "es", limit: int = 20
-    ) -> SearchResults:
-        normalized_query = " ".join(str(query or "").split())[
-            : DEFAULT_SEARCH_LIMITS.max_string_length
-        ]
-        terms = [
-            term.casefold()
-            for term in re.findall(r"[^\W_]+", normalized_query, flags=re.UNICODE)
-        ]
-        if not terms:
-            return SearchResults([], queried_models=[])
-
-        requested_limit = max(1, min(int(limit or 20), SystemSearchService.MAX_LIMIT))
-        models = [
-            model for model in await SystemModelRepository.get_all() if model.search
-        ]
-        results: list[SearchResult] = []
-        queried_models: list[str] = []
-        for model in models:
-            registration = require_search_model_registration(model.name)
-            searchable = [
-                field
-                for field in model.fields
-                if field.search_config.get("enabled")
-                and field.search_config.get("text")
-            ]
-            if not searchable:
-                continue
-            queried_models.append(model.name)
-            view = await SystemModelService.get_view(
-                model.name,
-                SystemModelSchemaUse.view,
-                "default",
-                current_user_id=current_user_id,
-            )
-            title_field = next(
-                (
-                    field
-                    for field in searchable
-                    if field.search_config.get("result") == "title"
-                ),
-                searchable[0],
-            )
-            subtitle_fields = [
-                field
-                for field in searchable
-                if field.search_config.get("result") == "subtitle"
-            ]
-            for record in view["records"]:
-                values = {
-                    field.name: _search_text(record.get(field.name), lang)
-                    for field in searchable
-                }
-                combined = " ".join(values.values()).casefold()
-                if not all(term in combined for term in terms):
-                    continue
-                title = values.get(title_field.name) or str(record.get("uuid") or "")
-                title_folded = title.casefold()
+            score = 0
+            if terms:
+                title_folded = (title or "").casefold()
                 score = sum(
                     (
                         100
@@ -498,26 +442,87 @@ class SystemSearchService:
                     )
                     for term in terms
                 )
-                subtitle = (
-                    " · ".join(
-                        filter(
-                            None, (values.get(field.name) for field in subtitle_fields)
-                        )
-                    )
-                    or None
+            mapped.append(
+                SearchResult(
+                    model=model.name,
+                    model_label=_localized(model.label, language),
+                    uuid=record_uuid,
+                    title=title or record_uuid,
+                    subtitle=subtitle,
+                    snippet=snippet,
+                    url=registration.build_url(record_uuid),
+                    score=score,
                 )
-                results.append(
-                    SearchResult(
-                        model=model.name,
-                        model_label=_localized(model.label, lang),
-                        uuid=str(record.get("uuid") or ""),
-                        title=title,
-                        subtitle=subtitle,
-                        snippet=None,
-                        url=registration.build_url(record.get("uuid") or ""),
-                        score=score,
-                    )
+            )
+        return mapped
+
+    @staticmethod
+    async def _search(
+        query: str, current_user_id: int, lang: str = "es", limit: int = 20
+    ) -> SearchResults:
+        normalized_query = " ".join(str(query or "").split())[
+            : DEFAULT_SEARCH_LIMITS.max_string_length
+        ]
+        terms = tuple(
+            term.casefold()
+            for term in re.findall(r"[^\W_]+", normalized_query, flags=re.UNICODE)
+        )
+        if not terms:
+            return SearchResults([], queried_models=[])
+
+        requested_limit = max(1, min(int(limit or 20), SystemSearchService.MAX_LIMIT))
+        models = [
+            model
+            for model in await SystemModelRepository.get_all_with_fields()
+            if model.search
+        ]
+
+        queried_models: list[str] = []
+        queries: list[ModelSearchQuery] = []
+        for model in models:
+            searchable = [
+                field
+                for field in model.fields
+                if field.search_config.get("enabled")
+                and field.search_config.get("text")
+            ]
+            if not searchable:
+                continue
+            queried_models.append(model.name)
+            queries.append(
+                ModelSearchQuery(
+                    model=model.name,
+                    text=normalized_query,
+                    limit=DEFAULT_SEARCH_LIMITS.max_results_per_query,
                 )
+            )
+
+        if not queries:
+            return SearchResults([], queried_models=[])
+
+        # Every enabled+text-searchable model is registered by construction (see
+        # `queried_models` above), so this only ever raises for a programming error.
+        plan = SearchPlanV1(
+            version=1,
+            intent="search_records",
+            queries=queries,
+            needs_clarification=False,
+            clarification_question=None,
+        )
+        validated = SearchPlanValidator.validate_with_models(plan, models, lang)
+
+        models_by_name = {model.name: model for model in models}
+        results: list[SearchResult] = []
+        for validated_query in validated.queries:
+            results.extend(
+                await SystemSearchService._execute_validated_query(
+                    validated_query,
+                    current_user_id,
+                    lang,
+                    models_by_name[validated_query.query.model],
+                    terms=terms,
+                )
+            )
 
         return SearchResults(
             sorted(

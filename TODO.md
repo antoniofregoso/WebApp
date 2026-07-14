@@ -83,8 +83,11 @@ Approved design: [Doc/AI_SEARCH_DESIGN.md](./Doc/AI_SEARCH_DESIGN.md).
 
 ### Performance and future work pending
 
-- [ ] Create a reproducible benchmark with 100,000 records per model and 10 concurrent clients.
-- [ ] Add `pg_trgm` indexes if current text matching misses the latency target.
+- [x] Create a reproducible benchmark with 100,000 records per model and 10 concurrent clients. See `backend/scripts/benchmark_search.py` and [Doc/AI_SEARCH_DESIGN.md](./Doc/AI_SEARCH_DESIGN.md#benchmark-results-2026-07-13).
+- [x] Fix `TEXT`/`AUTO` search (`SystemSearchService._search`) to filter in SQL via `SearchQueryCompiler` instead of loading the entire table through `get_view`. p95 at 100,000 records/model dropped from 11,073 ms (100% timeouts) to 3,635 ms. Still ~12x over the 300 ms SLO — now a real unindexed-`ILIKE` problem. See [Doc/AI_SEARCH_DESIGN.md](./Doc/AI_SEARCH_DESIGN.md#fix-route-text-search-through-searchquerycompiler-2026-07-13).
+- [x] Add `pg_trgm` indexes on every `ILIKE`-searched text field (`system_tasks.title/status/priority`, `system_messages.subject/status`), not just title/subject — the compiler `OR`s across all of them. See migration `20260713_2230_0b189788379d_add_search_trgm_indexes.py` and [Doc/AI_SEARCH_DESIGN.md](./Doc/AI_SEARCH_DESIGN.md#pg_trgm-indexes-2026-07-13). p95 dropped from 3,635 ms to 841 ms; raw query cost for rare/no-match terms is now sub-millisecond.
+- [x] Lighten the per-request catalog fetch (`SystemModelRepository.get_all_with_fields()` skips the unused `schemas` relation) and raise the DB connection pool (`DB_POOL_SIZE`/`DB_MAX_OVERFLOW`, default 20+20). p95 dropped from 841 ms to 719 ms. Running per-model queries concurrently via `asyncio.gather` was tried and reverted — it made p95 worse (1,458 ms) in this single-process benchmark, likely event-loop/GIL contention from doubling in-flight CPU-bound ORM work, not I/O wait. See [Doc/AI_SEARCH_DESIGN.md](./Doc/AI_SEARCH_DESIGN.md#reducing-per-request-overhead-2026-07-14).
+- [ ] p95 (719 ms) still misses the 300 ms SLO, but the remaining gap looks like single-process concurrency overhead from this benchmark script itself (10 clients in one event loop), not a specific query cost — unloaded single search is ~22–43 ms. Re-measure against a multi-worker deployment before optimizing further in-process.
 - [ ] Implement PostgreSQL Full Text Search with `tsvector`, ranking, and GIN indexes when metrics justify it.
 - [ ] Create normalized, indexable text for HTML fields before allowing them in search.
 - [ ] Decide whether the first version includes notes and attachment filenames.

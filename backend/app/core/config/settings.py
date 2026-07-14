@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     # Database Config
     DATABASE_URL: str
     DB_ECHO: bool = False
+    DB_POOL_SIZE: int = Field(default=20, gt=0)
+    DB_MAX_OVERFLOW: int = Field(default=20, ge=0)
 
     # Logging
     LOG_LEVEL: str = "INFO"

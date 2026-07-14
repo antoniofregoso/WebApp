@@ -110,7 +110,7 @@ async def test_ai_interpretation_timeout_is_typed_and_cancels_provider(monkeypat
     async def get_all():
         return models()
 
-    monkeypatch.setattr(service_module.SystemModelRepository, "get_all", get_all)
+    monkeypatch.setattr(service_module.SystemModelRepository, "get_all_with_fields", get_all)
 
     result = await SystemSearchService._run(
         "report",
@@ -139,7 +139,7 @@ async def test_clarification_is_stateless_and_does_not_query_database(monkeypatc
     async def unexpected_execute(statement):
         raise AssertionError("clarification must not execute a query")
 
-    monkeypatch.setattr(service_module.SystemModelRepository, "get_all", get_all)
+    monkeypatch.setattr(service_module.SystemModelRepository, "get_all_with_fields", get_all)
     monkeypatch.setattr(
         service_module.SearchQueryRepository, "execute", unexpected_execute
     )
@@ -204,7 +204,7 @@ async def test_bilingual_plans_are_validated_before_execution(
     async def execute(statement):
         return []
 
-    monkeypatch.setattr(service_module.SystemModelRepository, "get_all", get_all)
+    monkeypatch.setattr(service_module.SystemModelRepository, "get_all_with_fields", get_all)
     monkeypatch.setattr(service_module.SearchQueryRepository, "execute", execute)
 
     result = await SystemSearchService._run(
@@ -241,7 +241,7 @@ async def test_provider_cannot_query_a_model_outside_exposed_permissions(monkeyp
     async def get_all():
         return models()
 
-    monkeypatch.setattr(service_module.SystemModelRepository, "get_all", get_all)
+    monkeypatch.setattr(service_module.SystemModelRepository, "get_all_with_fields", get_all)
 
     result = await SystemSearchService._run(
         "all users",

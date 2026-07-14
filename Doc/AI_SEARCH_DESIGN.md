@@ -25,8 +25,11 @@ Implemented between 2026-07-12 and 2026-07-13:
 
 Pending:
 
+- The remaining p95 gap under concurrency (719 ms vs. the 300 ms SLO) is now
+  in-process event-loop/connection contention specific to this single-process
+  benchmark, not a specific fixable query — see "Reducing per-request overhead"
+  below for what was tried, what worked, and what didn't.
 - PostgreSQL Full Text Search, subject to metrics.
-- A reproducible benchmark before selecting indexes or full-text search.
 
 ## Problem
 
@@ -596,9 +599,22 @@ continues to work with text search.
 
 ## Next steps
 
-1. Run the reproducible benchmark at the target volume.
-2. Add `pg_trgm` or PostgreSQL Full Text Search only when metrics require it.
-3. Evaluate notes and attachment names without exposing unauthorized content.
+1. ~~Run the reproducible benchmark at the target volume.~~ Done 2026-07-13 — p95 at
+   100,000 records/model, 10 concurrent clients: 11,073 ms (target: < 300 ms); every
+   request timed out.
+2. ~~Route `TEXT`/`AUTO` search through `SearchQueryCompiler`~~ Done 2026-07-13 — see
+   "Fix: route TEXT search through `SearchQueryCompiler`" above. p95 dropped to
+   3,635 ms; still ~12x over the SLO, now due to unindexed `ILIKE`.
+3. ~~Add `pg_trgm` indexes on the `ILIKE`-searched text columns~~ Done 2026-07-13 —
+   see "`pg_trgm` indexes" above. p95 dropped from 3,635 ms to 841 ms; raw query
+   cost for rare/no-match terms is now sub-millisecond.
+4. ~~Reduce per-request overhead under concurrency~~ Partially done 2026-07-14 — see
+   "Reducing per-request overhead" above. Lighter catalog fetch + bigger connection
+   pool: p95 841 ms → 719 ms. Concurrent per-model fan-out was tried and reverted
+   (made p95 worse in-process). Still above the 300 ms SLO; re-measure against a
+   multi-worker deployment before optimizing further in-process.
+5. Add PostgreSQL Full Text Search only when metrics justify it beyond `pg_trgm`.
+6. Evaluate notes and attachment names without exposing unauthorized content.
 
 ## References
 
@@ -623,3 +639,202 @@ The second scored 7/10 and resolved filter semantics, TEXT behavior, clarificati
 limits, and fallback. The third scored 8/10; its three remaining risks were resolved
 in this version through relation authorization, exact catalog selection, and the
 exclusion of non-normalized HTML from Phase 1.
+
+## Benchmark results (2026-07-13)
+
+Reproducible script: `backend/scripts/benchmark_search.py` (`seed`, `run`, `cleanup`
+subcommands). It seeds `system.task` and `system.message` under one dedicated
+benchmark user (so `SearchAuthorizationPolicy` sees the full data set), then fires
+`SystemSearchService.search(...)` — the exact TEXT-mode call the topbar uses —
+through a bounded `asyncio.Semaphore` to simulate concurrent clients, and reports
+latency percentiles against the 300 ms p95 SLO.
+
+Hardware: developer workstation, local PostgreSQL 15, single backend process (no
+uvicorn workers), `SEARCH_TIMEOUT_SECONDS=10` (default).
+
+| Records/model | Concurrency | Requests | p50 | p95 | Outcome |
+|---:|---:|---:|---:|---:|---|
+| 500 | 5 | 12 | 765 ms | 939 ms | all ok |
+| 5,000 | 1 | 4 | 1,228 ms | 1,327 ms | all ok |
+| 20,000 | 1 | 4 | 5,056 ms | 5,075 ms | all ok |
+| 100,000 (target scale) | 10 | 16 | 11,056 ms | 11,073 ms | **100% timed out** |
+
+**Root cause — not a missing index.** The documented Phase 1 TEXT algorithm (escape
+`ILIKE` wildcards, `AND`/`OR` at the SQL level) is implemented in
+`SearchQueryCompiler` (`backend/app/domains/system/search/compiler.py`), but that
+compiler is only ever invoked from the AI-plan path
+(`system_search_service.py:295`, after an interpreter produces a `SearchPlanV1`).
+The plain TEXT/topbar path — `SystemSearchService._search`, used by both `search()`
+and `run(mode=TEXT)` — never calls it. Instead it calls
+`SystemModelService.get_view`, which runs `SystemModelRepository.get_records`:
+
+```python
+query = select(model_class).options(*options)  # no WHERE, no LIMIT
+```
+
+This loads **every row of the table** (plus `selectinload`'d relations) into Python
+for every keystroke-driven search, then applies the user-scope authorization filter,
+term matching, and scoring in memory. Latency scales linearly with table size
+regardless of the query — `no_match` costs the same as a query that matches
+thousands of rows, since the entire table is fetched either way. There are
+consequently no `ILIKE`-backed text columns to index in the first place on this
+path; `pg_trgm` would not fix it. This also means the deployed behavior diverges
+from this document's "Phase 1 TEXT algorithm" section, which describes the compiler
+path that TEXT mode does not currently use.
+
+**Implication for the pending items below:** `pg_trgm` indexes and PostgreSQL FTS
+are next steps for the AI-plan path's `ILIKE` filters (which are real, parameterized,
+and already tested), but they cannot fix `TEXT`/`AUTO` mode, since that path issues
+no filtered SQL at all. Before indexing is meaningful, `_search` needs to route
+through `SearchQueryCompiler` (or an equivalent SQL-level free-text query) the same
+way the AI-plan path does.
+
+### Fix: route TEXT search through `SearchQueryCompiler` (2026-07-13)
+
+`SystemSearchService._search` now builds one `ModelSearchQuery(model=..., text=...)`
+per enabled+text-searchable model, validates it with the same
+`SearchPlanValidator.validate_with_models` used by the AI-plan path, compiles it with
+`SearchQueryCompiler.compile`, and executes it via `SearchQueryRepository`. This
+means `TEXT`/`AUTO` search now runs the documented Phase 1 algorithm — parameterized
+`ILIKE`, `AND` across terms, `OR` across text fields, authorization applied in SQL —
+instead of loading the table. Relevance scoring (title exact/prefix/contains, plus a
+flat weight for other fields) is now applied only to the bounded set of rows SQL
+returns (up to `max_results_per_query` = 20 per model), not to the whole table. One
+consequence: if a model has more than 20 SQL matches, rows beyond that cap (ordered
+by `uuid`, not relevance) are invisible to scoring — the same limitation the AI-plan
+path already had. Real ranking requires `pg_trgm` similarity or FTS ordering pushed
+into the query, not a bigger client-side scan.
+
+Re-running the same benchmark after the fix, same hardware, same 100,000
+records/model and 10 concurrent clients (60 requests):
+
+| Records/model | Concurrency | Requests | p50 | p95 | p99 | Outcome |
+|---:|---:|---:|---:|---:|---:|---|
+| 100,000 (before fix) | 10 | 16 | 11,056 ms | 11,073 ms | — | 100% timed out |
+| 100,000 (after fix) | 10 | 60 | 2,689 ms | 3,635 ms | 4,053 ms | 100% ok |
+
+p95 dropped from >11,000 ms (timeout) to 3,635 ms — a ~3x reduction and the search
+now actually completes instead of failing every request. It still misses the 300 ms
+SLO by roughly 12x. This is now a real `ILIKE`-without-index problem (unlike before),
+so `pg_trgm` is the appropriate next step, exactly as this document originally
+anticipated — it just wasn't reachable until the SQL pushdown existed. Correctness
+was spot-checked separately: a common term matched and scored task/message titles
+correctly, a globally unique term matched exactly the two seeded "needle" rows with
+the highest score, and a guaranteed non-matching term returned zero results.
+
+### `pg_trgm` indexes (2026-07-13)
+
+Migration: `backend/migrations/versions/20260713_2230_0b189788379d_add_search_trgm_indexes.py`.
+It enables the `pg_trgm` extension and adds one GIN trigram index per
+`search.text: true` field currently registered — not just the "title" field.
+`SearchQueryCompiler.compile` `OR`s the `ILIKE` predicate across *every*
+text-searchable field of a model, so an index on only the title field left the
+`status`/`priority` (task) and `status` (message) branches unindexed, and PostgreSQL
+fell back to a sequential scan for the whole `OR` regardless. All four currently
+enabled text fields are covered: `system_tasks.title`, `system_tasks.status`,
+`system_tasks.priority`, `system_messages.subject`, `system_messages.status`.
+
+Two pitfalls worth recording, since they silently produce "index exists but is
+never used":
+
+1. **Expression identity.** PostgreSQL matches an expression index to a query by
+   exact parse-tree equality. SQLAlchemy's `.as_string()` (used by
+   `_localized_column` for the JSONB `title`/`subject` fields) wraps each
+   `jsonb ->> key` extraction in an explicit `CAST(... AS VARCHAR)`. An index built
+   on the bare `->>` expression (without that cast) is a structurally different
+   expression and is silently never chosen, even though `EXPLAIN` gives no warning.
+   The index definitions must mirror the compiler's output exactly, including casts
+   and argument order — `title`/`subject` need two indexes each (one per candidate
+   language order: `es_MX`-first and `en_US`-first) because the coalesce argument
+   order changes with the request language.
+2. **`ORDER BY uuid LIMIT n` can out-cost a good index for rare terms.**
+   `SearchQueryCompiler.compile` always appends `.order_by(model_class.uuid.asc())`
+   before `.limit(...)`. PostgreSQL's default `ILIKE '%...%'` selectivity estimate
+   is a flat heuristic, not based on real trigram statistics, so for a rare term the
+   planner can still prefer walking the `uuid` index in order hoping to fill the
+   `LIMIT` early — and pay for scanning nearly the whole table when the estimate is
+   wrong. Confirmed via `EXPLAIN (ANALYZE)`: a single-row match took 421 ms via that
+   plan versus 0.23 ms once verified against a forced bitmap plan using the new
+   indexes. In this benchmark the planner picked the fast `BitmapOr` plan on its own
+   once the expression-matching indexes existed and `ANALYZE` had run; if a future
+   PostgreSQL version or larger dataset picks the slow plan instead, the fix is
+   either dropping the `uuid` tiebreak order for `TEXT` mode or adding a
+   `pg_trgm`-aware cost hint.
+
+Benchmark after adding the indexes, same conditions (100,000 records/model, 10
+concurrent clients, 60 requests):
+
+| Stage | p50 | p95 | p99 | max | Outcome |
+|---|---:|---:|---:|---:|---|
+| Before SQL pushdown fix | 11,056 ms | 11,073 ms | — | — | 100% timed out |
+| After SQL pushdown fix, no `pg_trgm` | 2,689 ms | 3,635 ms | 4,053 ms | 4,149 ms | 100% ok |
+| After `pg_trgm` indexes | 220 ms | 841 ms | 857 ms | 943 ms | 100% ok |
+
+p50 dropped another ~12x (2,689 ms → 220 ms) and p95 another ~4.3x (3,635 ms →
+841 ms). `EXPLAIN ANALYZE` on the underlying queries in isolation (no concurrency,
+no metadata fetch) shows the raw query cost is now negligible: the no-match query
+went from a 204 ms sequential scan to a 0.78 ms `BitmapOr` across the three trigram
+indexes, and a single-row rare-term match went from 421 ms to 0.23 ms.
+
+**p95 still misses the 300 ms SLO (841 ms), but not because of text matching
+anymore.** A single unloaded `SystemSearchService.search()` call now costs
+20–70 ms end to end, almost entirely `SystemModelRepository.get_all()` (the
+`SystemModel`/`SystemModelField` catalog fetch that reloads on every single search
+call, ~20 ms warm) plus two sequential per-model queries. Under 10 concurrent
+clients this compounds through connection-pool contention (the default async engine
+pool is `pool_size=5` + `max_overflow=10`, and each concurrent search needs its own
+connection for the catalog fetch and then one more per model, sequentially, not
+concurrently). That contention, not `ILIKE` cost, is what now produces the 841 ms
+tail.
+
+### Reducing per-request overhead (2026-07-14)
+
+Three changes were tried against the 841 ms p95 baseline above, same benchmark
+conditions (100,000 records/model, 10 concurrent clients, 60 requests):
+
+1. **Skip the unused `schemas` relation on the catalog fetch — kept.**
+   `SystemModelRepository.get_all()` always `selectinload`s both `fields` and
+   `schemas` (the latter holds full view/form/kanban JSON definitions per model —
+   the heaviest relation on `SystemModel`), but the search path only ever reads
+   `fields`. Added `SystemModelRepository.get_all_with_fields()`, used by both
+   `_search` and `_run` instead of `get_all()`. Warm catalog fetch dropped from
+   ~20 ms to ~10 ms.
+2. **Increase the connection pool (`DB_POOL_SIZE`/`DB_MAX_OVERFLOW`, default
+   5+10 → 20+20 via new settings) — kept.** The default pool is undersized for the
+   documented target load (10 concurrent clients); raising it is a safe, generally
+   correct change independent of anything else here, since the local PostgreSQL
+   allows up to 100 connections.
+3. **Run each request's per-model queries concurrently with `asyncio.gather`
+   instead of a sequential loop — tried, reverted.** This looked like a clear win
+   on paper (two round trips in parallel instead of back-to-back), but it made p95
+   *worse*: 841 ms → 1,458 ms with the default pool, still 1,458 ms after the pool
+   increase above ruled out pool exhaustion as the cause. The likely explanation:
+   this benchmark drives 10 concurrent clients through a single Python process/event
+   loop (as a single backend worker would). Sequential execution keeps at most 10
+   DB operations in flight at any instant; concurrent per-model fan-out doubles that
+   to ~20, and cooperative multitasking has to interleave twice as many CPU-bound
+   bursts (asyncpg row materialization into ORM objects, then `_map_plan_records`)
+   through the same single thread — the tasks that lose the scheduling lottery wait
+   behind more CPU work, which shows up as tail latency, not average latency.
+   Reverted to the original sequential loop (with `_execute_validated_query` kept
+   as a shared helper for both `_search` and `_run`, and the AI-plan path's
+   per-model `try`/`except` → `PARTIAL` semantics preserved unchanged).
+
+Net result, same benchmark:
+
+| Stage | p50 | p95 |
+|---|---:|---:|
+| `pg_trgm`, before this round | 220 ms | 841 ms |
+| + lighter catalog fetch + bigger pool (sequential) | 164 ms | 719 ms |
+
+A modest, real improvement (841 ms → 719 ms), not a fix. The unloaded, single-call
+cost of `SystemSearchService.search()` is now ~22–43 ms; the remaining gap to
+719 ms at 10x concurrency is single-process event-loop/connection scheduling
+overhead, which this benchmark deliberately stresses by running many concurrent
+clients through one process — a production deployment normally spreads concurrent
+requests across multiple worker processes (e.g. multiple `uvicorn` workers), which
+this benchmark does not model and would be expected to absorb most of this
+remaining tail. Confirming that is future work, not something to assume without
+measuring: the next step, if this SLO is still worth chasing, is re-running this
+benchmark against a multi-worker deployment rather than adding more per-request
+optimizations in-process.

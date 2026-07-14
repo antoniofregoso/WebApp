@@ -75,6 +75,18 @@ class SystemModelRepository:
             return result.scalars().all()
 
     @staticmethod
+    async def get_all_with_fields():
+        # Skips `schemas` (unused here, and the heaviest relation on SystemModel).
+        async with db.session() as session:
+            query = (
+                select(SystemModel)
+                .options(selectinload(SystemModel.fields))
+                .order_by(SystemModel.name)
+            )
+            result = await session.execute(query)
+            return result.scalars().all()
+
+    @staticmethod
     async def get_by_uuid(model_uuid: uuid_lib.UUID):
         async with db.session() as session:
             query = (

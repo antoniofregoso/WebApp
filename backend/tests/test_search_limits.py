@@ -62,7 +62,7 @@ async def test_text_search_is_cancelled_when_execution_timeout_expires(monkeypat
         await asyncio.sleep(0.05)
         return []
 
-    monkeypatch.setattr(SystemModelRepository, "get_all", get_all)
+    monkeypatch.setattr(SystemModelRepository, "get_all_with_fields", get_all)
     monkeypatch.setattr(settings, "SEARCH_TIMEOUT_SECONDS", 0.001)
 
     with pytest.raises(TimeoutError):
