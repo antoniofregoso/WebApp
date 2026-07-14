@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import secrets
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -42,6 +43,17 @@ from app.domains.users.models import UserType, UserUser  # noqa: F401
 
 DATA_DIR = BACKEND_DIR / "app" / "domains" / "system" / "data"
 BOT_NAME = "App Bot"
+
+# Revision right before the tail of migrations that only run raw SQL (CREATE
+# EXTENSION / CREATE INDEX for pg_trgm and full-text search) with no
+# schema change, so nothing in `SQLModel.metadata.create_all` produces them.
+# Stamping here and running `alembic upgrade head` makes Alembic actually
+# execute those migrations for real instead of skipping them as already
+# applied. Every migration between this revision and head must stay
+# raw-SQL-only (no op.create_table/op.add_column) since create_schema()
+# already created that schema; if a future migration adds columns/tables
+# after this point, move this constant to the new boundary.
+_SEARCH_INDEX_MIGRATIONS_BASE_REVISION = "f2a6c8d9b4e0"
 
 
 def _load_json(file_name: str) -> Any:
@@ -135,6 +147,17 @@ async def create_schema() -> None:
     finally:
         await engine.dispose()
     print("Created database tables.")
+
+
+def apply_search_index_migrations() -> None:
+    alembic_bin = Path(sys.executable).parent / "alembic"
+    subprocess.run(
+        [str(alembic_bin), "stamp", _SEARCH_INDEX_MIGRATIONS_BASE_REVISION],
+        cwd=BACKEND_DIR,
+        check=True,
+    )
+    subprocess.run([str(alembic_bin), "upgrade", "head"], cwd=BACKEND_DIR, check=True)
+    print("Applied search index migrations (pg_trgm, FTS GIN indexes).")
 
 
 def _audit_values(bot_id: int, now: datetime) -> dict[str, Any]:
@@ -484,6 +507,7 @@ async def main() -> None:
     await reset_database()
     await create_schema()
     await seed_data()
+    apply_search_index_migrations()
     print("Setup complete.")
 
 

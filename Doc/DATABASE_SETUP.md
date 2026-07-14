@@ -49,6 +49,16 @@ not changed.
 5. Enables `pgcrypto` for `gen_random_uuid()`.
 6. Creates all backend tables from the SQLModel metadata.
 7. Loads the initial data from `backend/app/domains/system/data`.
+8. Applies the search index migrations: stamps Alembic at the revision right
+   before the pg_trgm/full-text search migrations
+   (`f2a6c8d9b4e0`, `add the virtual insight model`), then runs
+   `alembic upgrade head`. Those migrations only run raw SQL (`CREATE
+   EXTENSION`, `CREATE INDEX ... USING gin`) that `SQLModel.metadata.create_all`
+   cannot produce, since it isn't backed by any model or table column. Every
+   earlier migration is treated as already applied because `create_all` and
+   the data seed already reproduce their effect — the schema from current
+   models and the data from the JSON files in
+   `backend/app/domains/system/data`.
 
 ## Load Order
 
