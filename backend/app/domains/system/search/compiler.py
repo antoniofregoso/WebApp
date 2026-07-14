@@ -228,6 +228,20 @@ class SearchQueryCompiler:
         )
 
         predicates = []
+        if validated_query.query.text:
+            terms = validated_query.query.text.split()
+            for term in terms:
+                escaped = _escape_like(term)
+                predicates.append(
+                    or_(
+                        *(
+                            _localized_column(
+                                getattr(model_class, resolved.field.name), language
+                            ).ilike(f"%{escaped}%", escape="\\")
+                            for resolved in validated_query.text_fields
+                        )
+                    )
+                )
         for validated_filter in validated_query.filters:
             resolved = validated_filter.resolved_field
             if resolved.related_registration is not None:

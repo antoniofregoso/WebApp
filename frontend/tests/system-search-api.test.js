@@ -34,7 +34,7 @@ describe('searchSystemModels', () => {
         expect(requestBody.query).toContain('clarificationQuestion');
         expect(requestBody.query).toContain('errors');
         expect(requestBody.variables).toEqual({
-            input: { query: 'report', lang: 'en', limit: 10 },
+            input: { query: 'report', lang: 'en', limit: 10, mode: 'AUTO' },
         });
     });
 });

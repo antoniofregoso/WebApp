@@ -192,6 +192,67 @@ Backend criteria:
 - `messages`: the user appears in `toUsers` and `status != Read`.
 - `notifications`: direct or group notifications for the user with `status != read`.
 
+#### Declarative system search
+
+`systemSearch` supports traditional text search and optional natural-language
+interpretation. `AUTO` uses the configured interpreter and falls back to text with
+`PARTIAL`; `TEXT` never contacts an AI provider; `AI` fails explicitly when the
+provider is unavailable.
+
+```graphql
+query SystemSearch($input: SystemSearchInput!) {
+  systemSearch(input: $input) {
+    requestId
+    status
+    interpretedQuery
+    needsClarification
+    clarificationQuestion
+    results {
+      model
+      modelLabel
+      uuid
+      title
+      subtitle
+      snippet
+      url
+      score
+    }
+    errors { code message model field }
+  }
+}
+```
+
+Example variables:
+
+```json
+{
+  "input": {
+    "query": "tareas urgentes que vencen esta semana",
+    "lang": "es",
+    "limit": 20,
+    "mode": "AUTO"
+  }
+}
+```
+
+When `needsClarification` is true, make a new stateless request with the complete
+query plus `originalQuery` and `clarificationAnswer`; never send a plan from the
+client. The backend accepts only `SearchPlanV1`, validates it against the authorized
+`SearchableSchemaV1`, and then compiles parameterized SQLAlchemy expressions.
+
+The reference adapter is optional and configured only in the backend:
+
+```dotenv
+SEARCH_AI_PROVIDER=openai
+SEARCH_AI_API_KEY=<secret>
+SEARCH_AI_MODEL=<structured-output-capable-model>
+SEARCH_AI_BASE_URL=https://api.openai.com/v1
+SEARCH_AI_TIMEOUT_SECONDS=10
+```
+
+Leave `SEARCH_AI_PROVIDER`, `SEARCH_AI_API_KEY`, or `SEARCH_AI_MODEL` empty to keep
+`AUTO` available through its text fallback.
+
 #### System models
 
 Lists the available declarative models.

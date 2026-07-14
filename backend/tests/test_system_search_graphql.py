@@ -9,12 +9,14 @@ from app.domains.system.graphql.types import (
     SystemSearchInput,
     SystemSearchStatus,
 )
-from app.domains.system.service.system_search_service import (
-    SearchResult,
-    SystemSearchService,
-)
 from app.domains.system.service.system_search_audit_service import (
     SystemSearchAuditService,
+)
+from app.domains.system.service.system_search_service import (
+    SearchExecution,
+    SearchResult,
+    SearchResults,
+    SystemSearchService,
 )
 
 
@@ -32,22 +34,26 @@ def disable_search_audit_persistence(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_system_search_returns_typed_success_response(monkeypatch):
-    async def search(query, current_user_id, lang="es", limit=20):
-        return [
-            SearchResult(
-                model="system.task",
-                model_label="Tareas",
-                uuid="task-1",
-                title="Preparar reporte",
-                subtitle="Urgent",
-                snippet=None,
-                url="/dashboard/user/system.task/task-1",
-                score=100,
-            )
-        ]
+    async def run(query, current_user_id, **kwargs):
+        results = SearchResults(
+            [
+                SearchResult(
+                    model="system.task",
+                    model_label="Tareas",
+                    uuid="task-1",
+                    title="Preparar reporte",
+                    subtitle="Urgent",
+                    snippet=None,
+                    url="/dashboard/user/system.task/task-1",
+                    score=100,
+                )
+            ],
+            queried_models=["system.task"],
+        )
+        return SearchExecution("OK", query, False, None, results)
 
     monkeypatch.setattr(queries_module, "get_current_user", current_user)
-    monkeypatch.setattr(SystemSearchService, "search", search)
+    monkeypatch.setattr(SystemSearchService, "run", run)
 
     response = await SystemQuery().system_search(
         SystemSearchInput(query="reporte", lang="es", limit=20),
@@ -64,11 +70,11 @@ async def test_system_search_returns_typed_success_response(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_system_search_returns_typed_timeout_without_graphql_error(monkeypatch):
-    async def search(*args, **kwargs):
+    async def run(*args, **kwargs):
         raise TimeoutError
 
     monkeypatch.setattr(queries_module, "get_current_user", current_user)
-    monkeypatch.setattr(SystemSearchService, "search", search)
+    monkeypatch.setattr(SystemSearchService, "run", run)
 
     response = await SystemQuery().system_search(
         SystemSearchInput(query="reporte", lang="es"),
@@ -82,11 +88,11 @@ async def test_system_search_returns_typed_timeout_without_graphql_error(monkeyp
 
 @pytest.mark.asyncio
 async def test_system_search_does_not_expose_internal_exception_details(monkeypatch):
-    async def search(*args, **kwargs):
+    async def run(*args, **kwargs):
         raise RuntimeError("database password was secret-value")
 
     monkeypatch.setattr(queries_module, "get_current_user", current_user)
-    monkeypatch.setattr(SystemSearchService, "search", search)
+    monkeypatch.setattr(SystemSearchService, "run", run)
 
     response = await SystemQuery().system_search(
         SystemSearchInput(query="reporte", lang="en"),
@@ -104,14 +110,14 @@ async def test_system_search_audits_typed_outcome_without_changing_response(
 ):
     captured = {}
 
-    async def search(*args, **kwargs):
+    async def run(*args, **kwargs):
         raise TimeoutError
 
     async def record(**kwargs):
         captured.update(kwargs)
 
     monkeypatch.setattr(queries_module, "get_current_user", current_user)
-    monkeypatch.setattr(SystemSearchService, "search", search)
+    monkeypatch.setattr(SystemSearchService, "run", run)
     monkeypatch.setattr(SystemSearchAuditService, "record", record)
 
     response = await SystemQuery().system_search(
@@ -129,14 +135,16 @@ async def test_system_search_audits_typed_outcome_without_changing_response(
 
 @pytest.mark.asyncio
 async def test_system_search_still_returns_results_when_audit_fails(monkeypatch):
-    async def search(*args, **kwargs):
-        return []
+    async def run(query, *args, **kwargs):
+        return SearchExecution(
+            "OK", query, False, None, SearchResults([], queried_models=[])
+        )
 
     async def record(**kwargs):
         raise RuntimeError("audit database unavailable")
 
     monkeypatch.setattr(queries_module, "get_current_user", current_user)
-    monkeypatch.setattr(SystemSearchService, "search", search)
+    monkeypatch.setattr(SystemSearchService, "run", run)
     monkeypatch.setattr(SystemSearchAuditService, "record", record)
 
     response = await SystemQuery().system_search(

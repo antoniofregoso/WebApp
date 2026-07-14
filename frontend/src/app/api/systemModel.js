@@ -105,8 +105,20 @@ export async function fetchSystemModelByName(name, fetchImpl = globalThis.fetch)
     return data.systemModelByName;
 }
 
-export async function searchSystemModels({ query, lang = 'es', limit = 20 }, fetchImpl = globalThis.fetch) {
-    const data = await requestAuthenticated(SYSTEM_SEARCH_QUERY, { input: { query, lang, limit } }, fetchImpl);
+export async function searchSystemModels({
+    query,
+    lang = 'es',
+    limit = 20,
+    mode = 'AUTO',
+    model = null,
+    originalQuery = null,
+    clarificationAnswer = null,
+}, fetchImpl = globalThis.fetch) {
+    const input = { query, lang, limit, mode };
+    if (model) input.model = model;
+    if (originalQuery) input.originalQuery = originalQuery;
+    if (clarificationAnswer) input.clarificationAnswer = clarificationAnswer;
+    const data = await requestAuthenticated(SYSTEM_SEARCH_QUERY, { input }, fetchImpl);
     return data.systemSearch;
 }
 

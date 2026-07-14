@@ -39,56 +39,56 @@
 - [x] Repetir la petición original después de renovar el token.
 - [x] Cerrar la sesión y redirigir al login si la renovación falla.
 
-## Buscador global declarativo
+## Global declarative search
 
-Diseño aprobado: [Doc/AI_SEARCH_DESIGN.md](./Doc/AI_SEARCH_DESIGN.md).
+Approved design: [Doc/AI_SEARCH_DESIGN.md](./Doc/AI_SEARCH_DESIGN.md).
 
-### Primera fase implementada
+### First phase implemented
 
-- [x] Agregar `SystemModel.search` y `SystemModelField.search_config` como metadatos persistentes.
-- [x] Cargar la configuración declarativa desde `system_models.json`.
-- [x] Crear y aplicar la migración Alembic del buscador.
-- [x] Implementar la búsqueda textual global solo sobre modelos y campos habilitados.
-- [x] Reutilizar el alcance de registros por usuario de las vistas actuales.
-- [x] Exponer la consulta GraphQL `systemSearch`.
-- [x] Conectar el buscador del topbar con estados de carga, error, vacío y resultados.
-- [x] Agregar enlaces directos desde los resultados hacia cada registro.
-- [x] Habilitar inicialmente tareas y mensajes.
-- [x] Documentar el formato declarativo en `Doc/DATA_FORMAT.md`.
+- [x] Add `SystemModel.search` and `SystemModelField.search_config` as persistent metadata.
+- [x] Load declarative configuration from `system_models.json`.
+- [x] Create and apply the Alembic search migration.
+- [x] Implement global text search over enabled models and fields only.
+- [x] Reuse the per-user record scope from existing views.
+- [x] Expose the GraphQL `systemSearch` query.
+- [x] Connect topbar search with loading, error, empty, and result states.
+- [x] Add direct links from results to each record.
+- [x] Initially enable tasks and messages.
+- [x] Document the declarative format in `Doc/DATA_FORMAT.md`.
 
-### Contrato y seguridad pendientes
+### Contract and security implemented
 
-- [x] Crear los modelos Pydantic `SearchPlanV1`, `ModelSearchQuery`, `FilterGroup`, `SearchFilter` y `SearchOrder` con campos extra prohibidos.
-- [x] Implementar el registro seguro `SEARCH_MODEL_REGISTRY` con clase ORM, política de autorización y constructor de URL.
-- [x] Crear `SearchAuthorizationPolicy` y pruebas de equivalencia entre resultados visibles en vistas y búsqueda.
-- [x] Aplicar autorización también a modelos relacionados usados en filtros.
-- [x] Validar modelos, campos, operadores, relaciones, límites y orden antes de ejecutar cualquier plan.
-- [x] Implementar filtros parametrizados por tipo, incluyendo selections localizadas, fechas relativas y relaciones.
-- [x] Resolver fechas con zona horaria IANA y convertir límites a UTC.
-- [x] Agregar respuestas y errores GraphQL tipados: `OK`, `PARTIAL`, `NEEDS_CLARIFICATION` y `FAILED`.
-- [x] Agregar límites de modelos, filtros, profundidad de relaciones, tiempo y cantidad de resultados.
-- [x] Registrar auditoría de búsquedas sin conservar texto sensible por defecto.
+- [x] Create Pydantic `SearchPlanV1`, `ModelSearchQuery`, `FilterGroup`, `SearchFilter`, and `SearchOrder` models with extra fields forbidden.
+- [x] Implement the secure `SEARCH_MODEL_REGISTRY` with ORM class, authorization policy, and URL builder.
+- [x] Create `SearchAuthorizationPolicy` and equivalence tests between records visible in views and search.
+- [x] Apply authorization to related models used in filters.
+- [x] Validate models, fields, operators, relations, limits, and ordering before executing any plan.
+- [x] Implement type-specific parameterized filters, including localized selections, relative dates, and relations.
+- [x] Resolve dates with an IANA timezone and convert boundaries to UTC.
+- [x] Add typed GraphQL responses and errors: `OK`, `PARTIAL`, `NEEDS_CLARIFICATION`, and `FAILED`.
+- [x] Add limits for models, filters, relation depth, time, and result count.
+- [x] Audit searches without retaining sensitive text by default.
 
-### Interpretación con IA pendiente
+### AI interpretation implemented
 
-- [ ] Definir la interfaz `SearchInterpreter` independiente del proveedor.
-- [ ] Generar `SearchableSchemaV1` únicamente con modelos y campos autorizados.
-- [ ] Implementar un adaptador de referencia configurable mediante secretos del backend.
-- [ ] Convertir preguntas naturales en `SearchPlanV1`; la IA nunca debe generar ni ejecutar SQL.
-- [ ] Validar localmente toda salida del proveedor antes de consultar PostgreSQL.
-- [ ] Implementar los modos `AUTO`, `TEXT` y `AI` con fallback explícito de IA a texto.
-- [ ] Implementar aclaraciones stateless mediante pregunta original y respuesta del usuario.
-- [ ] Agregar timeout, cancelación y manejo de proveedor no configurado o no disponible.
-- [ ] Crear evaluaciones en español e inglés para consultas, fechas, relaciones, ambigüedad y permisos.
+- [x] Define the provider-independent `SearchInterpreter` interface.
+- [x] Generate `SearchableSchemaV1` using authorized models and fields only.
+- [x] Implement a reference adapter configured through backend secrets.
+- [x] Convert natural-language questions into `SearchPlanV1`; AI must never generate or execute SQL.
+- [x] Validate every provider output locally before querying PostgreSQL.
+- [x] Implement `AUTO`, `TEXT`, and `AI` modes with explicit AI-to-text fallback.
+- [x] Implement stateless clarifications using the original question and the user's answer.
+- [x] Add timeout, cancellation, and handling for unconfigured or unavailable providers.
+- [x] Create Spanish and English evaluations for queries, dates, relations, ambiguity, and permissions.
 
-### Rendimiento y evolución pendientes
+### Performance and future work pending
 
-- [ ] Crear un benchmark reproducible con 100 000 registros por modelo y 10 clientes concurrentes.
-- [ ] Agregar índices `pg_trgm` si la coincidencia textual actual no cumple el objetivo de latencia.
-- [ ] Implementar PostgreSQL Full Text Search con `tsvector`, ranking e índices GIN cuando las métricas lo justifiquen.
-- [ ] Crear texto normalizado e indexable para campos HTML antes de permitir buscarlos.
-- [ ] Decidir si la primera versión incluirá notas y nombres de archivos adjuntos.
-- [ ] Evaluar embeddings únicamente si filtros y texto completo no resuelven búsquedas conceptuales reales.
+- [ ] Create a reproducible benchmark with 100,000 records per model and 10 concurrent clients.
+- [ ] Add `pg_trgm` indexes if current text matching misses the latency target.
+- [ ] Implement PostgreSQL Full Text Search with `tsvector`, ranking, and GIN indexes when metrics justify it.
+- [ ] Create normalized, indexable text for HTML fields before allowing them in search.
+- [ ] Decide whether the first version includes notes and attachment filenames.
+- [ ] Evaluate embeddings only if filters and full-text search cannot solve real conceptual queries.
 
 ## Logs de actividad de usuario
 

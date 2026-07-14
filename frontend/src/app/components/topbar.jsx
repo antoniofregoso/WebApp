@@ -147,6 +147,7 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchLoading, setSearchLoading] = useState(false);
     const [searchError, setSearchError] = useState('');
+    const [searchClarification, setSearchClarification] = useState(null);
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [webPushStatus, setWebPushStatus] = useState('unsupported');
     const [webPushBusy, setWebPushBusy] = useState(false);
@@ -154,7 +155,12 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
     const userMenuWrapRef = useRef(null);
     const searchRef = useRef(null);
     const notificationsWrapRef = useRef(null);
+    const searchRequestRef = useRef(0);
     const notifications = notificationsSignal.value;
+
+    useEffect(() => {
+        return () => { searchRequestRef.current += 1; };
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -278,22 +284,42 @@ export function Topbar({ lang, theme, pageTitle, breadcrumb = [], showTools = tr
         setSearchLoading(true);
         setSearchError('');
         setSearchOpen(true);
+        const requestId = ++searchRequestRef.current;
+        const originalQuery = searchClarification?.originalQuery ?? null;
+        const completeQuery = originalQuery ? `${originalQuery}\n${query}` : query;
         try {
-            const response = await searchSystemModels({ query, lang, limit: 20 });
+            const response = await searchSystemModels({
+                query: completeQuery,
+                lang,
+                limit: 20,
+                mode: 'AUTO',
+                originalQuery,
+                clarificationAnswer: originalQuery ? query : null,
+            });
+            if (requestId !== searchRequestRef.current) return;
             setSearchResults(response.results ?? []);
             if (response.status === 'FAILED') {
+                setSearchClarification(null);
                 setSearchError(response.errors?.[0]?.message ?? (lang === 'es' ? 'No se pudo realizar la búsqueda.' : 'Unable to search.'));
             } else if (response.needsClarification) {
+                setSearchClarification({
+                    originalQuery: originalQuery ?? query,
+                    question: response.clarificationQuestion ?? '',
+                });
+                setSearchQuery('');
                 setSearchError(response.clarificationQuestion ?? '');
             } else if (response.status === 'PARTIAL' && response.errors?.length) {
+                setSearchClarification(null);
                 setSearchError(response.errors[0].message);
+            } else {
+                setSearchClarification(null);
             }
         } catch (error) {
             setSearchResults([]);
             setSearchError(lang === 'es' ? 'No se pudo realizar la búsqueda.' : 'Unable to search.');
             console.error('Unable to search system models.', error);
         } finally {
-            setSearchLoading(false);
+            if (requestId === searchRequestRef.current) setSearchLoading(false);
         }
     };
 

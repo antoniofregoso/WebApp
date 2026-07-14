@@ -75,10 +75,58 @@ describe('Topbar user menu', () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
         host.querySelector('.topbar-search').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
 
-        await vi.waitFor(() => expect(searchSystemModels).toHaveBeenCalledWith({ query: 'urgent report', lang: 'en', limit: 20 }));
+        await vi.waitFor(() => expect(searchSystemModels).toHaveBeenCalledWith({
+            query: 'urgent report',
+            lang: 'en',
+            limit: 20,
+            mode: 'AUTO',
+            originalQuery: null,
+            clarificationAnswer: null,
+        }));
         await vi.waitFor(() => expect(host.querySelector('[data-search-results] a')).not.toBeNull());
         expect(host.querySelector('[data-search-results] a').getAttribute('href')).toBe('/dashboard/user/system.task/task-1');
         expect(host.querySelector('[data-search-results]').textContent).toContain('Urgent report');
+    });
+
+    it('resubmits clarification with the original question and new answer', async () => {
+        searchSystemModels
+            .mockResolvedValueOnce({
+                status: 'NEEDS_CLARIFICATION',
+                needsClarification: true,
+                clarificationQuestion: 'Which priority?',
+                results: [],
+                errors: [],
+            })
+            .mockResolvedValueOnce({
+                status: 'OK',
+                needsClarification: false,
+                results: [],
+                errors: [],
+            });
+        const host = mount(<Topbar lang="en" theme="light" pageTitle="Tasks" showTools />);
+        const form = host.querySelector('.topbar-search');
+        const input = host.querySelector('.topbar-search-input');
+
+        input.value = 'find my tasks';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        await vi.waitFor(() => expect(host.querySelector('[data-search-results]').textContent)
+            .toContain('Which priority?'));
+
+        input.value = 'urgent';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+        await vi.waitFor(() => expect(searchSystemModels).toHaveBeenLastCalledWith({
+            query: 'find my tasks\nurgent',
+            lang: 'en',
+            limit: 20,
+            mode: 'AUTO',
+            originalQuery: 'find my tasks',
+            clarificationAnswer: 'urgent',
+        }));
     });
 
     it('renders an ordered dynamic breadcrumb trail with smaller nested links', () => {

@@ -1,10 +1,9 @@
-from pydantic_settings import BaseSettings
-from pydantic_settings import SettingsConfigDict
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
-from pydantic import Field
+from pydantic import Field, SecretStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -19,6 +18,11 @@ class Settings(BaseSettings):
     DEFAULT_TIMEZONE: str = "UTC"
     SEARCH_TIMEOUT_SECONDS: float = Field(default=10.0, gt=0)
     SEARCH_AUDIT_RETENTION_DAYS: int = Field(default=30, gt=0)
+    SEARCH_AI_PROVIDER: str = ""
+    SEARCH_AI_API_KEY: SecretStr = SecretStr("")
+    SEARCH_AI_MODEL: str = ""
+    SEARCH_AI_BASE_URL: str = "https://api.openai.com/v1"
+    SEARCH_AI_TIMEOUT_SECONDS: float = Field(default=10.0, gt=0)
 
     # Database Config
     DATABASE_URL: str

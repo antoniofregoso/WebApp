@@ -80,11 +80,22 @@ class SystemModelViewType:
     records: list[JSON]
 
 
+@strawberry.enum
+class SystemSearchMode(str, Enum):
+    AUTO = "AUTO"
+    TEXT = "TEXT"
+    AI = "AI"
+
+
 @strawberry.input
 class SystemSearchInput:
     query: str
     lang: str = "es"
     limit: int = 20
+    mode: SystemSearchMode = SystemSearchMode.AUTO
+    model: Optional[str] = None
+    original_query: Optional[str] = None
+    clarification_answer: Optional[str] = None
 
 
 @strawberry.enum

@@ -16,12 +16,12 @@ from app.domains.system.search.contracts import (
     SearchOrder,
     SearchPlanV1,
 )
+from app.domains.system.search.limits import DEFAULT_SEARCH_LIMITS
 from app.domains.system.search.registry import (
     SEARCH_MODEL_REGISTRY,
     SearchModelRegistration,
     require_search_model_registration,
 )
-from app.domains.system.search.limits import DEFAULT_SEARCH_LIMITS
 
 OPERATORS_BY_FIELD_TYPE = {
     "string": {SearchOperator.EQ, SearchOperator.CONTAINS, SearchOperator.STARTS_WITH},
@@ -152,6 +152,7 @@ class ValidatedSearchOrder:
 @dataclass(frozen=True)
 class ValidatedModelSearchQuery:
     query: ModelSearchQuery
+    text_fields: tuple[ResolvedSearchField, ...]
     filters: tuple[ValidatedSearchFilter, ...]
     orders: tuple[ValidatedSearchOrder, ...]
     result_limit: int
@@ -389,11 +390,29 @@ class SearchPlanValidator:
             registration = require_search_model_registration(query.model)
             fields = _field_map(model)
 
-            if query.text is not None and not any(
-                _search_config(field).get("enabled")
-                and _search_config(field).get("text")
+            text_fields = tuple(
+                ResolvedSearchField(
+                    path=field.name,
+                    model_name=query.model,
+                    field=field,
+                    registration=registration,
+                    selection_values=_selection_values(model, field),
+                )
                 for field in fields.values()
-            ):
+                if _search_config(field).get("enabled")
+                and _search_config(field).get("text")
+                and not _is_sensitive(field)
+                and str(
+                    getattr(
+                        getattr(field, "type", ""),
+                        "value",
+                        getattr(field, "type", ""),
+                    )
+                )
+                != "html"
+            )
+
+            if query.text is not None and not text_fields:
                 raise SearchPlanValidationError(
                     f"Model '{query.model}' has no searchable text fields"
                 )
@@ -445,6 +464,7 @@ class SearchPlanValidator:
             validated_queries.append(
                 ValidatedModelSearchQuery(
                     query=query,
+                    text_fields=text_fields,
                     filters=tuple(validated_filters),
                     orders=tuple(validated_orders),
                     result_limit=result_limit,

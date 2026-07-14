@@ -22,31 +22,31 @@ from app.domains.system.graphql.types import (
     SystemModelSchemaUseType,
     SystemModelType,
     SystemModelViewType,
-    SystemSearchInput,
+    SystemNotificationType,
+    SystemPendingCountsType,
     SystemSearchErrorCode,
     SystemSearchErrorType,
+    SystemSearchInput,
     SystemSearchResponseType,
     SystemSearchResultType,
     SystemSearchStatus,
-    SystemNotificationType,
-    SystemPendingCountsType,
     SystemTaskType,
     SystemWhatsAppMessageType,
     SystemWhatsAppTemplateType,
     SystemWhatsAppType,
 )
-from app.domains.system.service.system_message_service import SystemMessageService
-from app.domains.system.service.system_model_service import SystemModelService
-from app.domains.system.service.system_search_service import SystemSearchService
-from app.domains.system.service.system_search_audit_service import (
-    SystemSearchAuditService,
-)
 from app.domains.system.search.compiler import SearchQueryCompilationError
 from app.domains.system.search.temporal import SearchTimezoneError
 from app.domains.system.search.validator import SearchPlanValidationError
+from app.domains.system.service.system_message_service import SystemMessageService
+from app.domains.system.service.system_model_service import SystemModelService
 from app.domains.system.service.system_notification_service import (
     SystemNotificationService,
 )
+from app.domains.system.service.system_search_audit_service import (
+    SystemSearchAuditService,
+)
+from app.domains.system.service.system_search_service import SystemSearchService
 from app.domains.system.service.system_task_service import SystemTaskService
 from app.domains.system.service.system_whatsapp_message_service import (
     SystemWhatsAppMessageService,
@@ -150,22 +150,36 @@ class SystemQuery:
         request_id = uuid_lib.uuid4()
         started_at = monotonic()
         try:
-            results = await SystemSearchService.search(
+            execution = await SystemSearchService.run(
                 input.query,
                 current_user_id=user.id,
                 lang=input.lang,
                 limit=input.limit,
+                mode=input.mode.value,
+                model=input.model,
+                original_query=input.original_query,
+                clarification_answer=input.clarification_answer,
+                timezone_name=settings.DEFAULT_TIMEZONE,
             )
             response = SystemSearchResponseType(
                 request_id=request_id,
-                status=SystemSearchStatus.OK,
-                interpreted_query=input.query,
-                needs_clarification=False,
-                clarification_question=None,
+                status=SystemSearchStatus(execution.status),
+                interpreted_query=execution.interpreted_query,
+                needs_clarification=execution.needs_clarification,
+                clarification_question=execution.clarification_question,
                 results=[
-                    SystemSearchResultType(**result.__dict__) for result in results
+                    SystemSearchResultType(**result.__dict__)
+                    for result in execution.results
                 ],
-                errors=[],
+                errors=[
+                    SystemSearchErrorType(
+                        code=SystemSearchErrorCode(issue.code),
+                        message=issue.message,
+                        model=issue.model,
+                        field=issue.field,
+                    )
+                    for issue in execution.errors
+                ],
             )
             await _record_search_audit(
                 request_id=request_id,
@@ -174,9 +188,9 @@ class SystemQuery:
                 response=response,
                 started_at=started_at,
                 queried_models=getattr(
-                    results,
+                    execution.results,
                     "queried_models",
-                    tuple(result.model for result in results),
+                    tuple(result.model for result in execution.results),
                 ),
             )
             return response
