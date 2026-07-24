@@ -23,6 +23,7 @@ export function getListColumns(schema = []) {
 
 function sortValue(field, value) {
     if (value == null || value === '') return '';
+    if (field?.list?.display === 'count') return Array.isArray(value) ? value.length : 0;
     if (field.type === 'many2one') return localizedValue(value?.name, 'en') ?? '';
     if (['monetary', 'decimal', 'integer', 'percentage'].includes(field.type)) return Number(value);
     if (field.type === 'boolean') return value ? 1 : 0;
@@ -36,6 +37,9 @@ function initialListSort(schema = []) {
 
 function Cell({ field, record, data, lang }) {
     const value = record[field.name];
+    if (field?.list?.display === 'count') {
+        return <span class="tabular-nums">{Array.isArray(value) ? value.length : 0}</span>;
+    }
     const isRelation = ['many2one', 'many2one_avatar'].includes(field.type);
     const isRecordTitle = !isRelation
         && (field.name === 'name' || String(field?.form?.header ?? '').toLowerCase() === 'title');
@@ -187,8 +191,8 @@ export function ListView({ data = {}, lang = 'en' }) {
                         const align = NUMERIC_TYPES.has(field.type) ? 'text-right' : 'text-left';
                         const direction = sort.field === field.name ? sort.direction : '';
                         return <th class={`${align} whitespace-nowrap px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-[var(--dash-text-muted)]`} key={field.name}>
-                            <span class="inline-flex items-center gap-0.5">{field.label?.[lang] ?? field.name}
-                                {[true, 'asc', 'desc'].includes(field.list?.order) && <button type="button" class="js-list-sort ml-1 inline-flex" aria-label={`Sort by ${field.label?.[lang] ?? field.name}`}
+                            <span class="inline-flex items-center gap-0.5">{field.list?.label?.[lang] ?? field.label?.[lang] ?? field.name}
+                                {[true, 'asc', 'desc'].includes(field.list?.order) && <button type="button" class="js-list-sort ml-1 inline-flex" aria-label={`Sort by ${field.list?.label?.[lang] ?? field.label?.[lang] ?? field.name}`}
                                     onClick={() => setSort({ field: field.name, direction: direction === 'asc' ? 'desc' : 'asc' })}><SortIcon direction={direction} /></button>}
                             </span>
                         </th>;

@@ -10,6 +10,17 @@ import { authSignal } from '../store/authStore.js';
 
 const EMPTY_INITIAL_VALUES = {};
 
+export function createRecordErrorMessage(error, lang = 'en') {
+    const detail = error?.response?.errors?.[0]?.message;
+    const fallback = lang === 'es'
+        ? 'No se pudo crear el registro. Revisa los datos e inténtalo de nuevo.'
+        : 'Unable to create the record. Check the data and try again.';
+    if (!detail) return fallback;
+    return lang === 'es'
+        ? `No se pudo crear el registro: ${detail}`
+        : `Unable to create the record: ${detail}`;
+}
+
 export function Icon({ definition, class: className = '' }) {
     return <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: icon(definition, className) }} />;
 }
@@ -82,7 +93,7 @@ export function SchemaFormLayout({ schema, record, setValue, lang, context, read
     );
 }
 
-export function CreateModal({ data = {}, lang = 'en', open, onClose, initialValues = EMPTY_INITIAL_VALUES }) {
+export function CreateModal({ data = {}, lang = 'en', open, onClose, initialValues = EMPTY_INITIAL_VALUES, copyMode = false }) {
     const schema = data?.model?.schema ?? [];
     const isMessage = data?.model?.name === 'system.message';
     const context = { ...(data?.model ?? {}), tags: data?.model?.tags ?? [] };
@@ -113,7 +124,7 @@ export function CreateModal({ data = {}, lang = 'en', open, onClose, initialValu
     }, [open, onClose]);
     if (!open) return null;
     const layout = getFormLayout(schema);
-    const title = `${lang === 'es' ? 'Crear' : 'Create'} ${data?.model?.label?.[lang] ?? data?.model?.name ?? ''}`;
+    const title = `${copyMode ? (lang === 'es' ? 'Copiar' : 'Copy') : (lang === 'es' ? 'Crear' : 'Create')} ${data?.model?.label?.[lang] ?? data?.model?.name ?? ''}`;
     const closeLabel = lang === 'es' ? 'Cerrar' : 'Close';
     const saveLabel = isMessage ? (lang === 'es' ? 'Enviar' : 'Send') : (lang === 'es' ? 'Guardar' : 'Save');
     const requiredFields = schema.filter((field) => field?.form?.required === true || field?.required === true);
@@ -151,7 +162,7 @@ export function CreateModal({ data = {}, lang = 'en', open, onClose, initialValu
             onClose();
         } catch (error) {
             console.error('Unable to create model record.', error);
-            setSaveError(lang === 'es' ? 'No se pudo crear el registro. Revisa los datos e inténtalo de nuevo.' : 'Unable to create the record. Check the data and try again.');
+            setSaveError(createRecordErrorMessage(error, lang));
         } finally {
             setSaving(false);
         }
@@ -166,7 +177,7 @@ export function CreateModal({ data = {}, lang = 'en', open, onClose, initialValu
         </div>
     );
     return (
-        <div class="form-modal" data-form-modal>
+        <div class="form-modal" data-form-modal data-copy-modal={copyMode ? '' : undefined}>
             <div class="form-modal-backdrop" onClick={onClose} />
             <section class="form-modal-panel" role="dialog" aria-modal="true" aria-label={title}>
                 <header class="form-modal-header">

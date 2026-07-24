@@ -41,6 +41,7 @@ import {
     faTriangleExclamation,
     faCircleExclamation,
     faBellSlash,
+    faCopy,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -91,6 +92,7 @@ library.add(
     faTriangleExclamation,
     faCircleExclamation,
     faBellSlash,
+    faCopy,
     faBell,
     faCircleUser,
     faEnvelope,
@@ -154,6 +156,7 @@ export {
     faTriangleExclamation,
     faCircleExclamation,
     faBellSlash,
+    faCopy,
     faBell,
     faCircleUser,
     faEnvelope,

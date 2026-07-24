@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { updateSystemModelRecord } from '../src/app/api/systemModel.js';
+import { createSystemModelRecord, updateSystemModelRecord } from '../src/app/api/systemModel.js';
 import { createEmptyRecord, getFormLayout } from '../src/app/views/formLayout.js';
 import { mountForm } from './helpers/mountView.jsx';
 
@@ -27,6 +27,7 @@ const data = {
 };
 
 afterEach(() => {
+    createSystemModelRecord.mockClear();
     updateSystemModelRecord.mockClear();
     document.body.innerHTML = '';
 });
@@ -87,6 +88,21 @@ describe('schema-driven form layout', () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
         expect(host.querySelector('[data-form-field="first"] input')).toBeNull();
         expect(host.querySelector('[data-form-field="second"] input').disabled).toBe(false);
+        cleanup();
+    });
+
+    it('opens an unsaved copy in the create modal with editable values', async () => {
+        const { host, cleanup } = mountForm(data, 'es');
+
+        host.querySelector('[data-form-copy]').click();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        const modal = host.querySelector('[data-form-modal][data-copy-modal]');
+        expect(modal).not.toBeNull();
+        expect(modal.querySelector('[role="dialog"]').getAttribute('aria-label')).toBe('Copiar sale.order');
+        expect(modal.querySelector('input[name="name"]').value).toBe('SO-001');
+        expect(modal.querySelector('input[name="second"]').value).toBe('B');
+        expect(createSystemModelRecord).not.toHaveBeenCalled();
         cleanup();
     });
 

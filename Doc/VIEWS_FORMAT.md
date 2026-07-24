@@ -8,7 +8,7 @@ view placement lives in `system_model_schemas.json`.
 
 | Category      | Types                                                                                                         |
 | ------------- | ------------------------------------------------------------------------------------------------------------- |
-| Text          | `string`, `text`, `password`, `html`, `json`                                                                  |
+| Text          |`string_i18n`,  `string`, `text`, `password`, `html`, `json`                                                                  |
 | Numeric       | `integer`, `decimal`, `monetary`, `percentage`                                                                |
 | Date and time | `date`, `datetime`                                                                                            |
 | Visual        | `boolean`, `color`, `image`, `selection`, `status_badge`                                                      |
@@ -17,6 +17,41 @@ view placement lives in `system_model_schemas.json`.
 `many2one_avatar` renders the related record's avatar and display name. The
 backend serializes it as an object containing `uuid`, `name`, `display_name`,
 `avatar`, and `model`.
+
+### Multilingual strings
+
+Use `string_i18n` for short multilingual values such as names and titles. Its
+form component displays an internal language selector and persists every
+translation in one JSON object:
+
+```json
+{
+  "en_US": "Talent manager",
+  "es_MX": "Gerente de talento"
+}
+```
+
+Changing the selected language updates only that property and preserves the
+other translations. List, Kanban, and read-only form values resolve the current
+application language with a fallback to another available translation.
+
+New `string_i18n` values initialize as `{}`. Use `string` for non-translated
+technical values such as codes and keys. Use `html` for multilingual rich text
+such as descriptions and missions; new HTML values also initialize as `{}`.
+
+The default editor languages are `es_MX` and `en_US`. A schema may provide a
+different ordered list using `form.languages`:
+
+```json
+{
+  "name": "name",
+  "type": "string_i18n",
+  "form": {
+    "leftColumn": 0,
+    "languages": ["es_MX", "en_US"]
+  }
+}
+```
 
 ## Schema structure
 
@@ -218,6 +253,54 @@ Use `one2many_kanban` to display related records as compact cards:
 
 The header mapping references properties on each related record, not fields in
 the parent schema.
+
+### Related List view
+
+Use `one2many_list` to display related records as compact cards:
+
+```json
+"form": {
+                    "tab": 2,
+                    "view": "one2many_list",
+                    "function":[
+                        {
+                            "name": "description",
+                            "type": "count|sum",
+                            "label": {
+                                "es_MX": "Total",
+                                "en_US": "Total"
+                            }
+                        }
+                    ],
+                    "list_view": [
+                        {
+                            "name": "name",
+                            "type": "string",
+                            "label": {
+                                "es_MX": "Clave",
+                                "en_US": "Key"
+                            }
+                        },
+                        {
+                            "name": "description",
+                            "type": "string",
+                            "label": {
+                                "es_MX": "Descripción",
+                                "en_US": "Description"
+                            }
+                        }
+                    ],
+                    "placeholder": {
+                        "es_MX": "Configuraciones",
+                        "en_US": "Settings"
+                    },
+                    "help": {
+                        "es_MX": "Configuraciones de la aplicación",
+                        "en_US": "App settings"
+                    }
+                }
+            }
+```
 
 ![Form](./images/form.png)
 

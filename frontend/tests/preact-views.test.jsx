@@ -78,6 +78,26 @@ describe('Preact schema views', () => {
         expect(row.querySelector('img').getAttribute('src')).toBe(user.avatar);
     });
 
+    it('renders a one-to-many count with its list-specific label', () => {
+        const sectionData = {
+            model: {
+                name: 'hostal.section', label: { es: 'Áreas de alojamiento' },
+                readonly: true,
+                schema: [
+                    { name: 'section_type', type: 'selection', label: { es: 'Tipo de sección' }, list: { column: 3 } },
+                    { name: 'units', type: 'one2many_kanban', label: { es: 'Unidades' },
+                        list: { column: 4, display: 'count', label: { es: 'Número de unidades' } } },
+                ],
+            },
+            records: [{ uuid: 'section-1', section_type: 'bunk_bed', units: [{ uuid: 'u1' }, { uuid: 'u2' }] }],
+        };
+
+        const host = mount(<ListView data={sectionData} lang="es" />);
+        const headers = [...host.querySelectorAll('th')].map((item) => item.textContent.trim());
+        expect(headers).toEqual(['Tipo de sección', 'Número de unidades']);
+        expect(host.querySelector('[data-uuid="section-1"]').textContent).toContain('2');
+    });
+
     it('removes mutation controls from readonly model views', () => {
         const readonlyData = {
             ...data,

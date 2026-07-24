@@ -73,4 +73,22 @@ describe('create modal required fields', () => {
     }));
     await vi.waitFor(() => expect(onClose).toHaveBeenCalledOnce());
   });
+
+  it('shows the specific GraphQL error when record creation fails', async () => {
+    const onClose = vi.fn();
+    createSystemModelRecord.mockRejectedValueOnce({
+      response: { errors: [{ message: 'Permission required: hostal.location.amenity.create' }] },
+    });
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    act(() => render(<CreateModal data={data} lang="es" open onClose={onClose}
+      initialValues={{ name: 'Ana', email: 'ana@example.com', password: 'password123', user_type: 'HUMAN' }} />, host));
+
+    act(() => host.querySelector('button[aria-label="Guardar"]').click());
+
+    await vi.waitFor(() => expect(host.textContent).toContain(
+      'No se pudo crear el registro: Permission required: hostal.location.amenity.create',
+    ));
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

@@ -207,6 +207,11 @@ function initActiveView(view, lang) {
 /** Dock view-switch callback passed into the topbar. */
 function handleViewChange(view) {
     dashboardActions.setView(view);
+    if (view !== 'form' && hasRecordRoute()) {
+        const segments = globalThis.location.pathname.split('/').filter(Boolean);
+        const collectionPath = `/${segments.slice(0, -1).join('/')}`;
+        _router?.goTo(`${collectionPath}${globalThis.location.search ?? ''}`);
+    }
 }
 
 function getLabel(item, lang) {
