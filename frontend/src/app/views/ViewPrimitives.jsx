@@ -96,7 +96,6 @@ export function SchemaFormLayout({ schema, record, setValue, lang, context, read
 export function CreateModal({ data = {}, lang = 'en', open, onClose, initialValues = EMPTY_INITIAL_VALUES, copyMode = false }) {
     const schema = data?.model?.schema ?? [];
     const isMessage = data?.model?.name === 'system.message';
-    const context = { ...(data?.model ?? {}), tags: data?.model?.tags ?? [] };
     const initialRecord = () => ({
         ...createEmptyRecord(schema),
         ...(data?.model?.name === 'system.message' ? {
@@ -111,6 +110,7 @@ export function CreateModal({ data = {}, lang = 'en', open, onClose, initialValu
         ...initialValues,
     });
     const [record, setRecord] = useState(initialRecord);
+    const context = { ...(data?.model ?? {}), tags: data?.model?.tags ?? [], record };
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState('');
