@@ -22,7 +22,7 @@ export function renderValue(data, type, locale, currency, model, tagCatalog = []
             return `<a href="/model/${model}/${data.uuid}"><figure class="image is-24x24"><img class="is-rounded" src="${data.avatar}" alt="${data.name?.[locale.slice(0, 2)] || data}" /></figure></a>`;
         case 'many2many':
             return data;
-        case 'many2many_pills':
+        case 'many2many_pills': {
             const pillsData = groupPills(resolveTags(data, tagCatalog), locale);
             let pills = '<div class="field is-grouped is-grouped-multiline">';
             pillsData.forEach(item => {
@@ -30,6 +30,7 @@ export function renderValue(data, type, locale, currency, model, tagCatalog = []
             });
             pills += '</div>';
             return pills;
+        }
         case 'one2many':
             return data;
         case null:

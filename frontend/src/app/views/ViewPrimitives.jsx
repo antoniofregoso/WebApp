@@ -114,7 +114,7 @@ export function CreateModal({ data = {}, lang = 'en', open, onClose, initialValu
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState('');
-    const [dirtyFields, setDirtyFields] = useState(() => new Set());
+    const [dirtyFields, setDirtyFields] = useState(() => new Set(Object.keys(initialValues)));
     useEffect(() => { if (open) { setRecord(initialRecord()); setErrors({}); setSaveError(''); setSaving(false); setDirtyFields(new Set(Object.keys(initialValues))); } }, [open, schema, initialValues]);
     useEffect(() => {
         if (!open) return undefined;
