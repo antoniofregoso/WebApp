@@ -97,12 +97,19 @@ export async function fetchSystemModelView(
 }
 
 export async function fetchSystemModelByName(name, fetchImpl = globalThis.fetch) {
-    const data = await requestAuthenticated(
-        SYSTEM_MODEL_BY_NAME_QUERY,
-        { name },
-        fetchImpl,
-    );
-    return data.systemModelByName;
+    try {
+        const data = await requestAuthenticated(
+            SYSTEM_MODEL_BY_NAME_QUERY,
+            { name },
+            fetchImpl,
+        );
+        return data.systemModelByName;
+    } catch (error) {
+        if (error instanceof ClientError && error.response.errors?.length) {
+            throw new SystemModelError(`Model "${name}" was not found`, { cause: error });
+        }
+        throw new SystemModelError(`Unable to load model "${name}"`, { cause: error });
+    }
 }
 
 export async function searchSystemModels({
