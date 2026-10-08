@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import text as sa_text
 import sqlalchemy as sa
 from sqlmodel import Field, Column, Relationship, SQLModel
-import uuid
+from uuid import UUID, uuid4
 
 from app.domains.system.models.system_audit import SystemAudit
 
@@ -48,8 +48,8 @@ class SystemModel(SystemAudit, SQLModel, table=True):
     __tablename__ = "system_models"
 
     id: Optional[int] = Field(default=None, primary_key=True, nullable=False)
-    uuid: uuid.UUID = Field(
-        default_factory=uuid.uuid4,
+    uuid: UUID = Field(
+        default_factory=uuid4,
         sa_column_kwargs={
             "server_default": sa_text("gen_random_uuid()"),
             "unique": True,
@@ -96,8 +96,8 @@ class SystemModelField(SystemAudit, SQLModel, table=True):
     __tablename__ = "system_model_fields"
 
     id: Optional[int] = Field(default=None, primary_key=True, nullable=False)
-    uuid: uuid.UUID = Field(
-        default_factory=uuid.uuid4,
+    uuid: UUID = Field(
+        default_factory=uuid4,
         sa_column_kwargs={
             "server_default": sa_text("gen_random_uuid()"),
             "unique": True,
@@ -138,8 +138,8 @@ class SystemModelSchema(SystemAudit, SQLModel, table=True):
     __tablename__ = "system_model_schemas"
 
     id: Optional[int] = Field(default=None, primary_key=True, nullable=False)
-    uuid: uuid.UUID = Field(
-        default_factory=uuid.uuid4,
+    uuid: UUID = Field(
+        default_factory=uuid4,
         sa_column_kwargs={
             "server_default": sa_text("gen_random_uuid()"),
             "unique": True,
