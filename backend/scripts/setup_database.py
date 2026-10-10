@@ -53,7 +53,7 @@ BOT_NAME = "App Bot"
 # raw-SQL-only (no op.create_table/op.add_column) since create_schema()
 # already created that schema; if a future migration adds columns/tables
 # after this point, move this constant to the new boundary.
-_SEARCH_INDEX_MIGRATIONS_BASE_REVISION = "f2a6c8d9b4e0"
+_SEARCH_INDEX_MIGRATIONS_BASE_REVISION = "f7b2c3d4e5a6"
 
 
 def _load_json(file_name: str) -> Any:
