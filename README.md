@@ -81,6 +81,7 @@ cp .env.example .env
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+# Start the bundled PostgreSQL service; skip this if you use another server.
 docker compose up -d db
 python scripts/setup_database.py
 uvicorn main:app --reload
