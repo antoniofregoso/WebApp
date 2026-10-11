@@ -40,20 +40,15 @@ from app.domains.system.models import (  # noqa: F401
 )
 from app.domains.users.service.auth_service import AuthService
 from app.domains.users.models import UserType, UserUser  # noqa: F401
+from app.domains.system.search.indexes import SEARCH_INDEXES, create_index_statement
 
 DATA_DIR = BACKEND_DIR / "app" / "domains" / "system" / "data"
 BOT_NAME = "App Bot"
 
-# Revision right before the tail of migrations that only run raw SQL (CREATE
-# EXTENSION / CREATE INDEX for pg_trgm and full-text search) with no
-# schema change, so nothing in `SQLModel.metadata.create_all` produces them.
-# Stamping here and running `alembic upgrade head` makes Alembic actually
-# execute those migrations for real instead of skipping them as already
-# applied. Every migration between this revision and head must stay
-# raw-SQL-only (no op.create_table/op.add_column) since create_schema()
-# already created that schema; if a future migration adds columns/tables
-# after this point, move this constant to the new boundary.
-_SEARCH_INDEX_MIGRATIONS_BASE_REVISION = "head"
+# A fresh database is built directly from the current SQLModel metadata, search
+# index declarations, and JSON seed sources. Alembic only records that complete
+# state; historical migrations are reserved for upgrading existing databases.
+_FRESH_DATABASE_REVISION = "head"
 
 
 def _load_json(file_name: str) -> Any:
@@ -143,21 +138,27 @@ async def create_schema() -> None:
     try:
         async with engine.begin() as conn:
             await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto"))
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
             await conn.run_sync(SQLModel.metadata.create_all)
+            for index in SEARCH_INDEXES:
+                await conn.execute(
+                    text(create_index_statement(index, if_not_exists=True))
+                )
     finally:
         await engine.dispose()
-    print("Created database tables.")
+    print(
+        f"Created database tables, pg_trgm, and {len(SEARCH_INDEXES)} search GIN indexes."
+    )
 
 
-def apply_search_index_migrations() -> None:
+def stamp_fresh_database_revision() -> None:
     alembic_bin = Path(sys.executable).parent / "alembic"
     subprocess.run(
-        [str(alembic_bin), "stamp", _SEARCH_INDEX_MIGRATIONS_BASE_REVISION],
+        [str(alembic_bin), "stamp", _FRESH_DATABASE_REVISION],
         cwd=BACKEND_DIR,
         check=True,
     )
-    subprocess.run([str(alembic_bin), "upgrade", "head"], cwd=BACKEND_DIR, check=True)
-    print("Applied search index migrations (pg_trgm, FTS GIN indexes).")
+    print("Stamped fresh database at the current Alembic revision.")
 
 
 def _audit_values(bot_id: int, now: datetime) -> dict[str, Any]:
@@ -507,7 +508,7 @@ async def main() -> None:
     await reset_database()
     await create_schema()
     await seed_data()
-    apply_search_index_migrations()
+    stamp_fresh_database_revision()
     print("Setup complete.")
 
 
