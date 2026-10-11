@@ -55,7 +55,7 @@ not changed.
    upgrading existing databases, but a new database is built directly from
    the current models, index declarations, and JSON sources.
 
-## Backup And Restore
+## Backup and Restore
 
 The backup and restore scripts read the same `DATABASE_URL` from `.env` and
 require `pg_dump` and `pg_restore` in `PATH`.
